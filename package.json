@@ -13,7 +13,7 @@
 	"node-static": "*"
     },
     "scripts": {
-	"test": "mocha",
+	"test": "mocha-phantomjs test/client.html",
 	"test-phantom": "mocha-phantomjs test/client.html",
 	"debug": "mocha debug",
 	"shell": "node"
