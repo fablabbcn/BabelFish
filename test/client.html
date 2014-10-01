@@ -1,0 +1,29 @@
+<html>
+  <head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="../node_modules/mocha/mocha.css" />
+  </head>
+  <body>
+    <div id="mocha"></div>
+    <script src="../node_modules/mocha/mocha.js"></script>
+    <script src="../node_modules/chai/chai.js"></script>
+    <script>
+      mocha.ui('bdd');
+      mocha.reporter('html');
+      assert = chai.assert;
+    </script>
+    <script src="../tools/polyfill.js"></script>
+    <script src="../tools/mock.js"></script>
+    <script src="../tools/debug.js"></script>
+    <script src="../extension/rpc-client.js"></script>
+    <script src="../extension/rpc-server.js"></script>
+
+    <!-- Tests -->
+    <script src="test-bus.js"></script>
+    <script src="test-rpc.js"></script>
+    <script>
+      if (window.mochaPhantomJS) { mochaPhantomJS.run(); }
+      else { mocha.run(); }
+    </script>
+  </body>
+</html>

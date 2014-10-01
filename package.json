@@ -1,0 +1,21 @@
+{
+    "name": "selenium-test",
+    "version": "0.0.5",
+    "description": "Selenium tests.",
+    "keywords": [ "selenium" ],
+    "author": "Chris Perivolaropoulos",
+    "contributors": [],
+    "dependencies": {
+	"selenium-webdriver": "*",
+	"mocha": "*",
+	"mocha-phantomjs": "*",
+	"chai": "*",
+	"node-static": "*"
+    },
+    "scripts": {
+	"test": "mocha",
+	"test-phantom": "mocha-phantomjs test/client.html",
+	"debug": "mocha debug",
+	"shell": "node"
+    }
+}
