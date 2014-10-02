@@ -19,7 +19,7 @@ function dbg (msg) {
 }
 
 function err (msg) {
-	console.error(msg);
+	throw new Error("[Client:error] " + msg);
 }
 
 // id: the extension id
@@ -35,19 +35,20 @@ function RPCClient(id, obj, supported_calls) {
 }
 
 RPCClient.prototype = {
+	_msg_callback: function (callback, resp) {
+		dbg("Response was: " + JSON.stringify(resp));
+		if (resp.error) {
+			err(resp.error);
+		} else {
+			if (callback)
+				callback.apply(null, resp.args);
+		}
+	},
+
 	_message: function (obj, callback) {
 		dbg("Messaging for chrome." + obj.object + '.' + obj.method + "(" + obj.args.map(JSON.stringify) + ")");
 		chrome.runtime.sendMessage(
-			this.extensionId,
-			obj,
-			function (resp) {
-				dbg(resp);
-				if (resp.error) err(resp.error);
-
-				// The caller should take care of setting a this beforeand.
-				if (callback)
-					callback.apply(null, resp.args);
-			});
+			this.extensionId, obj, this._msg_callback.bind(this, callback));
 	},
 
 	_rpc: function (fnname, var_args) {

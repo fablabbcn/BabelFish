@@ -1,11 +1,11 @@
 {
-    "name": "chrome-messeger",
+    "name": "chrome-rpc",
     "version": "0.1",
     "manifest_version": 2,
-    "description": "Exchange messages with an extension.",
+    "description": "RPC protocol.",
     "app": {
 	"background": {
-	    "scripts": [ "background.js" ],
+	    "scripts": [ "rpc-host.js", "background.js" ],
 	    "persistent": true
 	}
     },
@@ -13,5 +13,9 @@
 	"matches": [
 	    "http://localhost:8080/*"
 	]
-    }
+    },
+    "permissions": [
+	"serial",
+	"http://localhost:8080/*"
+    ]
 }

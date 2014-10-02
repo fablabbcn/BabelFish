@@ -1,8 +1,8 @@
 {
-    "name": "selenium-test",
+    "name": "chrome-rpc",
     "version": "0.0.5",
-    "description": "Selenium tests.",
-    "keywords": [ "selenium" ],
+    "description": "RPC like interface to access extension methods from client-space.",
+    "keywords": [ "chrome", "extension", "rpv" ],
     "author": "Chris Perivolaropoulos",
     "contributors": [],
     "dependencies": {
@@ -13,9 +13,10 @@
 	"node-static": "*"
     },
     "scripts": {
-	"test": "mocha-phantomjs test/client.html",
+	"test": "mocha test/selenium-test.js",
 	"test-phantom": "mocha-phantomjs test/client.html",
 	"debug": "mocha debug",
-	"shell": "node"
+	"shell": "node",
+	"serve": "(chromium --load-extension=./extension chrome://extensions & node tools/serve.js ) "
     }
 }
