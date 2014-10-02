@@ -14,12 +14,12 @@
 // - ret: return value (not implemented)
 //
 
-config = {
-	extensionId: "ljmndkpjladbggcilngmpldikabkodpa"
-};
+function dbg (msg) {
+	console.log("[Client] " + msg);
+}
 
-function dbg(msg) {
-	console.log(msg);
+function err (msg) {
+	console.error(msg);
 }
 
 // id: the extension id
@@ -36,31 +36,33 @@ function RPCClient(id, obj, supported_calls) {
 
 RPCClient.prototype = {
 	_message: function (obj, callback) {
+		dbg("Messaging for chrome." + obj.object + '.' + obj.method + "(" + obj.args.map(JSON.stringify) + ")");
 		chrome.runtime.sendMessage(
 			this.extensionId,
 			obj,
 			function (resp) {
 				dbg(resp);
+				if (resp.error) err(resp.error);
+
 				// The caller should take care of setting a this beforeand.
 				if (callback)
 					callback.apply(null, resp.args);
 			});
 	},
 
-	_rpc: function (fnname, args) {
-		console.log("calling "+ fnname);
+	_rpc: function (fnname, var_args) {
 		// TODO: raise error in case of multiple callbacks.
-		var fn_args = [];
-		var callback;
-		for (var ar = 1; ar < arguments.length; ar++) {
-			var a = arguments[ar];
+		var args = Array.prototype.slice.call(arguments, 1);
+		dbg("Calling chrome." + this.obj + '.' + fnname + "(" + args.map(JSON.stringify) + ")");
+
+		var callback, fn_args = args.map(function (a) {
 			if (typeof(a) == 'function') {
 				callback = a;
-				fn_args.push('<function>');
+				return '<function>';
 			} else {
-				fn_args.push(a);
+				return a;
 			}
-		}
+		});
 
 		// Send the rpc call.
 		this._message({
