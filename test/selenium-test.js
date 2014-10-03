@@ -1,4 +1,4 @@
-var assert = require('assert'),
+var assert = require('chai').assert;
     test = require('selenium-webdriver/testing'),
     webdriver = require('selenium-webdriver'),
     chromedriver = require('selenium-webdriver/chrome'),
@@ -16,15 +16,11 @@ test.describe('Test', function() {
   });
 
 	// Tests
-	test.it("USB detection.", function () {
+	test.it("Serial detection.", function () {
 		chrome.get("http://localhost:8080/test/usb.html"). then(function () {
 			util.browser_logs(chrome, function (entries) {
-				if (entries)
-					entries.forEach(function (e) {console.log("Log: " + e.message);});
-				else
-					console.log("Error with entries.");
-
-				assert.ok(false);
+				assert.match(entries[0], /Found [0-9]+ devices.../,
+										 "Response callback did not yield the right message");
 			});
 		});
 	});

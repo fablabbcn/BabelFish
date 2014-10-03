@@ -1,39 +1,34 @@
-function Responder() {
-	this.msg = {args: [], err: null};
-}
-
-// Passed to the chromecall to fix the response
-Responder.prototype._callback = function (_sendResp, var_args) {
-	// XXX: sendResp is corrupt at this point if called from the chrome
-	// context.
-	var  sr = _sendResp, args = Array.prototype.slice.call(arguments, 1);
-	if (args.some(function (a) {return typeof(a) == 'function';})) {
-		throw new Error("No calbacks in callbacks allowed.");
-	}
-	this.msg.args = args;
-	console.log("Sending response: " + JSON.stringify(this.msg));
-	// It is already called?
-	sr(this.msg);
-};
-
-// Get a callback that knows how to send messages but looks like the
-// original callback
-Responder.prototype.get_callback = function (sendResp) {
-	var ret = this._callback.bind(this, sendResp);
-	return ret;
-};
-
-Responder.prototype.error = function (err) {
-	this.msg.error = err;
-};
+var DEBUG = false;
 
 function err(msg) {
 	console.error("[Server:ERR] " + msg);
 }
 
 function dbg(msg) {
-	console.log("[Server] " + msg);
+	DEBUG && console.log("[Server] " + msg);
 }
+
+
+function Responder() {
+	this.msg = {args: [], err: null};
+}
+
+// Get a callback that knows how to send messages but looks like the
+// original callback
+Responder.prototype.get_callback = function (sr) {
+	return function (sendResp, var_args) {
+		this.msg.args = Array.prototype.slice.call(arguments, 1);
+		dbg("Sending: " +  this.msg.args);
+		sendResp(this.msg);
+		if (chrome.runtime.lastError) {
+			throw chrome.runtime.lastError;
+		}
+	}.bind(this, sr);
+};
+
+Responder.prototype.error = function (err) {
+	this.msg.error = err;
+};
 
 // RPC call message is:
 // - timestamp
@@ -67,10 +62,12 @@ function RPCHost (name, supported_methods, obj) {
 	chrome.runtime.onMessageExternal.addListener(
 		(function(request, sender, sendResp) {
 			try {
-				this.listener(request, sender, sendResp);
+				// Must return true to call sendResp after listener finishes
+				return this.listener(request, sender, sendResp);
 			} catch (e) {
 				sendResp({error: "Bad request: " + JSON.stringify(request) +
 									"\nError: "+ e.message});
+				return false;
 			}
 		}).bind(this));
 }
@@ -91,13 +88,12 @@ RPCHost.prototype.listener = function (request, sender, sendResp) {
 										 (responder.get_callback(sendResp)) || a);
 					return ret;
 				});
-		// Stuff that works.
-		// function _fn (cb) {cb([1,2,3]);}; _fn.apply(this.obj, args);
-		// args[0]([1,2,3]);
 		method.apply(this.obj, args);
+		return true;
 	} else {
 		err("sending error -> bad request: " + JSON.stringify(request));
 		throw new Error("Bad request: " + JSON.stringify(request) +
 										"\nSupported methods: " + this.supported_methods);
+		return false;
 	}
 };

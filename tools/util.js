@@ -14,7 +14,7 @@ function chrome_driver(extension) {
 										 '../extension');
 
 	logperfs.setLevel(webdriver.logging.Type.BROWSER,
-										webdriver.logging.Level.DEBUG);
+										webdriver.logging.Level.ALL);
 
 	var chrome = new webdriver.Builder().
 				withCapabilities(webdriver.Capabilities.chrome()).

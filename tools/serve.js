@@ -13,7 +13,7 @@ function StaticServer(webroot, port) {
     "js": "text/javascript",
     "css": "text/css"};
 
-	http.createServer(function(req, res) {
+	this.srv = http.createServer(function(req, res) {
     var uri = url.parse(req.url).pathname;
     var filename = path.join(webroot, uri);
     fs.exists(filename, function(exists) {

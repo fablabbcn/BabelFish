@@ -14,8 +14,10 @@
 // - ret: return value (not implemented)
 //
 
+var DEBUG = false;
+
 function dbg (msg) {
-	console.log("[Client] " + msg);
+	DEBUG && console.log("[Client] " + msg);
 }
 
 function err (msg) {

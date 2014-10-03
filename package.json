@@ -15,7 +15,7 @@
     "scripts": {
 	"test": "mocha test/selenium-test.js",
 	"test-phantom": "mocha-phantomjs test/client.html",
-	"debug": "mocha debug",
+	"debug": "mocha debug test/selenium-test.js",
 	"shell": "node",
 	"serve": "(chromium --load-extension=./extension chrome://extensions & node tools/serve.js ) "
     }
