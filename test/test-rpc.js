@@ -1,74 +1,47 @@
-// Notably insupported stuff:
-//
-// - Callbacks not to be called at the very end of the rpc
-// - Return values. Most chromecalls use callbacks anyway.
-//
-// RPC is:
-// - timestamp
-// - method: method> name
-// - object: object name
-// - args: argumet list
-// - error
-// Resp:
-// - args: callback arguments
-// - ret: return value (not implemented)
-//
+describe("RPC end-to-end", function () {
+	var host, browser_serial;
 
-config = {
-	extensionId: "ljmndkpjladbggcilngmpldikabkodpa"
-};
+	before(function () {
+		chrome = new MockChrome();
+		host = new RPCHost('serial', ['send', 'getDevices'],
+											 ['onRsponse.addListener']);
+		browser_serial = new RPCClient('1234', 'serial', [ 'getDevices', 'send'],
+																	 ['onRsponse.addListener']);
+	});
 
-function dbg(msg) {
-	console.log(msg);
-}
+	it("Client setup", function () {
+		assert.equal(typeof(browser_serial.getDevices), 'function',
+								 'Method "getDevices" not registered');
+		assert.equal(typeof(browser_serial.onResponse.addListener), 'function',
+								'Listener "onReceive" not registered.');
+	});
 
-// id: the extension id
-// obj: name of the remote object
-// supported_calls: array of names of calls supported.
-function RPCClient(id, obj, supported_calls) {
-	this.extensionId = id;
-	this.obj = obj;
-	for (var i in supported_calls) {
-		var method = supported_calls[i];
-		this[method] = this._rpc.bind(this, method);
-	}
-}
 
-RPCClient.prototype = {
-	_message: function (obj, callback) {
-		chrome.runtime.sendMessage(
-			this.extensionId,
-			obj,
-			function (resp) {
-				dbg(resp);
-				// The caller should take care of setting a this beforeand.
-				if (callback)
-					callback.apply(null, resp.args);
-			});
-	},
+  it("Simple chromecall", function () {
+		var collected_bytes = false;
+		browser_serial.send(1, 'some data', function (res) {
+			assert.ok(res, 'Sending failed');
+			collected = true;
+		});
 
-	_rpc: function (fnname, args) {
-		console.log("calling "+ fnname);
-		// TODO: raise error in case of multiple callbacks.
-		var fn_args = [];
-		var callback;
-		for (var ar = 1; ar < arguments.length; ar++) {
-			var a = arguments[ar];
-			if (typeof(a) == 'function') {
-				callback = a;
-				fn_args.push('<function>');
-			} else {
-				fn_args.push(a);
-			}
-		}
+		assert.ok(collected, 'Send callback not called');
+		assert.equal(chrome.serial._journal[0], 'some data', 'Sent wrong data');
+	});
 
-		// Send the rpc call.
-		this._message({
-			timestamp: (new Date).getTime(),
-			object: this.obj,
-			method: fnname,
-			args: fn_args,
-			error: null
-		}, callback);
-	}
-};
+	it("Multiple chromecalls", function () {
+		var collected1 = false,
+				collected2 = false;
+		chrome.serial._raw_data = "";
+		browser_serial.send(1, 'My name is ', function (res) {
+			assert.ok(res, 'Sending failed');
+			collected1 = true;
+		});
+		browser_serial.send(1, 'Awesome-o', function (res) {
+			assert.ok(res, 'Sending failed');
+			collected2 = true;
+		});
+
+		assert.ok(collected1 && collected2);
+		assert.ok(chrome.serial._raw_data, 'My name is Awesome-o');
+	});
+});

@@ -15,12 +15,12 @@
     <script src="../tools/polyfill.js"></script>
     <script src="../tools/mock.js"></script>
     <script src="../tools/debug.js"></script>
-    <script src="../extension/rcp-client.js"></script>
-    <script src="../extension/rcp-server.js"></script>
+    <script src="../extension/rpc-client.js"></script>
+    <script src="../extension/rpc-host.js"></script>
 
     <!-- Tests -->
+    <script src="test-rpc.js"></script>
     <script src="test-bus.js"></script>
-    <script src="test-rcp.js"></script>
     <script>
       if (window.mochaPhantomJS) { mochaPhantomJS.run(); }
       else { mocha.run(); }

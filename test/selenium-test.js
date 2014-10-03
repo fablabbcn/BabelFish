@@ -19,6 +19,7 @@ test.describe('Test', function() {
 	test.it("Serial detection.", function () {
 		chrome.get("http://localhost:8080/test/usb.html"). then(function () {
 			util.browser_logs(chrome, function (entries) {
+				debugger;
 				assert.match(entries[0], /Found [0-9]+ devices.../,
 										 "Response callback did not yield the right message");
 			});

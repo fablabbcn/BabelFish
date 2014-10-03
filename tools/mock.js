@@ -49,6 +49,7 @@ Bus.prototype = {
 function MockRuntime() {
 	this._bus = new Bus();
 	this.onMessageExternal = {addListener: this._addListener.bind(this)};
+	this.onConnect = {addListener: function(){}};
 }
 MockRuntime.prototype = {
 	sendMessage: function (id, msg, cb) {
@@ -62,9 +63,11 @@ MockRuntime.prototype = {
 
 function MockSerial() {
 	this._journal = [];
+	this.raw_data = "";
+	this.onReceive = {addListener: function () {}};
 }
+
 MockSerial.prototype = {
-	// Data is a string here for simplicity
 	send: function (connId, data, cb) {
 		var sendInfo = {
 			bytesSent: data.length
@@ -72,9 +75,10 @@ MockSerial.prototype = {
 		this._journal.push(data);
 		this._raw_data += data;
 		cb(sendInfo);
-	}
-};
+	},
 
+  getDevices: function (_) {}
+};
 
 // A thin wrapper of the bus. Just make the object paths correct.
 function MockChrome() {

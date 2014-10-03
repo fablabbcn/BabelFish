@@ -5,7 +5,7 @@
 //
 // RPC is:
 // - timestamp
-// - method: method> name
+// - method: method name, may be a dot path
 // - object: object name
 // - args: argumet list
 // - error
@@ -14,7 +14,7 @@
 // - ret: return value (not implemented)
 //
 
-var DEBUG = false;
+var DEBUG = true;
 
 function dbg (msg) {
 	DEBUG && console.log("[Client] " + msg);
@@ -27,16 +27,29 @@ function err (msg) {
 // id: the extension id
 // obj: name of the remote object
 // supported_calls: array of names of calls supported.
-function RPCClient(id, obj, supported_calls) {
+function RPCClient(id, obj_name, supported_methods, supported_listeners) {
+	console.assert(typeof(id) == 'string', "Extension id should be a string");
+	console.assert(typeof(obj_name) == 'object',
+								 "object name should be a string");
 	this.extensionId = id;
-	this.obj = obj;
-	for (var i in supported_calls) {
-		var method = supported_calls[i];
-		this[method] = this._rpc.bind(this, method);
-	}
+	this.obj_name = obj_name;
+
+	supported_methods.forEach(this.register_fn.bind(this, false));
+	supported_listeners.forEach(this.register_fn.bind(this, true));
 }
 
 RPCClient.prototype = {
+	register_fn: function (name) {
+		var names = name.split('.'),
+				method = names.pop(),
+				obj = names.reduce(function (ob, m) {
+					ob[m] = {};
+					return ob[m];
+				}, this) || this;
+		obj[method] = this._rpc.bind(this, method);
+		dbg('Registering to client: ' + name);
+	},
+
 	_msg_callback: function (callback, resp) {
 		dbg("Response was: " + JSON.stringify(resp));
 		if (resp.error) {
@@ -47,17 +60,33 @@ RPCClient.prototype = {
 		}
 	},
 
-	_message: function (obj, callback) {
-		dbg("Messaging for chrome." + obj.object + '.' + obj.method + "(" + obj.args.map(JSON.stringify) + ")");
-		chrome.runtime.sendMessage(
-			this.extensionId, obj, this._msg_callback.bind(this, callback));
+	// Send a message potentially opening a connection, running callback
+	// on response. In the case of a connection the callback is being on
+	// _every_ response on the created port thus creating a listener.
+	_message: function (obj, callback, connect) {
+		var callString = "chrome." + obj.object + '.' + obj.method +
+				"(" + obj.args.map(JSON.stringify) + ")",
+		unboundCb = this._msg_callback.bind(this, callback);
+		if (connect) {
+			// Connect setting up the listener
+			// run callback on message (XXX: provide no feedback to the host)
+			var port = chrome.runtime.connect({msg: obj});
+			port.onMessage(unboundCb);
+		} else {
+			chrome.runtime.sendMessage(
+				this.extensionId, obj, unboundCb);
+		}
 	},
 
-	_rpc: function (fnname, var_args) {
+	_rpc: function (connect, fnname, var_args) {
 		// TODO: raise error in case of multiple callbacks.
-		var args = Array.prototype.slice.call(arguments, 1);
-		dbg("Calling chrome." + this.obj + '.' + fnname + "(" + args.map(JSON.stringify) + ")");
+		console.assert(typeof('connect') == connect,
+									 "connect=true to use connection");
+		var args = Array.prototype.slice.call(arguments, 2);
+		dbg("Calling chrome." + this.obj_name + '.' + fnname +
+				"(" + args.map(JSON.stringify) + ")");
 
+		// XXX: You are allowed only one callback.
 		var callback, fn_args = args.map(function (a) {
 			if (typeof(a) == 'function') {
 				callback = a;
@@ -70,10 +99,10 @@ RPCClient.prototype = {
 		// Send the rpc call.
 		this._message({
 			timestamp: (new Date).getTime(),
-			object: this.obj,
+			object: this.obj_name,
 			method: fnname,
 			args: fn_args,
 			error: null
-		}, callback);
+		}, callback, connect);
 	}
 };
