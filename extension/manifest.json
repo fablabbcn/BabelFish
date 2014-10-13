@@ -5,14 +5,15 @@
     "description": "RPC protocol.",
     "app": {
 	"background": {
-	    "scripts": [ "rpc-host.js", "background.js" ],
+	    "scripts": [ "config.js", "rpc-host.js", "background.js" ], // Make config remote
 	    "persistent": true
 	}
     },
     "externally_connectable": {
 	"matches": [
 	    "http://localhost:8080/*"
-	]
+	],
+	"accepts_tls_channel_id": false
     },
     "permissions": [
 	"serial",

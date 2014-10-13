@@ -13,14 +13,19 @@
       assert = chai.assert;
     </script>
     <script src="../tools/polyfill.js"></script>
-    <script src="../tools/mock.js"></script>
+    <script src="../tools/mock.js"></script> --
     <script src="../tools/debug.js"></script>
+
+    <script src="../extension/bus.js"></script>
     <script src="../extension/rpc-client.js"></script>
     <script src="../extension/rpc-host.js"></script>
 
-    <!-- Tests -->
+    <!-- Test testing -->
+    <script src="test-mockbus.js"></script>
+    <script src="test-mock.js"></script>
+
+    <!-- Test system -->
     <script src="test-rpc.js"></script>
-    <script src="test-bus.js"></script>
     <script>
       if (window.mochaPhantomJS) { mochaPhantomJS.run(); }
       else { mocha.run(); }

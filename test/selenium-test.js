@@ -1,4 +1,4 @@
-var assert = require('chai').assert;
+var assert = require('chai').assert,
     test = require('selenium-webdriver/testing'),
     webdriver = require('selenium-webdriver'),
     chromedriver = require('selenium-webdriver/chrome'),
@@ -15,18 +15,29 @@ test.describe('Test', function() {
 		srv = new Server(".", 8080);
   });
 
-	// Tests
-	test.it("Serial detection.", function () {
-		chrome.get("http://localhost:8080/test/usb.html"). then(function () {
-			util.browser_logs(chrome, function (entries) {
-				debugger;
-				assert.match(entries[0], /Found [0-9]+ devices.../,
-										 "Response callback did not yield the right message");
+	test.it("Chrome api functionality", function () {
+		chrome.get("http://localhost:8080/test/testpages/chrome/index.html").
+			then(function () {
+				util.logs(chrome, 'devices', function (entries) {
+					assert.notEqual(entries.length, 0, "No logging");
+				});
 			});
-		});
 	});
 
-  test.after(function() {
+	// Tests
+	test.it("Echo bus service", function () {
+		debugger;
+		chrome.get("http://localhost:8080/test/testpages/echo/index.html").
+			then(function () {
+				util.logs(chrome, 'log0', function (entries) {
+					assert.notEqual(entries.length, 0, "No echo..");
+					assert.equal(entries[0], 'Received: "I mana sou"',
+											 "No proper echo mode.");
+				});
+			});
+	});
+
+	test.after(function() {
 		chrome.quit();
 		srv.stop();
 	});

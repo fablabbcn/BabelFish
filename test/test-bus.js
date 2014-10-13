@@ -41,7 +41,7 @@ describe("Test Bus", function () {
 		assert.equal(bus.msg_log[0].from, "sendMessage");
 		// The same msg was received by the listener
 		assert.equal(bus.msg_log[1].msg, "client speaking");
-		assert.equal(bus.msg_log[1].from, "_listener");
+		assert.equal(bus.msg_log[1].from, "onMessageExternal");
 		// then sendResp sent the message to the client
 		assert.equal(bus.msg_log[2].msg, "extension speaking");
 		assert.equal(bus.msg_log[2].from, "sendResp");

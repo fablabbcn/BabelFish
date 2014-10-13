@@ -3,4 +3,4 @@
 
 ((nil
   (compilation-directory)
-  (compile-command . "npm run test-phantom")))
+  (compile-command . "npm test")))

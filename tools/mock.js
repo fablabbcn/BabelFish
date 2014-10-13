@@ -1,70 +1,63 @@
-// Mock chrome
+function setupMock(obj, dotPath, callBuf) {
+	if (typeof(obj) != 'object')
+		return null;
 
-// Bus for messages between extension nd the client. It supports:
-// receive function
-// send calls -> receive function arguments
-// sendResp callback passed to receive function
-//
-// Basic use: [] means user provided
-// :: addListener: [addedListener]
-// :: sendMessage -> [addedListener] -> sendResp -> [send Message callback]
-//
-// Note that nothing is really asychronous when using this bus.
-// Also note that only sendMessageCallback is called on the client.
-//
-function Bus () {
-	this.msg_log = [];
-}
-
-Bus.prototype = {
-	sendMessage: function (id, msg, cb) {
-		var sender = id;
-		this.msg_log.push({from:'sendMessage', msg: msg, id: id});
-		this.sendMessageCb = function (msg) {
-			this.msg_log.push({from: 'sendMessageCb', msg: msg});
-			cb(msg);
+	if (typeof(callBuf) == 'undefined') {
+		obj.callLog = [];
+		callBuf = obj.callLog;
+		obj.report = function () {
+			console.log("Reporting call history:\n"+
+									JSON.stringify(this.callLog, undefined, 2));
 		};
-		this._listener(msg, sender, this.sendResp.bind(this));
-	},
-
-	addListener: function (cb) {
-		this._listener = function (msg, sender, sendResp) {
-			this.msg_log.push({from: '_listener', msg: msg});
-			cb(msg, sender, sendResp);
-		};
-	},
-
-	sendResp: function (msg) {
-		this.msg_log.push({from:'sendResp', msg: msg});
-		this.sendMessageCb(msg);
-	},
-
-	_listener: function (_) {
-		throw new Error("Listener not attached");
+		obj.logReset = function () {obj.callLog = []};
 	}
 
-};
+	// DFS search mocking the functions.
+	for (var p in obj) {
+		if (typeof(dotPath) == 'undefined')
+			dotPath = [];
 
-
-function MockRuntime() {
-	this._bus = new Bus();
-	this.onMessageExternal = {addListener: this._addListener.bind(this)};
-	this.onConnect = {addListener: function(){}};
-}
-MockRuntime.prototype = {
-	sendMessage: function (id, msg, cb) {
-		this._bus.sendMessage(id, msg, cb);
-	},
-
-	_addListener: function  (callback) {
-		this._bus.addListener(callback);
+		dotPath.push(p);
+		switch(typeof(obj[p])) {
+		case 'object':
+			setupMock(obj[p], dotPath, callBuf);
+			break;
+		case 'function':
+			// Decorate fuction to log it's path to to callBuf
+			obj[p] = (function (_p, _path, _raw_method, _) {
+				var args = (Array.prototype.slice.call(arguments, 3)),
+						log = {call: _path,
+									 args: args.map(function (a) {
+										 if (typeof(a) == 'function')
+											 return a.toString();
+										 else
+											 return a;
+									 })};
+				callBuf.push(log);
+				return _raw_method.apply(this, args);
+			}).bind(obj, p, dotPath.slice(0), obj[p]);
+			break;
+		}
+		dotPath.pop();
 	}
+
+	return null;
 }
 
 function MockSerial() {
 	this._journal = [];
 	this.raw_data = "";
-	this.onReceive = {addListener: function () {}};
+	this.receive_lines = ["Everything is awesome",
+												"when ur part of",
+												"the team."];
+	this.onReceive = {
+		addListener: (
+			function (cb) {
+				this.receive_lines.forEach(function (l) {
+					cb(l);
+				});
+			}).bind(this)
+	};
 }
 
 MockSerial.prototype = {
@@ -82,9 +75,9 @@ MockSerial.prototype = {
 
 // A thin wrapper of the bus. Just make the object paths correct.
 function MockChrome() {
-	this.runtime = new MockRuntime();
-	this.serial = new MockSerial();
+	this.serial = new MockSerial(this.calls);
 
-	this._bus = this.runtime._bus;
+	this.call_log = [];
+	setupMock(this);
 }
 var chrome = new MockChrome();

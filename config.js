@@ -1,5 +1,17 @@
+// This file is to be hosted.
+
 var config = {
-	extensionId: "pcoogjpilcclcmejpkmbifdbihomlgec"
+	extensionId: "pcoogjpilcclcmejpkmbifdbihomlgec",
+	methods: {
+		serial: {
+			methods: ['getDevices', 'send'],
+			listeners: []
+		}
+	}
 };
 
-exports.config = config;
+try {
+	exports.config = config;
+} catch (e) {
+	;
+}

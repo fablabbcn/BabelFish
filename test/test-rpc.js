@@ -1,30 +1,36 @@
 describe("RPC end-to-end", function () {
-	var host, browser_serial;
+	var host, browser_serial, chrome;
 
 	before(function () {
 		chrome = new MockChrome();
 		host = new RPCHost('serial', ['send', 'getDevices'],
-											 ['onRsponse.addListener']);
+											 ['onReceive.addListener'], chrome.serial);
 		browser_serial = new RPCClient('1234', 'serial', [ 'getDevices', 'send'],
-																	 ['onRsponse.addListener']);
+																	 ['onReceive.addListener']);
 	});
 
 	it("Client setup", function () {
 		assert.equal(typeof(browser_serial.getDevices), 'function',
 								 'Method "getDevices" not registered');
-		assert.equal(typeof(browser_serial.onResponse.addListener), 'function',
-								'Listener "onReceive" not registered.');
+		assert.equal(typeof(browser_serial.onReceive), 'object',
+								 'Listener "onReceive" not registered. Registered methods: ' +
+								 Object.getOwnPropertyNames(browser_serial));
+		assert.equal(typeof(browser_serial.onReceive.addListener), 'function',
+								 "Failed to register dotted paths.");
 	});
 
 
   it("Simple chromecall", function () {
 		var collected_bytes = false;
+		setupMock(browser_serial);
 		browser_serial.send(1, 'some data', function (res) {
 			assert.ok(res, 'Sending failed');
-			collected = true;
+			collected_bytes = true;
 		});
 
-		assert.ok(collected, 'Send callback not called');
+		// assert.ok(chrome.calleed.indexOf('serial') == -1,
+		// 					"Mock serial not accessed");
+		assert.ok(collected_bytes, 'Send callback not called');
 		assert.equal(chrome.serial._journal[0], 'some data', 'Sent wrong data');
 	});
 
@@ -43,5 +49,15 @@ describe("RPC end-to-end", function () {
 
 		assert.ok(collected1 && collected2);
 		assert.ok(chrome.serial._raw_data, 'My name is Awesome-o');
+		assert.deepEqual(bus.msg_log.pop().args, [1, 'Awesome-o', "<function>"],
+										 "Did not pass through the mock bus.");
+	});
+
+	it("Persistent listeners", function () {
+		var res = "";
+		browser_serial.onReceive.addListener( function (msg) {
+			res += msg + " ";
+		});
+		assert.equal(res, "Everything is awesome when ur part of the team. ");
 	});
 });

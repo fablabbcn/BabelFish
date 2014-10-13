@@ -1,7 +1,8 @@
 # Chrome RPC
 
 RPC protocol to provide selective access to the chrome api to the
-front end code.
+front end code. More simply it is an extension that allows you to run
+restricted chrome API calls from regular fetched javascript.
 
 ## Usage
 
@@ -61,3 +62,13 @@ error | An error code or null
 
 *Note: not all the above functionality is thoroughly tested, the
  priority is to implement the chrome.serial.\* API*
+
+## Implementation details
+
+When a page loads `rpc-client.js` it can create rpc client objects
+that behave similarly to the corresponding google API objects.
+
+	chrome.serial = RPCClient(<extension-id>, 'serial');
+
+The client then queries the server for supported methods of the object
+'serial' and registers corresponding RPC methods to itself.
