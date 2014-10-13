@@ -1,3 +1,7 @@
 // Access usb interface
 //
-var host = new RPCHost('serial');
+
+var hosts = {};
+Object.getOwnPropertyNames(config.methods).forEach(function (m) {
+	hosts[m] = new RPCHost(m);
+});

@@ -21,6 +21,9 @@ test.describe('Test', function() {
 				util.logs(chrome, 'devices', function (entries) {
 					assert.notEqual(entries.length, 0, "No logging");
 				});
+				util.logs(chrome, 'platform', function (entries) {
+					assert.notEqual(entries.length, 0, "No logging");
+				});
 			});
 	});
 

@@ -82,10 +82,26 @@ function RPCClient(id, obj_name, supported_methods, supported_listeners) {
 	console.assert(typeof(obj_name) == 'string',
 								 "object name should be a string, not " + typeof(obj_name));
 
+	// do not override an existing object
+	if (chrome[obj_name]) {
+		var props = Object.getOwnPropertyNames(chrome[obj_name]);
+		props.forEach( function (p) {
+			var prop = chrome[obj_name][p];
+			if (prop instanceof Function) {
+				this[p] = prop.bind(chrome[obj_name]);
+			} else {
+				this[p] = prop;
+			}
+		}.bind(this));
+	}
+
 	// Make sure there is a bus available
 	if (!bus) bus = new ClientBus(id);
 	this.extensionId = id;
 	this.obj_name = obj_name;
+	if (!config.methods[obj_name])
+		throw Error('Tried to connect to unconfigured object: chrome.' + obj_name);
+
 	this.setup_methods(config.methods[obj_name]);
 
 	// XXX: The callback is called very very late.

@@ -6,6 +6,10 @@ var config = {
 		serial: {
 			methods: ['getDevices', 'send'],
 			listeners: []
+		},
+		runtime: {
+			methods: ['getPlatformInfo'],
+			listeners: []
 		}
 	}
 };
