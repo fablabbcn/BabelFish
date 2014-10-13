@@ -50,10 +50,10 @@ ClientBus.prototype = {
 	clientMessage: function (persist, msg, cb) {
 		cb = cb  || this.default_cb;
 		if (persist) {
-			var port = chrome.connect({listener: msg.host});
+			var port = chrome.runtime.connect(this.extensionId, {name: msg.object});
 			// cb has access only to msg, not to any other arguments the API
 			// provides.
-			port.onMessage(function (msg) {cb(msg);});
+			port.onMessage.addListener(function (msg) {cb(msg);});
 		} else {
 			console.log("Sending: " + str(msg));
 			chrome.runtime.sendMessage(
@@ -122,9 +122,10 @@ RPCClient.prototype = {
 		var names = name.split('.'),
 				method = names.pop(),
 				obj = names.reduce(function (ob, m) {
-					ob[m] = {};
+					ob[m] = ob[m] || {};
 					return ob[m];
 				}, this) || this;
+		console.log("Object: " + this.obj_name + ',' + names + '(reg method: '+ method +')');
 		obj[method] = this._rpc.bind(this, isListener, name);
 	},
 
@@ -174,4 +175,6 @@ RPCClient.prototype = {
 	}
 };
 
-chrome.serial = new RPCClient(config.extensionId, 'serial');
+Object.getOwnPropertyNames(config.methods).forEach(function (m) {
+	chrome[m] = new RPCClient(config.extensionId, m);
+});

@@ -16,6 +16,11 @@
 	"accepts_tls_channel_id": false
     },
     "permissions": [
+	"storage",
+	"alarms",
+	"notifications",
+        { "fileSystem": ["write"]},
+	"syncFileSystem",
 	"serial",
 	"http://localhost:8080/*"
     ]

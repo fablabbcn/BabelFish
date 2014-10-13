@@ -15,14 +15,30 @@ test.describe('Test', function() {
 		srv = new Server(".", 8080);
   });
 
-	test.it("Chrome api functionality", function () {
+	test.it("Chrome api listeners", function () {
 		chrome.get("http://localhost:8080/test/testpages/chrome/index.html").
 			then(function () {
 				util.logs(chrome, 'devices', function (entries) {
 					assert.notEqual(entries.length, 0, "No logging");
 				});
 				util.logs(chrome, 'platform', function (entries) {
+					assert.notEqual(entries.length, 0, "No platform received.");
+					assert.match(entries[0], /^Platform: {"arch":".*?","nacl_arch":".*?","os":".*?"}$/,
+											"Not receiveng expected entry format for platform.");
+				});
+			});
+	});
+
+	test.it("Chrome api calls", function () {
+		chrome.get("http://localhost:8080/test/testpages/chrome/index.html").
+			then(function () {
+				util.logs(chrome, 'devices', function (entries) {
 					assert.notEqual(entries.length, 0, "No logging");
+				});
+				util.logs(chrome, 'platform', function (entries) {
+					assert.notEqual(entries.length, 0, "No platform received.");
+					assert.match(entries[0], /^Platform: {"arch":".*?","nacl_arch":".*?","os":".*?"}$/,
+											"Not receiveng expected entry format for platform.");
 				});
 			});
 	});

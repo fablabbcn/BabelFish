@@ -37,7 +37,7 @@ HostBus.prototype = {
 			this.addRuntimeListener('onConnectExternal', function  (port) {
 				// Message comes with port
 				if (channel == port.name)
-					port.onMessage( function (msg) {
+					port.onMessage.addListener( function (msg) {
 						cb(msg, port.sendMessage.bind(port));
 					});
 			});
