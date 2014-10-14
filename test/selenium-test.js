@@ -22,9 +22,10 @@ test.describe('Test', function() {
 					assert.notEqual(host_log.length, 0, "No logging");
 					util.logs(chrome, 'client-storage', function (cli_log) {
 						assert.equal(host_log.length, cli_log.length,
-														"Different number of tabs were reported by host and client");
+														"Different number of tabs were reported by\
+												 host and client");
 
-						for (var i = 0 ; i < cli_log.length; i++)
+						for (var i=0 ; i < cli_log.length; i++)
 							assert.equal(cli_log[i].split('~')[1], host_log[i].split('~')[1],
 													 "Different tabs were logged by host and client");
 					});

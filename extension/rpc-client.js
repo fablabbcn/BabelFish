@@ -60,7 +60,7 @@ ClientBus.prototype = {
 			console.log("Sending: " + str(msg));
 			chrome.runtime.sendMessage(
 				this.extensionId, msg, {}, (function (msg) {
-					console.log("RPC received: " + msg);
+					console.log("RPC received: " + str(msg));
 					cb(msg || {
 						error: chrome.runtime.lastError.message,
 						extensionId: this.extensionId

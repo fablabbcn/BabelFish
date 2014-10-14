@@ -4,8 +4,8 @@ var config = {
 	extensionId: "pcoogjpilcclcmejpkmbifdbihomlgec",
 	methods: {
 		serial: {
-			methods: ['getDevices', 'send'],
-			listeners: []
+			methods: ['getDevices', 'send', 'connect', 'disconnect', 'setControlSignals'],
+			listeners: ['onReceive.addListener']
 		},
 		runtime: {
 			methods: ['getPlatformInfo'],
@@ -31,7 +31,7 @@ var config = {
 		alarms: {
 			methods: ['clear', 'create', 'getAll'],
 			listeners: ['onAlarm.addListener']
-		},
+		}
 	}
 };
 
