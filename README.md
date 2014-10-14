@@ -6,16 +6,23 @@ restricted chrome API calls from regular fetched javascript.
 
 ## Usage
 
-in the extension:
+And in config.js (unless you want something strage it should be setup:
 
-	var rpc_serial = new RPCHost(chrome.serial, 'serial', ['detectDevices', 'write'])
+	...
+	serial: {
+		methods: ['getDevices', 'send'],
+		listeners: [...]
+	}
+	...
 
-*Note: It is an object to maintain state*
+and in the web page:
 
-In the website javascript:
+	<script type="text/javascript" src="/config.js"></script>
+	<script type="text/javascript" src="/extension/rpc-client.js"></script>
 
-	var chrome = {serial: new RPCClient(<extension-id>, 'serial', ['detectDevices', 'write'])}
-	chrome.serial.write(...);
+And then from web your web page javascript:
+
+	chrome.serial.getDevices(function (devs) {...do.something()...)})
 
 ## Protocol overview
 
@@ -62,13 +69,3 @@ error | An error code or null
 
 *Note: not all the above functionality is thoroughly tested, the
  priority is to implement the chrome.serial.\* API*
-
-## Implementation details
-
-When a page loads `rpc-client.js` it can create rpc client objects
-that behave similarly to the corresponding google API objects.
-
-	chrome.serial = RPCClient(<extension-id>, 'serial');
-
-The client then queries the server for supported methods of the object
-'serial' and registers corresponding RPC methods to itself.
