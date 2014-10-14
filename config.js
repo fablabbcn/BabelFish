@@ -21,7 +21,7 @@ var config = {
 		},
 		storage: {
 			methods: ['local.get', 'local.set'],
-			listeners: []
+			listeners: ['onChanged.addListener']
 		},
 		syncFileSystem: {
 			methods: ['requestFileSystem'],
@@ -31,7 +31,7 @@ var config = {
 		alarms: {
 			methods: ['clear', 'create', 'getAll'],
 			listeners: ['onAlarm.addListener']
-		}
+		},
 	}
 };
 

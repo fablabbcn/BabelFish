@@ -34,12 +34,15 @@ HostBus.prototype = {
 	// If channel is provided listen on that channel
 	hostListener: function (channel,  cb) {
 		if (channel) {
+			console.log("Listening on: " + channel);
 			this.addRuntimeListener('onConnectExternal', function  (port) {
 				// Message comes with port
-				if (channel == port.name)
+				if (channel == port.name) {
+					console.log("Connected: " + channel);
 					port.onMessage.addListener( function (msg) {
-						cb(msg, port.sendMessage.bind(port));
+						cb(msg, port.postMessage.bind(port));
 					});
+				}
 			});
 		} else {
 			this.addRuntimeListener('onMessageExternal', function (req, sender, sendResp) {
@@ -68,7 +71,7 @@ HostBus.prototype = {
 	// Set echo mode
 	echo_mode: function (sendResp, disable) {
 		console.log("Echo mode!");
-			this.echo_mode_enabled = !disable;
+		this.echo_mode_enabled = !disable;
 	}
 };
 
@@ -133,7 +136,6 @@ RPCHost.prototype.listener = function (allowed_methods, request, sendResp) {
 				return ret;
 			}).bind(this));
 
-	console.log('Calling for: '+ args[args.length - 1]);
 	method.apply(this.obj, args);
 	return true;
 };
@@ -143,7 +145,6 @@ RPCHost.prototype.listener = function (allowed_methods, request, sendResp) {
 RPCHost.prototype.packager_wrapper = function (sr) {
 	return (function (sendResp, var_args) {
 		var msg = {args: Array.prototype.slice.call(arguments, 1), err: null};
-		console.log("Responding: " + JSON.stringify(msg));
 		sendResp(msg);
 	}).bind(this, sr);
 };
@@ -159,7 +160,6 @@ RPCHost.prototype.path2callable = function (name) {
 	if (!obj[method])
 		throw new Error('Bad object chrome.'+ this.obj_name +'.'+name);
 
-	console.log('Callable: chrome.'+ this.obj_name +'.'+name);
 	return obj[method].bind(obj);
 };
 

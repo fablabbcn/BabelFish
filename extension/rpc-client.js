@@ -50,9 +50,11 @@ ClientBus.prototype = {
 	clientMessage: function (persist, msg, cb) {
 		cb = cb  || this.default_cb;
 		if (persist) {
+			console.log("Connectiong to: " + msg.object);
 			var port = chrome.runtime.connect(this.extensionId, {name: msg.object});
 			// cb has access only to msg, not to any other arguments the API
 			// provides.
+			port.postMessage(msg);
 			port.onMessage.addListener(function (msg) {cb(msg);});
 		} else {
 			console.log("Sending: " + str(msg));
@@ -125,12 +127,10 @@ RPCClient.prototype = {
 					ob[m] = ob[m] || {};
 					return ob[m];
 				}, this) || this;
-		console.log("Object: " + this.obj_name + ',' + names + '(reg method: '+ method +')');
 		obj[method] = this._rpc.bind(this, isListener, name);
 	},
 
 	_msg_callback: function (callback, resp) {
-		console.log("Response was: " + JSON.stringify(resp));
 		if (resp.error) {
 			err(resp.error);
 		} else {
