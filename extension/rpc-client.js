@@ -32,7 +32,6 @@ var method_type = {
 	LISTENER: true
 }, bus;
 
-
 function ClientBus(id) {
 	this.extensionId = id;
 }
@@ -50,7 +49,7 @@ ClientBus.prototype = {
 	clientMessage: function (persist, msg, cb) {
 		cb = cb  || this.default_cb;
 		if (persist) {
-			console.log("Connectiong to: " + msg.object);
+			console.log("Connecting: " + str(msg));
 			var port = chrome.runtime.connect(this.extensionId, {name: msg.object});
 			// cb has access only to msg, not to any other arguments the API
 			// provides.
@@ -60,7 +59,7 @@ ClientBus.prototype = {
 			console.log("Sending: " + str(msg));
 			chrome.runtime.sendMessage(
 				this.extensionId, msg, {}, (function (msg) {
-					console.log("RPC received: " + str(msg));
+					console.log("BUS received: " + str(msg));
 					cb(msg || {
 						error: chrome.runtime.lastError.message,
 						extensionId: this.extensionId
@@ -134,8 +133,10 @@ RPCClient.prototype = {
 		if (resp.error) {
 			err(resp.error);
 		} else {
-			if (callback)
-				callback.apply(null, resp.args);
+			if (callback) {
+				console.log("Callback has args: " +  str(resp.args));
+				callback.apply(null, argsDecode(resp.args));
+			}
 		}
 	},
 
@@ -150,28 +151,19 @@ RPCClient.prototype = {
 
 	_rpc: function (isListener, fnname, var_args) {
 		// TODO: raise error in case of multiple callbacks.
-		var args = Array.prototype.slice.call(arguments, 2);
+		var args = Array.prototype.slice.call(arguments, 2),
+				rich_args = argsEncode(args);
 		dbg("Calling chrome." + this.obj_name + '.' + fnname +
 				"(" + args.map(JSON.stringify) + ")");
-
-		// XXX: You are allowed only one callback.
-		var callback, fn_args = args.map(function (a) {
-			if (typeof(a) == 'function') {
-				callback = a;
-				return '<function>';
-			} else {
-				return a;
-			}
-		});
 
 		// Send the rpc call.
 		this._message({
 			timestamp: (new Date).getTime(),
 			object: this.obj_name,
 			method: fnname,
-			args: fn_args,
+			args: rich_args,
 			error: null
-		}, callback, isListener);
+		}, rich_args.callback, isListener);
 	}
 };
 

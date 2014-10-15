@@ -5,7 +5,7 @@
     "description": "RPC protocol.",
     "app": {
 	"background": {
-	    "scripts": [ "config.js", "rpc-host.js", "background.js" ], // Make config remote
+	    "scripts": [ "config.js", "rpc-args.js", "rpc-host.js", "background.js" ], // Make config remote
 	    "persistent": true
 	}
     },

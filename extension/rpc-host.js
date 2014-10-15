@@ -28,7 +28,7 @@ HostBus.prototype = {
 		if (!this._listeners[eventName]) this._listeners[eventName] = [];
 
 		this._listeners[eventName].push(cb);
-	  chrome.runtime[eventName].addListener(cb);
+		chrome.runtime[eventName].addListener(cb);
 	},
 
 	// If channel is provided listen on that channel
@@ -130,11 +130,7 @@ RPCHost.prototype.listener = function (allowed_methods, request, sendResp) {
 		return false;
 
 	var method = this.path2callable(request.method),
-			args = (request.args || []).map((function (a) {
-				var ret = ((a == "<function>") &&
-									 (this.packager_wrapper(sendResp)) || a);
-				return ret;
-			}).bind(this));
+			args = argsDecode(request.args, this.cbHandlerFactory(sendResp));
 
 	method.apply(this.obj, args);
 	return true;
@@ -142,9 +138,10 @@ RPCHost.prototype.listener = function (allowed_methods, request, sendResp) {
 
 // Get a callable that when called will package it's arguments and
 // pass them to sr
-RPCHost.prototype.packager_wrapper = function (sr) {
+RPCHost.prototype.cbHandlerFactory = function (sr) {
 	return (function (sendResp, var_args) {
-		var msg = {args: Array.prototype.slice.call(arguments, 1), err: null};
+		var args = Array.prototype.slice.call(arguments, 1),
+				msg = {args: argsEncode(args), err: null};
 		sendResp(msg);
 	}).bind(this, sr);
 };

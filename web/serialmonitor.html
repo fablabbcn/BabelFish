@@ -1,0 +1,46 @@
+<html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="serialmonitor.css">
+    <script type="text/javascript" src="/config.js"></script>
+    <script type="text/javascript" src="/tools/client-util.js"></script>
+    <script type="text/javascript" src="/extension/rpc-args.js"></script>
+    <script type="text/javascript" src="/extension/rpc-client.js"></script>
+    <script type="text/javascript">
+      var blink_hex = window.location.origin + '/web/blink-example.hex'; // "http://linode.mrjon.es/blink.hex"
+    </script>
+  </head>
+  <body>
+      <div id="config" class="section">
+        <div id="devices">
+          Serial Port:
+          <select id="devices_menu"></select>
+        </div>
+        <button id="connect">Connect</button>
+        <button id="disconnect">Disconnect</button>
+        <button id="devices_refresh">Refresh Port List</button>
+        <button id="uploader_button">Upload Blink Sketch</button>
+        <button id="test_fetch">Test Fetch</button>
+        <select id="protocol">
+          <option value="stk500">STK500</option>
+          <option value="avr109">AVR109</option>
+          <option selected value="avr109_beta">AVR109 (Beta)</option>
+        </select>
+      </div>
+      <div id="serialmonitor" class="section">
+        <div id="fromdevice_data"></div>
+        <input id="todevice_data" type="text">
+        <button id="todevice_send">Send</button>
+       </div>
+     </div>
+     <div id="status" class="section"></div>
+   <script src="status.js"></script>
+   <script src="clock.js"></script>
+   <script src="logging.js"></script>
+   <script src="serialdispatcher.js"></script>
+   <script src="hexparser.js"></script>
+   <script src="avr109.js"></script>
+   <script src="stk500.js"></script>
+   <script src="uploader.js"></script>
+   <script src="serialmonitor.js"></script>
+  </body>
+</html>

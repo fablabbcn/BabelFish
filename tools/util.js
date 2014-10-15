@@ -53,7 +53,7 @@ function wait_for(driver, css, cb) {
 	return driver.wait((function (driver, css) {
 		show_new_logs(driver);
 		return driver.isElementPresent(webdriver.By.css(css));
-	}).bind(null, driver, css), 3000, 'Timed out waiting for ' + css).
+	}).bind(null, driver, css), 5000, 'Timed out waiting for ' + css).
 		then(function () {
 			get_elements(driver, css).then(function (el) {
 				cb(el);

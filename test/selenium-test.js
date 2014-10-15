@@ -33,6 +33,20 @@ test.describe('Test', function() {
 			});
 	});
 
+	test.it("Chrome serial calls", function () {
+		chrome.get("http://localhost:8080/test/testpages/serial/index.html").
+			then(function () {
+				util.logs(chrome, 'onresponse', function (entries) {
+					assert.notEqual(entries.length, 0, "No logging");
+				});
+				util.logs(chrome, 'send1', function (entries) {
+					assert.notEqual(entries.length, 0, "No platform received.");
+					assert.match(entries[0], /^Platform: {"arch":".*?","nacl_arch":".*?","os":".*?"}$/,
+											 "Not receiveng expected entry format for platform.");
+				});
+			});
+	});
+
 	test.it("Chrome api calls", function () {
 		chrome.get("http://localhost:8080/test/testpages/chrome/index.html").
 			then(function () {
@@ -49,7 +63,6 @@ test.describe('Test', function() {
 
 	// Tests
 	test.it("Echo bus service", function () {
-		debugger;
 		chrome.get("http://localhost:8080/test/testpages/echo/index.html").
 			then(function () {
 				util.logs(chrome, 'log0', function (entries) {
