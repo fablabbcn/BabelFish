@@ -1,4 +1,4 @@
-# Chrome RPC
+# Babel Fish
 
 RPC protocol to provide selective access to the chrome api to the
 front end code. More simply it is an extension that allows you to run
