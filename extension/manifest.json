@@ -1,8 +1,8 @@
 {
-    "name": "chrome-rpc",
+    "name": "babel-fish",
     "version": "0.1",
     "manifest_version": 2,
-    "description": "RPC protocol.",
+    "description": "Serial for everyone.",
     "app": {
 	"background": {
 	    "scripts": [ "config.js", "rpc-args.js", "rpc-host.js", "background.js" ], // Make config remote

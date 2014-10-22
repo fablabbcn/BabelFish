@@ -43,7 +43,7 @@ function readToBuffer(readArg) {
 
   log(kDebugFine, "Pushing " + hexData.length + " bytes onto buffer for: " + readArg.connectionId + " " + hexData);
   for (var i = 0; i < hexData.length; ++i) {
-//    log(kDebugFine, i);
+		//    log(kDebugFine, i);
     databuffer[readArg.connectionId].push(hexData[i]);
   }
   log(kDebugFine, "Buffer for " + readArg.connectionId + " now of size " + databuffer[readArg.connectionId].length);
@@ -86,23 +86,26 @@ function uploadBlinkSketch(deviceName, protocol) {
 }
 
 function fetchProgram(url, handler) {
-  log(kDebugFine, "Fetching: " + url)
+  log(kDebugFine, "Fetching: " + url);
   var xhr = new XMLHttpRequest();
   xhr.onreadystatechange = function() {
     if (xhr.readyState == 4) {
       if (xhr.status == 200) {
-        var programBytes = ParseHexFile(xhr.responseText);
-        log(kDebugFine, "Program Data: " + xhr.responseText.substring(0,25) + "...");
+				var hex = JSON.parse(xhr.responseText).output,
+						programBytes = ParseHexFile(hex);
+        log(kDebugFine, "Program Data: " + hex.substring(0,25) + "...");
 				console.assert(typeof(programBytes) != "string",
-											"Parsing hex failed: " + programBytes);
+											 "Parsing hex failed: " + programBytes);
         handler(programBytes);
       } else {
         log(kDebugError, "Bad fetch: " + xhr.status);
       }
     }
   };
-  xhr.open("GET", url, true);
-  xhr.send();
+
+  xhr.open("POST", url, true);
+	xhr.send(JSON.stringify(hex_request()));
+
 }
 
 var sketchData_;
@@ -208,7 +211,7 @@ function stkConsumeMessage(connectionId, payloadSize, callback) {
           }
         } else {
           log(kDebugError, "Expected STK_INSYNC (" + STK_INSYNC + "). Got: " + hexData[i] + ". Ignoring.");
-//          state = ReadState.ERROR;
+					//          state = ReadState.ERROR;
         }
       } else if (state == ReadState.READY_FOR_PAYLOAD) {
         accum.push(hexData[i]);
@@ -251,8 +254,8 @@ function stkConsumeMessage(connectionId, payloadSize, callback) {
         // Mega hack (temporary)
         log(kDebugFine, "Mega Hack: Writing: " + hexRep([STK_GET_SYNC, STK_CRC_EOP]));
         chrome.serial.send(connectionId, hexToBin([STK_GET_SYNC, STK_CRC_EOP]), function() {
-            readFromBuffer(connectionId, 1024, handleRead);
-          });
+          readFromBuffer(connectionId, 1024, handleRead);
+        });
       } else {
         // Don't tight-loop waiting for the message.
         setTimeout(function() {
@@ -296,9 +299,10 @@ function stkWriteThenRead(connectionId, outgoingMsg, responsePayloadSize, callba
   log(kDebugNormal, "[" + connectionId + "] Writing: " + hexRep(outgoingMsg));
   var outgoingBinary = hexToBin(outgoingMsg);
   // schedule a read in 100ms
+	console.warn("Sending...");
   chrome.serial.send(connectionId, outgoingBinary, function(writeArg) {
-      stkConsumeMessage(connectionId, responsePayloadSize, callback);
-    });
+    stkConsumeMessage(connectionId, responsePayloadSize, callback);
+  });
 }
 
 function stkConnectDone(connectArg) {
@@ -314,6 +318,7 @@ function stkConnectDone(connectArg) {
 
   readFromBuffer(connectArg.connectionId, 1024, function(readArg) {
     stkDrainedBytes(readArg, connectArg.connectionId);
+		console.log("LOAD FINISHED");
   });
 };
 
@@ -325,8 +330,8 @@ function stkDtrSent(ok, connectionId) {
   log(kDebugFine, "DTR sent (low) real good");
 
   readFromBuffer(connectionId, 1024, function(readArg) {
-      stkDrainedAgain(readArg, connectionId);
-    });
+    stkDrainedAgain(readArg, connectionId);
+  });
 
 }
 
@@ -335,8 +340,8 @@ function stkDrainedAgain(readArg, connectionId) {
   if (readArg.bytesRead == 1024) {
     // keep draining
     readFromBuffer(connectionId, 1024, function(readArg) {
-        stkDrainedBytes(readArg, connectionId);
-      });
+      stkDrainedBytes(readArg, connectionId);
+    });
   } else {
     // Start the protocol
     setTimeout(function() { stkWriteThenRead(connectionId, [STK_GET_SYNC, STK_CRC_EOP], 0, stkInSyncWithBoard); }, 50);
@@ -349,8 +354,8 @@ function stkDrainedBytes(readArg, connectionId) {
   if (readArg.bytesRead == 1024) {
     // keep draining
     readFromBuffer(connectionId, 1024, function(readArg) {
-        stkDrainedBytes(readArg, connectionId);
-      });
+      stkDrainedBytes(readArg, connectionId);
+    });
   } else {
     log(kDebugFine, "About to set DTR low");
 
@@ -447,13 +452,13 @@ function stkProgramFlash(connectionId, data, offset, length, doneCallback) {
   programMessage.push(STK_CRC_EOP);
 
   stkWriteThenRead(connectionId, loadAddressMessage, 0, function(connectionId, ok, reponse) {
-      if (!ok) { log(kDebugError, "Error programming the flash (load address)"); return; }
-      stkWriteThenRead(connectionId, programMessage, 0, function(connectionId, ok, response) {
-          if (!ok) { log(kDebugError, "Error programming the flash (send data)"); return }
-          // Program the next section
-          stkProgramFlash(connectionId, data, offset + length, length, doneCallback);
-        });
+    if (!ok) { log(kDebugError, "Error programming the flash (load address)"); return; }
+    stkWriteThenRead(connectionId, programMessage, 0, function(connectionId, ok, response) {
+      if (!ok) { log(kDebugError, "Error programming the flash (send data)"); return }
+      // Program the next section
+      stkProgramFlash(connectionId, data, offset + length, length, doneCallback);
     });
+  });
 }
 
 function storeAsTwoBytes(n) {
@@ -545,9 +550,9 @@ function kickLeonardoBootloader(originalDeviceName) {
       chrome.serial.disconnect(connectArg.connectionId, function(disconnectArg) {
         log(kDebugNormal, "Disconnected from " + originalDeviceName);
         waitForNewDevice(oldDevices, (new Date().getTime()) + 10000);
-//        setTimeout(function() {
-//          chrome.serial.connect(originalDeviceName, { bitrate: 57600 }, avrConnectDone);
-//        }, 300);
+				//        setTimeout(function() {
+				//          chrome.serial.connect(originalDeviceName, { bitrate: 57600 }, avrConnectDone);
+				//        }, 300);
       });
     });
   });
@@ -647,8 +652,8 @@ function avrDrainedAgain(readArg, connectionId) {
   if (readArg.bytesRead == 1024) {
     // keep draining
     readFromBuffer(connectionId, 1024, function(readArg) {
-        avrDrainedBytes(readArg, connectionId);
-      });
+      avrDrainedBytes(readArg, connectionId);
+    });
   } else {
     // Start the protocol
 
@@ -728,8 +733,8 @@ function avrProgramFlash(connectionId, data, offset, length, doneCallback) {
     avrProgramFlash(connectionId, data, offset + length, length, doneCallback);
   });
 
-//  log(kDebugNormal, "Want to write: " + hexRep(loadAddressMessage));
-//  log(kDebugNormal, "Then: " + hexRep(programMessage));
+	//  log(kDebugNormal, "Want to write: " + hexRep(loadAddressMessage));
+	//  log(kDebugNormal, "Then: " + hexRep(programMessage));
 
-//  avrProgramFlash(connectionId, data, offset + length, length, doneCallback);
+	//  avrProgramFlash(connectionId, data, offset + length, length, doneCallback);
 }

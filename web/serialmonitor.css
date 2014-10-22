@@ -3,21 +3,14 @@ body {
 }
 
 .section {
-  width: auto;
+    height: 278px;
+  width: 70%;
   padding: 10px;
   border-top: 2px solid teal;
 }
 
-#config.section {
+#config {
   height: 78px;
-}
-
-#serialmonitor.section {
-  height: 278px;
-}
-
-#status.section {
-  height: 278px;
 }
 
 #fromdevice_data {

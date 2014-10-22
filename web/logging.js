@@ -23,7 +23,7 @@ function timestampString() {
 function visibleLog(message) {
   if (visibleLoggingDiv_ != "") {
     document.getElementById(visibleLoggingDiv_).innerHTML =
-      "[" + timestampString() + "] " + message + 
+      "[" + timestampString() + "] " + message +
       "<br/>" + document.getElementById(visibleLoggingDiv_).innerHTML;
   }
 }

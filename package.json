@@ -1,5 +1,5 @@
 {
-    "name": "chrome-rpc",
+    "name": "babel-fish",
     "version": "0.0.5",
     "description": "RPC like interface to access extension methods from client-space.",
     "keywords": [ "chrome", "extension", "rpv" ],

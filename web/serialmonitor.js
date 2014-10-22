@@ -43,9 +43,9 @@ document.getElementById(ids.disconnectButton).disabled = true;
 document.getElementById(ids.sendButton).disabled = true;
 
 function testFetch() {
-    fetchProgram("http://linode.mrjon.es/blink.hex", function(data) {
-        log(kDebugFine, "Got data!");
-    });
+  fetchProgram("http://linode.mrjon.es/blink.hex", function(data) {
+    log(kDebugFine, "Got data!");
+  });
 }
 
 function testUploader() {
@@ -189,70 +189,95 @@ function onSerialFlush(flushArg) {
 
 /*
 
-Code for talking over USB, the chrome.serial seems to be working better for now
-but maybe come back to this.
+ Code for talking over USB, the chrome.serial seems to be working better for now
+ but maybe come back to this.
 
-var usb;
-if (chrome.experimental && chrome.experimental.usb) {
-  console.log("chrome.experimental.usb: " + chrome.experimental.usb);
-  usb = chrome.experimental.usb;
-} else {
-  usb = chrome.usb;
-  console.log("chrome.usb: " + chrome.usb);
+ var usb;
+ if (chrome.experimental && chrome.experimental.usb) {
+ console.log("chrome.experimental.usb: " + chrome.experimental.usb);
+ usb = chrome.experimental.usb;
+ } else {
+ usb = chrome.usb;
+ console.log("chrome.usb: " + chrome.usb);
+ }
+
+ var device_;
+
+
+ // Info is for Arduino Duemilanove
+ // TODO(mrjones): Make this work with other boards
+ var VENDOR_ID = 0x0403;
+ var PRODUCT_ID = 0x6001;
+
+
+ var deviceOptions = {
+ //  onEvent: function(usbEvent) {
+ //    console.log("USB EVENT: " + usbEvent);
+ //  }
+ }
+
+
+ usb.findDevice(
+ VENDOR_ID,
+ PRODUCT_ID,
+ deviceOptions,
+ function(device) {
+ if (!device) {
+ alert("Couldn't load device (V:" + VENDOR_ID + ", P:" + PRODUCT_ID + ")");
+ return;
+ }
+ device_ = device;
+ console.log("FOUND DEVICE: " + JSON.stringify(device));
+ });
+
+
+ function fire() {
+ console.log("FIRE");
+
+ var buf = new ArrayBuffer(1);
+ console.log(buf);
+ var bufView = new Uint8Array(buf);
+ console.log(bufView);
+
+ bufView[0] = 89;
+ console.log(bufView[0]);
+
+ var payload = {
+ direction: 'out',
+ endpoint: 0,
+ data: buf
+ };
+
+ var doneFn = function() { console.log("SEND DONE"); };
+
+ console.log("[PAYLOAD: " + JSON.stringify(payload) + "]\n[DEVICE: " + JSON.stringify(device_) + "]\n[DONEFN: " + doneFn + "]\n[USBFN: " + usb.interruptTransfer + "]");
+
+ usb.interruptTransfer(device_, payload, doneFn);
+ console.log("interrupt kicked off: " + buf + " | " + buf[0]);
+ }
+ */
+
+// http://192.168.1.110/compiler/authKey/v1
+function hex_request(url) {
+	var request = {
+		files:
+		[{
+			filename:"example.ino",
+			content:"int led = 13;\nvoid setup() {\n  pinMode(led, OUTPUT);   \n}\nvoid loop() {\n\t  digitalWrite(led, HIGH);\n\t  delay(1000);\n\t  digitalWrite(led, LOW);\n\t  delay(1000);\n}\n"
+		},
+		 {filename: "new_header.h", content:"\n"}
+		],
+		libraries: [],
+		format: "hex",
+		version:"105",
+		build: {
+			mcu:"atmega328p",
+			f_cpu:"16000000L",
+			core:"arduino",
+			variant:"standard"
+		}
+	},
+			code = document.getElementById('code').value;
+	request.files[1].content = code;
+	return request;
 }
-
-var device_;
-
-
-// Info is for Arduino Duemilanove
-// TODO(mrjones): Make this work with other boards
-var VENDOR_ID = 0x0403;
-var PRODUCT_ID = 0x6001;
-
-
-var deviceOptions = {
-//  onEvent: function(usbEvent) {
-//    console.log("USB EVENT: " + usbEvent);
-//  }
-}
-
-
-usb.findDevice(
-  VENDOR_ID,
-  PRODUCT_ID,
-  deviceOptions,
-  function(device) {
-    if (!device) {
-      alert("Couldn't load device (V:" + VENDOR_ID + ", P:" + PRODUCT_ID + ")");
-      return;
-    }
-    device_ = device;
-    console.log("FOUND DEVICE: " + JSON.stringify(device));
-  });
-
-
-function fire() {
-  console.log("FIRE");
-
-  var buf = new ArrayBuffer(1);
-  console.log(buf);
-  var bufView = new Uint8Array(buf);
-  console.log(bufView);
- 
-  bufView[0] = 89;
-  console.log(bufView[0]);
-
-  var payload = {
-    direction: 'out',
-    endpoint: 0,
-    data: buf
-  };
-
-  var doneFn = function() { console.log("SEND DONE"); };
-
-  console.log("[PAYLOAD: " + JSON.stringify(payload) + "]\n[DEVICE: " + JSON.stringify(device_) + "]\n[DONEFN: " + doneFn + "]\n[USBFN: " + usb.interruptTransfer + "]");
-
-  usb.interruptTransfer(device_, payload, doneFn);
-  console.log("interrupt kicked off: " + buf + " | " + buf[0]);
-}
-*/
