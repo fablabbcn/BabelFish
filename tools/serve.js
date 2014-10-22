@@ -16,11 +16,11 @@ function StaticServer(webroot, port) {
 	this.srv = http.createServer(function(req, res) {
     var uri = url.parse(req.url).pathname;
     var filename = path.join(webroot, uri);
-    fs.exists(filename, function(exists) {
-      if(!exists) {
-        console.log("not exists: " + filename);
-        res.writeHead(200, {'Content-Type': 'text/plain'});
-        res.write('404 Not Found\n');
+    fs.stat(filename, function(err, stats) {
+      if(!stats || stats.isDirectory()) {
+        res.writeHead(404, {'Content-Type': 'text/plain'});
+        console.log("not exists (or is directory): " + filename);
+        res.write("404: not exists (or is directory): " + filename);
         res.end();
 				return;
       }
