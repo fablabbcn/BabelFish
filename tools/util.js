@@ -5,8 +5,8 @@ var    webdriver = require('selenium-webdriver'),
 function chrome_driver(extension) {
 	var logperfs = new webdriver.logging.Preferences(),
 			opts = new chromedriver.Options().
-				addArguments("--load-extension=" + extension ||
-										 '../extension');
+				addArguments("--load-extension=" + extension || '../extension' +
+										'--user-data-dir=/tmp/chromium-user-data');
 
 	logperfs.setLevel(webdriver.logging.Type.BROWSER,
 										webdriver.logging.Level.ALL);
