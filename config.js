@@ -1,7 +1,7 @@
 // This file is to be hosted.
 
 var config = {
-	extensionId: "pcoogjpilcclcmejpkmbifdbihomlgec",
+	extensionId: "ikbeoilhibkmefncclghdbmenaeancgg",
 	methods: {
 		serial: {
 			methods: ['getDevices', 'send', 'connect', 'disconnect', 'setControlSignals'],

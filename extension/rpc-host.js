@@ -100,6 +100,10 @@ function RPCHost (name, obj) {
 	this.supported_listeners = config.methods[name].listeners; // Use connections for these
 	this.obj_name = name;
 	this.obj = obj || chrome[name];
+	if (config.extensionId != chrome.runtime.id) {
+		console.error("The clients think my id is '" + config.extensionId +
+									"' (!=" + chrome.runtime.id + ") they wont be able to communicate");
+	}
 
 	if (!this.obj) {
 		throw new Error("No such object chrome." + this.obj_name);
