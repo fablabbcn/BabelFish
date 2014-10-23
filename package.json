@@ -13,7 +13,7 @@
 	"node-static": "*"
     },
     "scripts": {
-	"test": "mocha test/selenium-test.js",
+	"test": "make test",
 	"test-phantom": "mocha-phantomjs test/client.html",
 	"debug": "mocha debug test/selenium-test.js",
 	"shell": "node",

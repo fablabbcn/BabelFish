@@ -1,12 +1,35 @@
 var    webdriver = require('selenium-webdriver'),
-    chromedriver = require('selenium-webdriver/chrome');
+    chromedriver = require('selenium-webdriver/chrome'),
+    ffdriver = require('selenium-webdriver/firefox');
+
+function firefox_driver(extension) {
+	var logperfs = new webdriver.logging.Preferences(),
+			profile = new ffdriver.Profile();
+
+	profile.addExtension("plugin/codebendercc.xpi");
+	var	opts = new ffdriver.Options().setProfile(profile);
+
+	logperfs.setLevel(webdriver.logging.Type.BROWSER,
+										webdriver.logging.Level.ALL);
+
+	var ff = new webdriver.Builder().
+				withCapabilities(webdriver.Capabilities.firefox()).
+				setFirefoxOptions(opts).
+				setLoggingPrefs(logperfs).
+				build();
+
+	ff.manage().timeouts().pageLoadTimeout(5000);
+	return ff;
+}
+module.exports.firefox_driver = firefox_driver;
+
 
 // @param extensions: string of unpacked extension path to install.
 function chrome_driver(extension) {
 	var logperfs = new webdriver.logging.Preferences(),
 			opts = new chromedriver.Options().
 				addArguments("--load-extension=" + extension || '../extension' +
-										'--user-data-dir=/tmp/chromium-user-data');
+										 '--user-data-dir=/tmp/chromium-user-data');
 
 	logperfs.setLevel(webdriver.logging.Type.BROWSER,
 										webdriver.logging.Level.ALL);
@@ -60,6 +83,7 @@ function wait_for(driver, css, cb) {
 			});
 		});
 };
+module.exports.wait_for = wait_for;
 
 // Get logs of id synchronously
 function logs(driver, id, cb) {

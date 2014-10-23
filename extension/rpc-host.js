@@ -1,4 +1,11 @@
+// All hosts should share the same global bus
+
 var DEBUG = false, bus;
+function log(msg) {
+	if (DEBUG) {
+		console.log("Server: " + msg);
+	}
+}
 
 function err(msg) {
 	console.error("[Server:ERR] " + msg);
@@ -24,6 +31,7 @@ HostBus.prototype = {
 			});
 	},
 
+	// chrome.runtime.*.addListener and some extras.
 	addRuntimeListener: function (eventName, cb) {
 		if (!this._listeners[eventName]) this._listeners[eventName] = [];
 
@@ -120,7 +128,6 @@ function RPCHost (name, obj) {
 			listener_listener = this.listener.bind(this, this.supported_listeners);
 	bus.hostListener(false, method_listener);
 	bus.hostListener(this.obj_name, listener_listener);
-	bus.hostListener(false, this.get_supported_calls.bind(this));
 }
 
 
@@ -162,12 +169,4 @@ RPCHost.prototype.path2callable = function (name) {
 		throw new Error('Bad object chrome.'+ this.obj_name +'.'+name);
 
 	return obj[method].bind(obj);
-};
-
-RPCHost.prototype.get_supported_calls = function (req, sendResp) {
-	if (req.method == 'setup' && req.object == this.obj_name)
-		sendResp({
-			methods: this.supported_methods,
-			listneners: this.supported_listeners
-		});
 };

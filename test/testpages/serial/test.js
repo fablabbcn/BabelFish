@@ -18,7 +18,7 @@ window.onload = function () {
 				log('clinet', "Control signals: " + ok);
 				if (ok) {
 					chrome.serial.send(cid, hexToBin([0x30,0x20]), function (packet) {
-						log('client', 'Send receided: ' + str(packet));
+						log('client', 'Send received: ' + str(packet));
 					});
 				}
 			});});

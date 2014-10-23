@@ -1,0 +1,4 @@
+[submodule "plugin"]
+	path = plugin
+	url = git@github.com:fakedrake/npapiPlugins
+	branch = build-script

@@ -19,7 +19,6 @@ function argsEncode(args) {
 
 		// XXX: extremely ad-hoc
 		if (arg.data && arg.data instanceof ArrayBuffer) {
-			console.warn("arg.data");
 			arg.data = binToHex(arg.data);
 			return {type: 'data-arraybuffer', val: arg};
 		}
