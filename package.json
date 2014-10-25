@@ -14,9 +14,8 @@
     },
     "scripts": {
 	"test": "make test",
-	"test-phantom": "mocha-phantomjs test/client.html",
 	"debug": "mocha debug test/selenium-test.js",
 	"shell": "node",
-	"serve": "(chromium --user-data-dir=/tmp/chromium-user-data --load-extension=./extension chrome://extensions & node tools/serve.js ) "
+	"serve": "make serve-chrome"
     }
 }
