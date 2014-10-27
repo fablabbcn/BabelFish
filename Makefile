@@ -1,8 +1,9 @@
 build_script = remote.sh
 # build_script = build.sh
-TARGETS = plugin/codebendercc.xpi plugin/npCodebendercc.so
+ΤΑRGETS = plugin/codebendercc.xpi plugin/npCodebendercc.so
 # FORCE=force
 MOCHA = mocha $(DEBUG)
+URL = http://localhost:8080/test/testpages/plugin-serial/index.html
 
 force:;
 
@@ -22,10 +23,20 @@ test-chrome:
 	$(MOCHA) test/selenium-test.js
 
 test: test-firefox # test-chrome
+	rm -rf /tmp/tmp-*
 
-serve-chrome:
-	(chromium --user-data-dir=/tmp/chromium-user-data --load-extension=./extension chrome://extensions & node tools/serve.js )
-	rm -rf /tmp/chromium-user-data
+serve:
+	node tools/serve.js
+
+run-chrome:
+	(chromium --user-data-dir=/tmp/chromium-user-data --load-extension=./extension chrome://extensions; rm -rf /tmp/chromium-user-data) &
+
+run-firefox:
+	firefox -jsconsole -new-instance -profile "$(shell ls -sdr /tmp/tmp-* | head -1 | awk '{print $$2}')" -url $(URL) &
+
+serve-chrome: run-chrome serve
+serve-firefox: run-firefox serve
+
 
 clean:
 	rm -rf $(TARGETS)
