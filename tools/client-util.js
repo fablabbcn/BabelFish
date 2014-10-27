@@ -2,11 +2,15 @@
 function log(id, msg) {
 	var ele = document.getElementById(id);
 	if (!ele) {
+		var he = document.createElement('h3');
+		he.innerHTML = id;
 		ele = document.createElement('ul');
 		ele.id = id;
+		document.body.appendChild(he);
 		document.body.appendChild(ele);
 	}
 
+	console.log("[" + id + "] " + msg );
 	ele.innerHTML += '<li>' + msg + '</li>';
 }
 

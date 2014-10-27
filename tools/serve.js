@@ -33,7 +33,7 @@ function StaticServer(webroot, port) {
 
     }); //end path.exists
 	}).listen(port);
-	console.log('node-static running at http://localhost:%d', port);
+	console.log('node-static running on http://localhost:%d', port);
 }
 
 StaticServer.prototype.stop = function () {

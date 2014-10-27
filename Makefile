@@ -32,7 +32,7 @@ run-chrome:
 	(chromium --user-data-dir=/tmp/chromium-user-data --load-extension=./extension chrome://extensions; rm -rf /tmp/chromium-user-data) &
 
 run-firefox:
-	firefox -jsconsole -new-instance -profile "$(shell ls -sdr /tmp/tmp-* | head -1 | awk '{print $$2}')" -url $(URL) &
+	firefox -jsconsole -venkman -new-instance -profile "$(shell ls -sdr /tmp/tmp-* | head -1 | awk '{print $$2}')" -url $(URL) &
 
 serve-chrome: run-chrome serve
 serve-firefox: run-firefox serve

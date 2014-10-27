@@ -17,30 +17,36 @@ test.describe('Test Firefox', function() {
 		srv = new Server(".", 8080);
   });
 
-	test.it("Plugin existnese", function () {
-		ff.get("http://localhost:8080/test/testpages/plugin/index.html").
-			then(function () {
-				util.logs(ff, 'baudrate', function (logs) {
-					assert.equal(logs[0], "9600");
-				});
-				util.logs(ff, 'plugin', function (logs) {
-					assert.equal(logs[0], "Found plugin!");
-				});
-				util.logs(ff, 'all-plugins', function (logs) {
-					assert.include(logs, 'Codebendercc', "Found plugin!");
-				});
-				util.logs(ff, 'plugin-ids', function (logs) {
-					assert.equal(logs[0], '0', "");
-					assert.equal(logs[1], '1', "");
-				});
-			});
-	});
+	// test.it("Plugin existnese", function () {
+	// 	ff.get("http://localhost:8080/test/testpages/plugin/index.html").
+	// 		then(function () {
+	// 			util.logs(ff, 'baudrate', function (logs) {
+	// 				assert.equal(logs[0], "9600");
+	// 			});
+	// 			util.logs(ff, 'plugin', function (logs) {
+	// 				assert.equal(logs[0], "Found plugin!");
+	// 			});
+	// 			util.logs(ff, 'all-plugins', function (logs) {
+	// 				assert.include(logs, 'Codebendercc', "Found plugin!");
+	// 			});
+	// 			util.logs(ff, 'plugin-ids', function (logs) {
+	// 				assert.equal(logs[0], '0', "");
+	// 				assert.equal(logs[1], '1', "");
+	// 			});
+	// 		});
+	// });
 
 	test.it("Plugin existnese", function () {
 		ff.get("http://localhost:8080/test/testpages/plugin-serial/index.html").
 			then(function () {
 				util.logs(ff, 'devices', function (devs) {
-					assert.eqaual(devs[0], "hello", "Bad device");
+					assert.equal(devs[0], "/dev/ttyACM0", "Bad device");
+				});
+
+				// Check some infos
+				util.logs(ff, 'connected-info1', function (infos) {
+					assert.include(infos, 'name:connection-0', "Bad connection id");
+					assert.include(infos, 'baudrate:115200', "Bad baudrate");
 				});
 			});
 	});

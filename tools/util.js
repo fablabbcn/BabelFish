@@ -7,7 +7,10 @@ function firefox_driver(extension) {
 			profile = new ffdriver.Profile();
 
 	profile.addExtension("plugin/codebendercc.xpi");
-	var	opts = new ffdriver.Options().setProfile(profile);
+	var	opts = new ffdriver.Options().
+				setProfile(profile);
+	// 			setBinary('/usr/bin/firefox');
+	// opts.binary_.addArguments('-jsconsole');
 
 	logperfs.setLevel(webdriver.logging.Type.BROWSER,
 										webdriver.logging.Level.ALL);
