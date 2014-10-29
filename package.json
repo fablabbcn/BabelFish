@@ -14,6 +14,8 @@
     },
     "scripts": {
 	"test": "make test",
+	"test-firefox": "make test-firefox",
+	"test-chrome": "make test-chrome",
 	"debug": "mocha debug test/selenium-test.js",
 	"shell": "node",
 	"serve": "make serve-chrome"

@@ -1,7 +1,8 @@
 function ctrl_sig(cid, val, cb) {
 	chrome.serial.setControlSignals(cid, {dtr: val, rts: val}, cb);
 }
-window.onload = function () {
+
+document.body.onload = function () {
 	console.log("Storage listening");
 	chrome.serial.onReceive.addListener(function (info) {
 		log('onresponse', "onReceive received: " + str(info));

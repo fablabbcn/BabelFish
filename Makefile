@@ -1,7 +1,12 @@
-build_script = remote.sh
 # build_script = build.sh
-ΤΑRGETS = plugin/codebendercc.xpi plugin/npCodebendercc.so
-# FORCE=force
+
+build_script = remote.sh
+XPI = $(CURDIR)/plugin/codebendercc.xpi
+PLUGIN = $(CURDIR)/plugin/npCodebendercc.so
+ΤΑRGETS = $(XPI) $(PLUGIN)
+CPP_DIR = $(CURDIR)/plugin/Codebendercc
+CPP = $(CPP_DIR)/CodebenderccAPI.cpp $(CPP_DIR)/CodebenderccAPI.h $(CPP_DIR)/CodebenderccAPIJS.cpp $(CPP_DIR)/Codebendercc.cpp $(CPP_DIR)/Codebendercc.h
+
 MOCHA = mocha $(DEBUG)
 URL = http://localhost:8080/test/testpages/plugin-serial/index.html
 
@@ -12,11 +17,11 @@ plugin:
 	git submodule update
 
 .ONESHELL:
-$(TARGETS): plugin/Codebendercc/fake_install.rdf $(FORCE) | plugin
+$(XPI): $(CPP) plugin/Codebendercc/fake_install.rdf | plugin
 	cd plugin
 	./$(build_script)
 
-test-firefox: plugin/codebendercc.xpi
+test-firefox: $(CURDIR)/plugin/codebendercc.xpi
 	$(MOCHA) test/firefox-test.js
 
 test-chrome:

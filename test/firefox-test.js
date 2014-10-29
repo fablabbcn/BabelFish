@@ -17,26 +17,19 @@ test.describe('Test Firefox', function() {
 		srv = new Server(".", 8080);
   });
 
-	// test.it("Plugin existnese", function () {
-	// 	ff.get("http://localhost:8080/test/testpages/plugin/index.html").
-	// 		then(function () {
-	// 			util.logs(ff, 'baudrate', function (logs) {
-	// 				assert.equal(logs[0], "9600");
-	// 			});
-	// 			util.logs(ff, 'plugin', function (logs) {
-	// 				assert.equal(logs[0], "Found plugin!");
-	// 			});
-	// 			util.logs(ff, 'all-plugins', function (logs) {
-	// 				assert.include(logs, 'Codebendercc', "Found plugin!");
-	// 			});
-	// 			util.logs(ff, 'plugin-ids', function (logs) {
-	// 				assert.equal(logs[0], '0', "");
-	// 				assert.equal(logs[1], '1', "");
-	// 			});
-	// 		});
-	// });
 
-	test.it("Plugin existnese", function () {
+	test.it("Serial events", function () {
+		ff.get("http://localhost:8080/test/testpages/plugin-event/index.html").
+			then(function () {
+				util.logs(ff, 'listener-d', function (logs) {
+					assert.equal(logs[0], "Heard barking", "Bad device");
+					assert.equal(logs[1], "Heard barking", "Bad device");
+				});
+			});
+	});
+
+
+	test.it("Plugin existnesion", function () {
 		ff.get("http://localhost:8080/test/testpages/plugin-serial/index.html").
 			then(function () {
 				util.logs(ff, 'devices', function (devs) {
@@ -44,9 +37,58 @@ test.describe('Test Firefox', function() {
 				});
 
 				// Check some infos
-				util.logs(ff, 'connected-info1', function (infos) {
-					assert.include(infos, 'name:connection-0', "Bad connection id");
-					assert.include(infos, 'baudrate:115200', "Bad baudrate");
+				util.logs(ff, 'connected-info', function (infos) {
+					assert.include(infos, 'bitrate:115200', "Bad baudrate, " +
+												 JSON.stringify(infos));
+				});
+
+				util.logs(ff, 'ctrlsig1', function (infos) {
+				});
+
+				util.logs(ff, 'ctrlsig2', function (infos) {
+				});
+
+				util.logs(ff, 'client', function (infos) {
+				});
+
+				util.logs(ff, 'onresponcse', function (infos) {
+				});
+
+			});
+	});
+
+	test.it("Plugin existnese", function () {
+		ff.get("http://localhost:8080/test/testpages/plugin/index.html").
+			then(function () {
+				util.logs(ff, 'baudrate', function (logs) {
+					assert.equal(logs[0], "9600");
+				});
+				util.logs(ff, 'plugin', function (logs) {
+					assert.equal(logs[0], "Found plugin!");
+				});
+				util.logs(ff, 'all-plugins', function (logs) {
+					assert.include(logs, 'Codebendercc', "Found plugin!");
+				});
+				util.logs(ff, 'plugin-ids', function (logs) {
+					assert.match(logs[0], /[0-9]/, "Plugin 0 has wrong id");
+					assert.equal(Number(logs[1]), Number(logs[0]) + 1,
+											 "Plugin 1 has wrong id");
+				});
+
+				util.logs(ff, 'plugin-properties', function (logs) {
+					assert.include(logs, 'instance_id', 'Missing plugin property.');
+					assert.include(logs, 'baudrate', 'Missing plugin property.');
+					assert.include(logs, 'getPorts', 'Missing plugin property.');
+					assert.include(logs, 'disconnect', 'Missing plugin property.');
+					assert.include(logs, 'flush', 'Missing plugin property.');
+					assert.include(logs, 'serialWrite', 'Missing plugin property.');
+					assert.include(logs, 'CD', 'Missing plugin property.');
+					assert.include(logs, 'DSR', 'Missing plugin property.');
+					assert.include(logs, 'RI', 'Missing plugin property.');
+					assert.include(logs, 'CTS', 'Missing plugin property.');
+					assert.include(logs, 'setDTR', 'Missing plugin property.');
+					assert.include(logs, 'setRTS', 'Missing plugin property.');
+					assert.include(logs, 'openPort', 'Missing plugin property.');
 				});
 			});
 	});
