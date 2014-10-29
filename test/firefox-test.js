@@ -49,11 +49,19 @@ test.describe('Test Firefox', function() {
 				});
 
 				util.logs(ff, 'client', function (infos) {
+					assert.equal(infos[0], 'Send received: {"bytesSent":2}',
+											"Bad response to callback from serial.");
+					assert.notInclude(infos[0], "error");
 				});
 
-				util.logs(ff, 'onresponcse', function (infos) {
+				util.logs(ff, 'onresponse', function (infos) {
+					assert.include(infos[0], "onReceive received: ",
+												 "Incorrect respose message");
 				});
 
+				util.logs(ff, 'onresponse-error', function (infos) {
+					assert.lengthOf(infos, 1, "Error on receive.");
+				});
 			});
 	});
 

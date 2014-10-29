@@ -9,6 +9,11 @@ document.body.onload = function () {
 		log('onresponse', "onReceive received: " + str(info));
 	});
 
+	serial.onReceiveError.addListener(function (info) {
+		log('onresponse-error', "onReceiveError received: " + str(info));
+	});
+
+	log('onresponse-error', "Nothing should be here");
 	serial.getDevices(function (devs) {
 		devs.forEach(function (d) {
 			log("devices", d.path);
