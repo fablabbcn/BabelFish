@@ -1,4 +1,25 @@
-var serial = new Serial();
+var serial = new Serial(),
+		received = false;
+
+function hexToBin(hex) {
+  var buffer = new ArrayBuffer(hex.length);
+  var bufferView = new Uint8Array(buffer);
+  for (var i = 0; i < hex.length; i++) {
+    bufferView[i] = hex[i];
+  }
+
+	console.log("Buffer length: " + binToHex(buffer).length);
+  return buffer;
+}
+
+function binToHex(bin) {
+  var bufferView = new Uint16Array(bin);
+  var hexes = [];
+  for (var i = 0; i < bufferView.length; ++i) {
+    hexes.push(bufferView[i]);
+  }
+  return hexes;
+}
 
 function ctrl_sig(cid, val, cb) {
 	serial.setControlSignals(cid, {dtr: val, rts: val}, cb);
@@ -6,11 +27,12 @@ function ctrl_sig(cid, val, cb) {
 
 document.body.onload = function () {
 	serial.onReceive.addListener(function (info) {
-		log('onresponse', "onReceive received: " + str(info));
+		log('onresponse', "onReceive received: " + binToHex(info.data));
+		received = true;
 	});
 
 	serial.onReceiveError.addListener(function (info) {
-		log('onresponse-error', "onReceiveError received: " + str(info));
+		log('onresponse-error', "onReceiveError received: " + binToHex(info.data));
 	});
 
 	log('onresponse-error', "Nothing should be here");
@@ -22,13 +44,23 @@ document.body.onload = function () {
 				Object.getOwnPropertyNames(info).forEach(function (k) {
 					log("connected-info", k + ":" + info[k]);
 				});
-				ctrl_sig(cid, true, function(ok) {
+				ctrl_sig(cid, false, function(ok) {
 					log('ctrlsig1', "Control sig success: " + ok);
 					ok && ctrl_sig(cid, true, function(ok) {
 						log('ctrlsig2', "Control sig 2 success: " + ok);
-						serial.send(cid, '\x30\x20', function (packet) {
-							log('client', 'Send received: ' + str(packet));
-						});
+
+						var interv;
+						interv = setInterval(function () {
+							if (ok && !received) {
+								serial.send(cid, hexToBin([0x30,0x20]), function (packet) {
+									log('client', 'Send received: ' + str(packet));
+								});
+							} else {
+								log('autopsy', received ? "Stopped due to reception" :
+										"Failed to set signals");
+								clearInterval(interv);
+							}
+						}, 1000);
 					});
 				});
 			});

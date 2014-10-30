@@ -13,15 +13,16 @@
 // - args: callback arguments
 // - ret: return value (not implemented)
 //
-
-var DEBUG=false;
-if (DEBUG) {
-	function dbg (msg) {
-		console.log("[Client] " + msg);
+var dbg = (function () {
+	var DEBUG=false;
+	if (DEBUG) {
+		return function (msg) {
+			console.log("[Client] " + msg);
+		};
+	} else {
+		return function (msg) {};
 	}
-} else {
-	function dbg (msg) {}
-}
+})();
 
 function err (msg) {
 	throw new Error("[Client:error] " + msg);
@@ -49,17 +50,17 @@ ClientBus.prototype = {
 	clientMessage: function (persist, msg, cb) {
 		cb = cb  || this.default_cb;
 		if (persist) {
-			console.log("Connecting: " + str(msg));
+			dbg("Connecting: " + str(msg));
 			var port = chrome.runtime.connect(this.extensionId, {name: msg.object});
 			// cb has access only to msg, not to any other arguments the API
 			// provides.
 			port.postMessage(msg);
 			port.onMessage.addListener(function (msg) {cb(msg);});
 		} else {
-			console.log("Sending: " + str(msg));
+			dbg("Sending: " + str(msg));
 			chrome.runtime.sendMessage(
 				this.extensionId, msg, {}, (function (msg) {
-					console.log("BUS received: " + str(msg));
+					dbg("BUS received: " + str(msg));
 					cb(msg || {
 						error: chrome.runtime.lastError.message,
 						extensionId: this.extensionId
@@ -134,7 +135,6 @@ RPCClient.prototype = {
 			err(resp.error);
 		} else {
 			if (callback) {
-				console.log("Callback has args: " +  str(resp.args));
 				callback.apply(null, argsDecode(resp.args));
 			}
 		}

@@ -37,12 +37,7 @@ test.describe('Test', function() {
 		chrome.get("http://localhost:8080/test/testpages/serial/index.html").
 			then(function () {
 				util.logs(chrome, 'onresponse', function (entries) {
-					assert.notEqual(entries.length, 0, "No logging");
-				});
-				util.logs(chrome, 'send1', function (entries) {
-					assert.notEqual(entries.length, 0, "No platform received.");
-					assert.match(entries[0], /^Platform: {"arch":".*?","nacl_arch":".*?","os":".*?"}$/,
-											 "Not receiveng expected entry format for platform.");
+					assert.equal(entries[0], 'onReceive received: 20,16', "No logging");
 				});
 			});
 	});

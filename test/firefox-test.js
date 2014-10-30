@@ -42,10 +42,8 @@ test.describe('Test Firefox', function() {
 												 JSON.stringify(infos));
 				});
 
-				util.logs(ff, 'ctrlsig1', function (infos) {
-				});
-
-				util.logs(ff, 'ctrlsig2', function (infos) {
+				util.logs(ff, 'autopsy', function (infos) {
+					assert.equal(infos[0], "Stopped due to reception", "Error in ctrlsigs");
 				});
 
 				util.logs(ff, 'client', function (infos) {
@@ -55,7 +53,7 @@ test.describe('Test Firefox', function() {
 				});
 
 				util.logs(ff, 'onresponse', function (infos) {
-					assert.include(infos[0], "onReceive received: ",
+					assert.equal(infos[0], "onReceive received: 20,16",
 												 "Incorrect respose message");
 				});
 
