@@ -13,7 +13,7 @@ function hexToBin(hex) {
 }
 
 function binToHex(bin) {
-  var bufferView = new Uint16Array(bin);
+  var bufferView = new Uint8Array(bin);
   var hexes = [];
   for (var i = 0; i < bufferView.length; ++i) {
     hexes.push(bufferView[i]);
