@@ -46,12 +46,17 @@ run-chrome:
 	(chromium --user-data-dir=/tmp/chromium-user-data --load-extension=./extension chrome://extensions; rm -rf /tmp/chromium-user-data) &
 
 firefox = open  -n -a firefox --args
-FF_PROFILE=$(shell (find /var/folders -ls | grep  'tmp-[0-9a-zA-Z]*$$') 2> /dev/null | sort -r | awk '{print $$11}' | head -1)
+GET_FF_PROFILES = (find /var/folders -ls | grep  'tmp-[0-9a-zA-Z]*$$') 2> /dev/null | sort -r | awk '{print $$11}'
+FF_PROFILE=$(shell $(GET_FF_PROFILES) | head -1)
 run-firefox:
 	$(firefox) -jsconsole -new-instance -profile "$(FF_PROFILE)" -url "$(URL)" &
 
 kill-firefox-instances:
 	(while kill $$(ps aux | grep 'firefox' | grep '-new-instanc[e]' | head -1 | awk '{print $$2}'); do echo 'killing'; done) 2> /dev/null
+
+delete-firefox-profiles:
+	$(GET_FF_PROFILES) | xargs rm -rf
+
 serve-chrome: run-chrome serve
 serve-firefox: kill-firefox-instances run-firefox serve
 
