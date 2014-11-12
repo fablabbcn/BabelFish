@@ -50,6 +50,7 @@ if (!chrome) {
   function ClientBus(id) {
     this.extensionId = id;
     this.pingTimeout = 5000;
+    this.runtime_ = chrome.runtime;
 
     this.clientMessage(false, "ping", function (msg) {
       if (msg == "pong") {
@@ -67,7 +68,7 @@ if (!chrome) {
   ClientBus.prototype = {
     default_cb: function (msg) {
       if (!msg)
-	throw new Error("Chrome's last error: " + chrome.runtime.lastError);
+	throw new Error("Chrome's last error: " + this.runtime_.lastError);
 
       if (msg.error)
 	throw new Error(msg.error);
@@ -78,18 +79,18 @@ if (!chrome) {
       cb = cb  || this.default_cb;
       if (persist) {
 	dbg("Connecting: " + str(msg));
-	var port = chrome.runtime.connect(this.extensionId, {name: msg.object});
+	var port = this.runtime_.connect(this.extensionId, {name: msg.object});
 	// cb has access only to msg, not to any other arguments the API
 	// provides.
 	port.postMessage(msg);
 	port.onMessage.addListener(function (msg) {cb(msg);});
       } else {
 	dbg("Sending: " + str(msg));
-	chrome.runtime.sendMessage (
+	this.runtime_.sendMessage (
 	  this.extensionId, msg, {}, (function (msg) {
 	    dbg("BUS received: " + str(msg));
 	    cb(msg || {
-	      error: chrome.runtime.lastError.message,
+	      error: this.runtime_.lastError.message,
 	      extensionId: this.extensionId
 	    });
 	  }).bind(this));
