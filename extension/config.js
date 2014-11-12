@@ -1,1 +1,0 @@
-/home/fakedrake/Projects/Codebender/BabelFish/config.js

@@ -1,4 +1,4 @@
-// This file is to be hosted.
+// File: /chrome-extension/common/config.js
 
 var config = {
   extensionId: "mpnpognhgldjlcgnckgiofbdldbhpbnf",

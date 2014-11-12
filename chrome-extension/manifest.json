@@ -5,8 +5,7 @@
     "description": "Serial for everyone.",
     "app": {
 	"background": {
-	    "scripts": [ "config.js", "rpc-args.js", "rpc-host.js", "background.js" ], // Make config remote
-	    "persistent": true
+	    "page": "background.html"
 	}
     },
     "externally_connectable": {

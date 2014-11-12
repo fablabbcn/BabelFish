@@ -1,3 +1,5 @@
+// File: /tools/client-util.js
+
 // Log in a list called id
 function log(id, msg) {
 	var ele = document.getElementById(id);
@@ -16,4 +18,10 @@ function log(id, msg) {
 
 function str(obj) {
 	return JSON.stringify(obj);
+}
+
+try {
+  module.exports = {str: str, log: log};
+} catch (e) {
+  ;
 }

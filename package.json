@@ -2,7 +2,11 @@
     "name": "babel-fish",
     "version": "0.0.5",
     "description": "RPC like interface to access extension methods from client-space.",
-    "keywords": [ "chrome", "extension", "rpv" ],
+    "keywords": [
+	"chrome",
+	"extension",
+	"rpv"
+    ],
     "author": "Chris Perivolaropoulos",
     "contributors": [],
     "dependencies": {
@@ -10,14 +14,14 @@
 	"mocha": "*",
 	"mocha-phantomjs": "*",
 	"chai": "*",
-	"node-static": "*"
+	"node-static": "*",
+	"chromedriver": "*"
     },
     "scripts": {
 	"test": "make test",
-	"test-firefox": "make test-firefox",
-	"test-chrome": "make test-chrome",
-	"debug": "mocha debug test/selenium-test.js",
-	"shell": "node",
-	"serve": "make serve-chrome"
+	"browserify": "browserify chrome-extension/common/* chrome-extension/client/* > bundles/chrome-client.js"
+    },
+    "devDependencies": {
+	"browserify": "^6.3.2"
     }
 }

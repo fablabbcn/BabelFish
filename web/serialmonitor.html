@@ -3,9 +3,9 @@
     <link rel="stylesheet" type="text/css" href="serialmonitor.css">
     <script type="text/javascript" src="/config.js"></script>
     <script type="text/javascript" src="/tools/client-util.js"></script>
-    <script type="text/javascript" src="/lib/plugin.js"></script>
-    <!-- <script type="text/javascript" src="/extension/rpc-args.js"></script> -->
-    <!-- <script type="text/javascript" src="/extension/rpc-client.js"></script> -->
+    <!-- <script type="text/javascript" src="/lib/plugin.js"></script> -->
+    <script type="text/javascript" src="/extension/rpc-args.js"></script> --
+    <script type="text/javascript" src="/extension/rpc-client.js"></script --
   </head>
   <body>
       <div id="config" class="section">
@@ -33,7 +33,9 @@
      </div>
      <div id="status" class="section"></div>
      <script type="text/javascript">
-      var chrome = {serial: new Serial()};
+      if (!chrome.serial)
+        var chrome = {serial: new Serial()};
+
       var blink_hex = "https://codebender.cc/utilities/compile/";
 //    var blink_hex = "http://192.168.1.110/compiler/authKey/v1"
     </script>

@@ -11,15 +11,15 @@ test.describe('Test', function() {
   this.timeout(10000);
 
   test.before(function() {
-    chrome = util.chrome_driver("extension"),
+    chrome = util.chrome_driver("chrome-extension"),
     srv = new Server(".", 8080);
   });
 
   test.it("Chrome api listeners", function () {
     chrome.get("http://localhost:8080/test/testpages/chrome-listener/index.html").
       then(function () {
-	util.logs(chrome, 'host-storage', function (host_log) {
 	  assert.notEqual(host_log.length, 0, "No logging");
+	util.logs(chrome, 'host-storage', function (host_log) {
 	  util.logs(chrome, 'client-storage', function (cli_log) {
 	    assert.equal(host_log.length, cli_log.length,
 			 "Different number of tabs were reported by\
