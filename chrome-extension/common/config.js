@@ -1,7 +1,7 @@
 // File: /chrome-extension/common/config.js
 
 var config = {
-  extensionId: "mpnpognhgldjlcgnckgiofbdldbhpbnf",
+  extensionId: "iihpjpedfemglflaabiadnnjanplblia",
   methods: {
     serial: {
       methods: ['getDevices', 'send', 'connect', 'disconnect', 'setControlSignals', 'getControlSignals'],
@@ -37,6 +37,9 @@ var config = {
 
 try {
   module.exports = config;
+  if (window)
+    window.config = config;
+
 } catch (e) {
   ;
 }

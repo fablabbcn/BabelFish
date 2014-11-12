@@ -1,19 +1,20 @@
 function rcv (dev) {
-	log('devices', str(dev));
+  log('devices', str(dev));
 }
 
 window.onload = function () {
-	chrome.runtime = new RPCClient(config.extensionId, 'runtime');
-	chrome.runtime.getPlatformInfo(function (pi) {
-		log('platform', "Platform: " + str(pi));
-	});
+  // ATTENTION: This is horrible, dont do it in production.
+  chrome.runtime = new RPCClient(config.extensionId, 'runtime');
+  chrome.runtime.getPlatformInfo(function (pi) {
+    log('platform', "Platform: " + str(pi));
+  });
 
-	chrome.serial.getDevices(function (devs) {
-		console.log("Received devs: " + str(devs));
-		if (devs.length != 0) {
-			devs.forEach(rcv);
-		} else {
-			rcv('<i>No devices</i>');
-		}
-	});
+  chrome.serial.getDevices(function (devs) {
+    console.log("Received devs: " + str(devs));
+    if (devs.length != 0) {
+      devs.forEach(rcv);
+    } else {
+      rcv('<i>No devices</i>');
+    }
+  });
 };

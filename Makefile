@@ -7,9 +7,16 @@ CPP_DIR = $(CURDIR)/plugin/Codebendercc
 CPP = $(CPP_DIR)/CodebenderccAPI.cpp $(CPP_DIR)/CodebenderccAPI.h $(CPP_DIR)/CodebenderccAPIJS.cpp $(CPP_DIR)/Codebendercc.cpp $(CPP_DIR)/Codebendercc.h
 
 MOCHA = mocha $(DEBUG)
-URL = http://localhost:8080/web/serialmonitor.html
+
+#URL = http://localhost:8080/web/serialmonitor.html
+## FIREFOX TESTS
 # URL = http://localhost:8080/test/testpages/plugin-serial/index.html
 # URL = http://localhost:8080/test/testpages/plugin/index.html
+
+## CHROME TESTS
+URL = http://localhost:8080/test/testpages/chrome-listener/index.html
+
+
 CHROME_TEST = test/selenium-test.js
 FIREFOX_TEST = test/firefox-test.js
 PLUGIN_FILES = $(build_script) $(CPP) $(CURDIR)/plugin/Codebendercc/fake_install.rdf

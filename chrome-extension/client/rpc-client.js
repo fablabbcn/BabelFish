@@ -8,7 +8,9 @@ if (!chrome) {
   var config = require('./../common/config'),
       util = require('./../../tools/client-util'),
       rargs = require('./../common/rpc-args'),
-      str = util.str;
+      str = util.str,
+      argsEncode = rargs.argsEncode,
+      argsDecode = rargs.argsDecode;
 
   // Notably insupported stuff:
   //
@@ -50,7 +52,7 @@ if (!chrome) {
     this.pingTimeout = 5000;
 
     this.clientMessage(false, "ping", function (msg) {
-      if (msg != "pong") {
+      if (msg == "pong") {
 	this.hostExists_ = true;
       }
     });
@@ -196,4 +198,10 @@ if (!chrome) {
   Object.getOwnPropertyNames(config.methods).forEach(function (m) {
     chrome[m] = new RPCClient(config.extensionId, m);
   });
+
+  if (window){
+    window.ClientBus = ClientBus;
+    window.RPCClient = RPCClient;
+  }
+
 })();

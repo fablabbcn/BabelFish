@@ -58,3 +58,13 @@ function argsDecode(args, cbHandler) {
     }
   });
 }
+
+try {
+  module.exports = {
+    argsDecode:argsDecode,
+    argsEncode:argsEncode
+  };
+
+  window.hexToBin = hexToBin;
+  window.binToHex = binToHex;
+} catch (e) {;}
