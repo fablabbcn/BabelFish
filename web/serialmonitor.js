@@ -259,25 +259,25 @@ function onSerialFlush(flushArg) {
 
 // http://192.168.1.110/compiler/authKey/v1
 function hex_request(url) {
-	var request = {
-		files:
-		[{
-			filename:"example.ino",
-			content:"int led = 13;\nvoid setup() {\n  pinMode(led, OUTPUT);   \n}\nvoid loop() {\n\t  digitalWrite(led, HIGH);\n\t  delay(1000);\n\t  digitalWrite(led, LOW);\n\t  delay(1000);\n}\n"
-		},
-		 {filename: "new_header.h", content:"\n"}
-		],
-		libraries: [],
-		format: "hex",
-		version:"105",
-		build: {
-			mcu:"atmega328p",
-			f_cpu:"16000000L",
-			core:"arduino",
-			variant:"standard"
-		}
-	},
-			code = document.getElementById('code').value;
-	request.files[1].content = code;
-	return request;
+  var request = {
+    files:
+    [{
+      filename:"example.ino",
+      content:"int led = 13;\nvoid setup() {\n  pinMode(led, OUTPUT);   \n}\nvoid loop() {\n\t  digitalWrite(led, HIGH);\n\t  delay(1000);\n\t  digitalWrite(led, LOW);\n\t  delay(1000);\n}\n"
+    },
+     {filename: "new_header.h", content:"\n"}
+    ],
+    libraries: [],
+    format: "hex",
+    version:"105",
+    build: {
+      mcu:"atmega328p",
+      f_cpu:"16000000L",
+      core:"arduino",
+      variant:"standard"
+    }
+  },
+      code = document.getElementById('code').value;
+  request.files[1].content = code;
+  return request;
 }

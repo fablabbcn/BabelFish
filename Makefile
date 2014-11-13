@@ -8,13 +8,14 @@ CPP = $(CPP_DIR)/CodebenderccAPI.cpp $(CPP_DIR)/CodebenderccAPI.h $(CPP_DIR)/Cod
 
 MOCHA = mocha $(DEBUG)
 
-#URL = http://localhost:8080/web/serialmonitor.html
+# URL = http://localhost:8080/web/serialmonitor.html
 ## FIREFOX TESTS
 # URL = http://localhost:8080/test/testpages/plugin-serial/index.html
 # URL = http://localhost:8080/test/testpages/plugin/index.html
 
 ## CHROME TESTS
-URL = http://localhost:8080/test/testpages/chrome-listener/index.html
+URL = http://localhost:8080/test/testpages/serial/index.html
+# URL = http://localhost:8080/test/testpages/chrome-listener/index.html
 
 
 CHROME_TEST = test/selenium-test.js

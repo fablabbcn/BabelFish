@@ -1,18 +1,19 @@
 // All hosts should share the same global bus
-
-var DEBUG = true, bus;
-function log(msg) {
-  if (DEBUG) {
-    console.log("Server: " + msg);
-  }
-}
+var bus, log = (function () {
+  var DEBUG = true, bus;
+  return function (msg) {
+    if (DEBUG) {
+      console.log.apply(console, Array.prototype.slice.apply(arguments));
+    }
+  };
+})();
 
 function err(msg) {
   console.error("[Server:ERR] " + msg);
 }
 
 function HostBus() {
-  console.log("Host bus started.");
+  log("Host bus started.");
   this._listeners = {};
   this.hostListener(false, this.commandListener.bind(this));
 
@@ -23,6 +24,7 @@ function HostBus() {
       cb("pong");
       return true;
     }
+
     if (this.echo_mode_enabled)
       cb(msg);
 
@@ -46,23 +48,23 @@ HostBus.prototype = {
     chrome.runtime[eventName].addListener(cb);
   },
 
-  // If channel is provided listen on that channel
+  // If channel is provided listen on that channel otherwise it's a
+  // message listener.
   hostListener: function (channel,  cb) {
     if (channel) {
-      console.log("Listening on: " + channel);
+      console.log("RPCBus Listening on: " + channel);
       this.addRuntimeListener('onConnectExternal', function  (port) {
 	// Message comes with port
 	if (channel == port.name) {
-	  console.log("Connected: " + channel);
+	  log("Connected: " + channel);
 	  port.onMessage.addListener( function (msg) {
-	    log("Host bus reveived connection message" + msg);
+	    log("RPCBus reveived connection message: ", msg);
 	    return cb(msg, port.postMessage.bind(port));
 	  });
 	}
       });
     } else {
       this.addRuntimeListener('onMessageExternal', function (req, sender, sendResp) {
-	log("Host bus reveived message" + req);
 	return cb(req, sendResp);
       });
     }
@@ -91,12 +93,6 @@ HostBus.prototype = {
     this.echo_mode_enabled = !disable;
   }
 };
-
-// if (DEBUG) {
-// 	function dbg(msg) {
-// 		console.log("[Server] " + msg);
-// 	}
-// }
 
 // RPC call message is:
 // - timestamp
@@ -147,27 +143,46 @@ function RPCHost (name, obj) {
 // Listener on mesages: get the request, execute it and send the
 // formatted result through sendResp.
 RPCHost.prototype.listener = function (allowed_methods, request, sendResp) {
-  console.log("Host received: " + JSON.stringify(request));
   // Ignore calls not for you
   if (this.obj_name != request.object ||
       allowed_methods.indexOf(request.method) == -1)
     return false;
 
   var method = this.path2callable(request.method),
+      // Replace the 'function' argument with the callback handler and
+      // unbox arguments.
       args = argsDecode(request.args, this.cbHandlerFactory(sendResp));
 
-  method.apply(this.obj, args);
+  log("RPCHost applying: " + request.method,  args);
+  try {
+    method.apply(this.obj, args);
+  } catch (e) {
+    this.sendError(e, sendResp);
+  }
+
+  // Retain the ability to call sendResp
   return true;
 };
 
+RPCHost.prototype.sendError = function (error, sendResp) {
+  return sendResp(argsEncode([]), err.message);
+};
+
+// XXX: Maybe this should block until the callback is done. If this
+// becomes a problem consider opening an adhoc connection for callback
+// finishing. Using a completely different channel for this will
+// reduce the noize in the operational channel and
+
 // Get a callable that when called will package it's arguments and
-// pass them to sr
-RPCHost.prototype.cbHandlerFactory = function (sr) {
+// pass them to sendResp
+RPCHost.prototype.cbHandlerFactory = function (sendResp) {
   return (function (sendResp, var_args) {
     var args = Array.prototype.slice.call(arguments, 1),
 	msg = {args: argsEncode(args), err: null};
+
+    log("RPCHost requesting callback with args:", args);
     sendResp(msg);
-  }).bind(this, sr);
+  }).bind(this, sendResp);
 };
 
 // Get a callable member of this.obj given the name. Dot paths are

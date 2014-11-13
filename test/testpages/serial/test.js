@@ -12,12 +12,23 @@ document.body.onload = function () {
     received = true;
   });
 
+  // TODO: produce an error on the server side ans check if it appears
+  // here.
+
+  // try {
+  //   chrome.serial.send(20, hexToBin([0x30,0x20]), function (packet) {
+  //     log('delegated_errors', packet);
+  //   });
+  // } catch (e) {
+  //   log('delegated_errors', e.message);
+  // }
+
   chrome.serial.getDevices(function (devs) {
     if (devs.length == 0) {
       log('nodev', "<i>Will not run this test, connect a serial.</i>");
     }
 
-    chrome.serial.connect(devs[0].path, {bitrate: 115200}, function (conInfo) {
+    chrome.serial.connect(devs.reverse()[0].path, {bitrate: 115200}, function (conInfo) {
       var cid = conInfo.connectionId;
       ctrl_sig(cid, false, function(ok) { ok && ctrl_sig(cid, true, function(ok) {
 	log('clinet', "Control signals were set all the way: " + ok);

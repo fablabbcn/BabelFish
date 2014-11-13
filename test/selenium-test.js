@@ -36,6 +36,10 @@ test.describe('Test', function() {
   test.it("Chrome serial calls", function () {
     chrome.get("http://localhost:8080/test/testpages/serial/index.html").
       then(function () {
+	// util.logs(chrome, 'delegated_errors', function (delegated_errors) {
+	//   assert.equal(delegated_errors[0], "");
+	// });
+
 	util.logs(chrome, 'onresponse', function (entries) {
 	  assert.equal(entries[0], 'onReceive received: 20,16', "No logging");
 	});
@@ -50,7 +54,8 @@ test.describe('Test', function() {
 	});
 	util.logs(chrome, 'platform', function (entries) {
 	  assert.notEqual(entries.length, 0, "No platform received.");
-	  assert.match(entries[0], /^Platform: {"arch":".*?","nacl_arch":".*?","os":".*?"}$/,
+	  assert.match(entries[0],
+		       /^Platform: {"arch":".*?","nacl_arch":".*?","os":".*?"}$/,
 		       "Not receiveng expected entry format for platform.");
 	});
       });

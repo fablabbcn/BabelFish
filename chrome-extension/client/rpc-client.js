@@ -38,7 +38,7 @@ if (!chrome) {
     }
   })();
 
-  function err (msg) {
+  function err(msg) {
     throw new Error("[Client:error] " + msg);
   }
 
@@ -60,7 +60,7 @@ if (!chrome) {
 
     setTimeout(function () {
       if (!this.hostExists_)
-	throw Error("Host did not respond in " + this.pingTimeout +
+	err("Host did not respond in " + this.pingTimeout +
 		    "ms. Extension id: "+this.extensionId );
     }.bind(this), this.pingTimeout);
   }
@@ -68,10 +68,10 @@ if (!chrome) {
   ClientBus.prototype = {
     default_cb: function (msg) {
       if (!msg)
-	throw new Error("Chrome's last error: " + this.runtime_.lastError);
+	err("Chrome's last error: " + this.runtime_.lastError);
 
       if (msg.error)
-	throw new Error(msg.error);
+	throw err(msg.error);
     },
 
     // cb(msg)
@@ -89,10 +89,7 @@ if (!chrome) {
 	this.runtime_.sendMessage (
 	  this.extensionId, msg, {}, (function (msg) {
 	    dbg("BUS received: " + str(msg));
-	    cb(msg || {
-	      error: this.runtime_.lastError.message,
-	      extensionId: this.extensionId
-	    });
+	    cb(msg);
 	  }).bind(this));
       }
     },
@@ -130,7 +127,7 @@ if (!chrome) {
     this.extensionId = id;
     this.obj_name = obj_name;
     if (!config.methods[obj_name])
-      throw Error('Tried to connect to unconfigured object: chrome.' + obj_name);
+      err('Tried to connect to unconfigured object: chrome.' + obj_name);
 
     this.setup_methods(config.methods[obj_name]);
 
@@ -204,5 +201,4 @@ if (!chrome) {
     window.ClientBus = ClientBus;
     window.RPCClient = RPCClient;
   }
-
 })();
