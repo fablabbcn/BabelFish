@@ -2,6 +2,9 @@ function dbg (var_args) {
   console.log.apply(console, Array.prototype.slice.call(arguments));
 }
 
+// XXX: Use lawnchair for this.
+window.plugins_initialized = 0;
+
 if (!chrome.serial) {
   dbg("Not on chrome");
   function PluginPropertyDescriptor(pluginElement, prop) {
@@ -66,9 +69,18 @@ if (!chrome.serial) {
   function Plugin() {
     dbg("Initializing plugin.");
     this.serial = chrome.serial;
+    this.version = "Chrome-serial (no plugin)";
+    this.instance_id = window.plugins_initialized++;
+
+    this.errorCallback = function () {}
   }
 
   Plugin.prototype = {
+
+    errorCallback:  function(from, msg, status) {
+      console.error("["+ from + "] ", msg, "(status: " + status + ")");
+    },
+
     // Async methods
     serialRead: function (port, baudrate, cb, valCb) {},
 
@@ -96,6 +108,25 @@ if (!chrome.serial) {
 
       setTimeout(this.doFlashWithProgrammer.bind(this), 0);
       return 0;
+    },
+
+    flash: function (device,
+		     code,
+		     maxsize,
+		     protocol,
+		     disable_flushing,
+		     speed,
+		     mcu,
+		     cb) {
+      // uploadCompiledSketch by mr john
+      // XXX: disconnect first
+      setTimeout(function () {
+	dbg("Code length", code.length, typeof code,
+	    "Protocol:", protocol,
+	    "Device:", device);
+	uploadCompiledSketch(ParseHexFile(code), device, protocol);
+	cb();
+      }, 0);
     },
 
     // Wrongly sync methods
@@ -129,12 +160,16 @@ if (!chrome.serial) {
 
     serialWrite: function (strData) {},
 
-    setCallback: function (cb) {},
+    setCallback: function (cb) {
+      this.callback = cb;
+    },
 
-    version: function () {},
+    setErrorCallback: function (cb) {
+      this.errorCallback = cb;
+    },
 
+    // Dummies for plugin garbage collection.
     deleteMap: function () {},
-
     closeTab: function () {}
   }
 }

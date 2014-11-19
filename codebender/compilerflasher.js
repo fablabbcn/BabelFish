@@ -20,7 +20,7 @@ EventManager.prototype = {
       event.target = this;
     }
 
-    if (!event.type){
+    if (!event.type) {
       throw new Error("Event object missing 'type' property.");
     }
 
@@ -106,7 +106,6 @@ PluginHandler.prototype = {
     $.get(url);
   },
 
-
   savePort: function(port) {
     var cb = this;
     if(typeof Lawnchair !== "undefined")
@@ -127,8 +126,6 @@ PluginHandler.prototype = {
         url = "{{  url('CodebenderUtilitiesBundle_logdb', {actionid : 38 , meta: 'SAVEPORTMETA'}) }}";
         url = url.replace("SAVEPORTMETA", JSON.stringify({ "oldPort":oldPort, "newPort": newPort, "tabID": this.tabID } ));
         $.get(url);
-
-
       });}
     else
     {
@@ -229,7 +226,6 @@ PluginHandler.prototype = {
   },
 
   searchPlugin: function() {
-    dbg("Searching for plugin");
     if (chrome && chrome.serial) {
       this.plugin_found = true;
       this.plugin_searched = true;
@@ -242,7 +238,6 @@ PluginHandler.prototype = {
   },
 
   runPlugin: function() {
-    dbg("runPlugin()");
     url = "{{  url('CodebenderUtilitiesBundle_logdb', {actionid : 35 , meta: 'PLUGIN_META'}) }}";
     url = url.replace("PLUGIN_META", JSON.stringify({ "plugin" : true, "message": "Found on navigator plugins."} ));
     $.get(url);
@@ -462,12 +457,24 @@ PluginHandler.prototype = {
         if (this.comparePluginVersions(this.parseVersionString(this.plugin_.version), this.parseVersionString("1.6.0.4")) >= 0)
         {
           var disable_flushing = ((typeof board["upload"]["disable_flushing"] === 'undefined') ? "" : board["upload"]["disable_flushing"]);
-          this.plugin_.flash(this.portslist. options[this.portslist.selectedIndex].text, binary, board["upload"]["maximum_size"], board["upload"]["protocol"], disable_flushing, board["upload"]["speed"], board["build"]["mcu"],
+          this.plugin_.flash(this.portslist. options[this.portslist.selectedIndex].text,
+			     binary,
+			     board["upload"]["maximum_size"],
+			     board["upload"]["protocol"],
+			     disable_flushing,
+			     board["upload"]["speed"],
+			     board["build"]["mcu"],
 			     flash_callback);
         }
         else
         {
-          this.plugin_.flash(this.portslist.options[this.portslist.selectedIndex].text, binary, board["upload"]["maximum_size"], board["upload"]["protocol"], board["upload"]["speed"], board["build"]["mcu"],
+          this.plugin_.flash(this.portslist.options[this.portslist.selectedIndex].text,
+			     binary,
+			     board["upload"]["maximum_size"],
+			     board["upload"]["protocol"],
+			     disable_flushing,
+			     board["upload"]["speed"],
+			     board["build"]["mcu"],
 			     flash_callback);
         }
       }
@@ -612,17 +619,17 @@ PluginHandler.prototype = {
     window.hasPerm = this.plugin_.setCallback(function (from, output) {
       if (output == "disconnect") {
 
-        compilerflasher.pluginHandler.disconnect(true);
+        this.owner.pluginHandler.disconnect(true);
       } else
       {
-        compilerflasher.eventManager.fire("plugin_notification", output);
-        compilerflasher.setOperationOutput(output);
+        this.owner.eventManager.fire("plugin_notification", output);
+        this.owner.setOperationOutput(output);
       }
     });
 
     if (!window.hasPerm) {
-      compilerflasher.setOperationOutput("You need to grant permissions to the Codebender extension.");
-      compilerflasher.eventManager.fire('plugin_notification', "You need to grant permissions to the Codebender extension.");
+      this.owner.setOperationOutput("You need to grant permissions to the Codebender extension.");
+      this.owner.eventManager.fire('plugin_notification', "You need to grant permissions to the Codebender extension.");
     }
 
 
@@ -685,9 +692,9 @@ PluginHandler.prototype = {
 											      "version": (Browsers.os.version == null || typeof Browsers.os.version.original === 'undefined') ? 'undefined' : Browsers.os.version.original }, "Browser": { "name": (typeof Browsers.browser.name === 'undefined') ? 'undefined' : Browsers.browser.name,
 																															   "version": (typeof Browsers.browser.version === 'undefined' || Browsers.browser.version == null) ? 'undefined' : Browsers.browser.version.original}}));
               $.get(url);
-              var msg = compilerflasher.getFlashFailMessage(line);
-              compilerflasher.setOperationOutput(msg);
-              compilerflasher.eventManager.fire("plugin_notification", msg);
+              var msg = this.owner.getFlashFailMessage(line);
+              this.owner.setOperationOutput(msg);
+              this.owner.eventManager.fire("plugin_notification", msg);
 	    }
           );
 
@@ -749,7 +756,12 @@ PluginHandler.prototype = {
       if(notified == false)
       {
         var url = "{{  url('CodebenderUtilitiesBundle_logdb', {actionid : 59, meta: 'SERIAL_MONITOR_DISC_META'}) }}";
-        url = url.replace("SERIAL_MONITOR_DISC_META", JSON.stringify({ "baudrate" : $("#cb_cf_baud_rates option:selected").val(), "port": $("#cb_cf_ports").val(), "tabID": this.tabID }));
+        url = url.replace("SERIAL_MONITOR_DISC_META",
+			  JSON.stringify({
+			    "baudrate" : $("#cb_cf_baud_rates option:selected").val(),
+			    "port": $("#cb_cf_ports").val(),
+			    "tabID": this.tabID
+			  }));
         $.get(url);
       }
 
@@ -993,17 +1005,17 @@ compilerflasher = function(lf) {
     if(typeof Lawnchair !== 'undefined')
     {
       new Lawnchair(function () {
-        this.save({key:'board', name:$("#cb_cf_boards option:selected").text()});
+        cb.save({key:'board', name:$("#cb_cf_boards option:selected").text()});
       });
     }
 
-    var oldBoard = this.selectedBoard.name;
+    var oldBoard = cb.selectedBoard.name;
 
-    this.selectedBoard = this.boards_list[$("#cb_cf_boards").prop("selectedIndex")];
+    cb.selectedBoard = cb.boards_list[$("#cb_cf_boards").prop("selectedIndex")];
 
-    var newBoard = this.selectedBoard.name;
+    var newBoard = cb.selectedBoard.name;
     url = "{{  url('CodebenderUtilitiesBundle_logdb', {actionid : 37 , meta: 'SAVEBOARDMETA'}) }}";
-    url = url.replace("SAVEBOARDMETA", JSON.stringify({ "oldBoard":oldBoard, "newBoard":newBoard, "tabID": this.pluginHandler.tabID } ));
+    url = url.replace("SAVEBOARDMETA", JSON.stringify({ "oldBoard":oldBoard, "newBoard":newBoard, "tabID": cb.pluginHandler.tabID } ));
     $.get(url);
   };
 
@@ -1012,9 +1024,9 @@ compilerflasher = function(lf) {
     if(typeof Lawnchair !== 'undefined')
     {
       Lawnchair(function () {
-        this.exists('board', function (exists) {
+        cb.exists('board', function (exists) {
           if (exists) {
-            this.get('board', function (config) {
+            cb.get('board', function (config) {
 	      $("#cb_cf_boards").val(config.name)
             })
           }
@@ -1030,7 +1042,7 @@ compilerflasher = function(lf) {
   };
 
   this.getMaxSize = function() {
-    return parseInt(this.selectedBoard["upload"]["maximum_size"]);
+    return parseInt(cb.selectedBoard["upload"]["maximum_size"]);
   }
 
 
@@ -1038,23 +1050,22 @@ compilerflasher = function(lf) {
     if(typeof Lawnchair !== 'undefined')
     {
       new Lawnchair(function () {
-        this.save({key:'programmer', name:$("#cb_cf_programmers option:selected").text()});
+        cb.save({key:'programmer', name:$("#cb_cf_programmers option:selected").text()});
       });
     }
 
-    var oldProgrammer = this.selectedProgrammer.name;
+    var oldProgrammer = cb.selectedProgrammer.name;
 
-    this.selectedProgrammer = this.programmers_list[$("#cb_cf_programmers").prop("selectedIndex")];
+    cb.selectedProgrammer = cb.programmers_list[$("#cb_cf_programmers").prop("selectedIndex")];
 
-    var newProgrammer = this.selectedProgrammer.name;
+    var newProgrammer = cb.selectedProgrammer.name;
     url = "{{  url('CodebenderUtilitiesBundle_logdb', {actionid : 39 , meta: 'SAVEPROGRAMMERMETA'}) }}";
-    url = url.replace("SAVEPROGRAMMERMETA", JSON.stringify({ "oldProgrammer":oldProgrammer, "newProgrammer":newProgrammer, "tabID": this.pluginHandler.tabID } ));
+    url = url.replace("SAVEPROGRAMMERMETA", JSON.stringify({ "oldProgrammer":oldProgrammer, "newProgrammer":newProgrammer, "tabID": cb.pluginHandler.tabID } ));
     $.get(url);
 
   };
 
   this.loadProgrammer = function() {
-    var cb = this;
     window.programmersInitInterv = setInterval(function(){
 
       if(cb.pluginHandler.plugin_running)
@@ -1095,18 +1106,18 @@ compilerflasher = function(lf) {
   };
 
   this.setBoardsList = function(data){
-    this.boards_list = data;
+    cb.boards_list = data;
   };
 
   this.getBoardsList = function(){
-    return this.boards_list ;
+    return cb.boards_list ;
   }
 
   this.clickedBoard = function()
   {
     var board = $("#cb_cf_boards option:selected").text();
     url = "{{  url('CodebenderUtilitiesBundle_logdb', {actionid : 42 , meta: 'CLICK_BOARD_META'}) }}";
-    url = url.replace("CLICK_BOARD_META", JSON.stringify({ "selectedBoard": board, "tabID": this.pluginHandler.tabID} ));
+    url = url.replace("CLICK_BOARD_META", JSON.stringify({ "selectedBoard": board, "tabID": cb.pluginHandler.tabID} ));
     $.get(url);
   }
 
@@ -1114,13 +1125,13 @@ compilerflasher = function(lf) {
   {
     var programmer = $("#cb_cf_programmers option:selected").text();
     url = "{{  url('CodebenderUtilitiesBundle_logdb', {actionid : 44 , meta: 'CLICK_PROGRAMMER_META'}) }}";
-    url = url.replace("CLICK_PROGRAMMER_META", JSON.stringify({ "selectedProgrammer": programmer, "tabID": this.pluginHandler.tabID} ));
+    url = url.replace("CLICK_PROGRAMMER_META", JSON.stringify({ "selectedProgrammer": programmer, "tabID": cb.pluginHandler.tabID} ));
     $.get(url);
   }
 
   this.generate_payload =  function(format, logging) {
     logging = (typeof logging === "undefined") ? false : logging;
-    var files = this.load_files();
+    var files = cb.load_files();
 
     var count = 0;
     var files_array = Array();
@@ -1132,9 +1143,9 @@ compilerflasher = function(lf) {
     });
 
     if(logging)
-      var payload = {"files":files_array, "logging":logging, "format":format, "version":"105", "build":compilerflasher.selectedBoard["build"]};
+      var payload = {"files":files_array, "logging":logging, "format":format, "version":"105", "build": cb.selectedBoard["build"]};
     else
-      var payload = {"files":files_array, "format":format, "version":"105", "build":compilerflasher.selectedBoard["build"]};
+      var payload = {"files":files_array, "format":format, "version":"105", "build": cb.selectedBoard["build"]};
 
     if(format == 'autocomplete' && typeof editor !== 'undefined')
     {
@@ -1162,30 +1173,28 @@ compilerflasher = function(lf) {
 
     if (progress)
     {
-      msg = compilerflasher.getFlashFailMessage(progress);
-      compilerflasher.setOperationOutput(msg);
-      compilerflasher.eventManager.fire('flash_failed', msg);
+      msg = cb.getFlashFailMessage(progress);
+      cb.setOperationOutput(msg);
+      cb.eventManager.fire('flash_failed', msg);
 
 
     } else
     {
-      compilerflasher.eventManager.fire('flash_succeed');
-      compilerflasher.setOperationOutput("Upload successful!");
+      cb.eventManager.fire('flash_succeed');
+      cb.setOperationOutput("Upload successful!");
     }
 
 
     var url = "{{ url('CodebenderUtilitiesBundle_flash', {error: 'ERROR_CODE'}) }}";
     url = url.replace('ERROR_CODE', progress);
     $.get(url);
-
   }
 
 
   this.getHex = function() {
 
-    this.eventManager.fire('pre_hex');
-    var payload = this.generate_payload("hex");
-    var cb = this;
+    cb.eventManager.fire('pre_hex');
+    var payload = cb.generate_payload("hex");
     $.post("{{ url('CodebenderUtilitiesBundle_compile')}}", payload, function (data) {
       try{
         var obj = jQuery.parseJSON(data);
@@ -1212,15 +1221,14 @@ compilerflasher = function(lf) {
   {
 
     url = "{{  url('CodebenderUtilitiesBundle_logdb', {actionid : 40 , meta: 'RUN_BUTTON_META'}) }}";
-    url = url.replace("RUN_BUTTON_META", JSON.stringify({ "port":$("#cb_cf_ports option:selected").text(), "board":$("#cb_cf_boards option:selected").text(), "programmer":$("#cb_cf_programmers option:selected").text(), "tabID": this.pluginHandler.tabID } ));
+    url = url.replace("RUN_BUTTON_META", JSON.stringify({ "port":$("#cb_cf_ports option:selected").text(), "board":$("#cb_cf_boards option:selected").text(), "programmer":$("#cb_cf_programmers option:selected").text(), "tabID": cb.pluginHandler.tabID } ));
     $.get(url);
 
-    if(this.pluginHandler.canflash(this.selectedBoard, this.selectedProgrammer))
+    if(cb.pluginHandler.canflash(cb.selectedBoard, cb.selectedProgrammer))
     {
-      var cb = this;
-      this.eventManager.fire('pre_flash');
-      this.setOperationOutput("<i class='icon-spinner icon-spin'> </i> Working...");
-      this.getbin(function(obj){
+      cb.eventManager.fire('pre_flash');
+      cb.setOperationOutput("<i class='icon-spinner icon-spin'> </i> Working...");
+      cb.getbin(function(obj){
         if (obj.success == 0) {
           cb.setOperationOutput("There was an error compiling.")
           cb.eventManager.fire('verification_failed', obj.message);
@@ -1251,8 +1259,8 @@ compilerflasher = function(lf) {
     }
     else
     {
-      this.setOperationOutput("Please select a valid port!");
-      this.eventManager.fire("plugin_notification", "Please select a valid port!!");
+      cb.setOperationOutput("Please select a valid port!");
+      cb.eventManager.fire("plugin_notification", "Please select a valid port!!");
     }
 
   }
@@ -1261,15 +1269,14 @@ compilerflasher = function(lf) {
   this.usbflashWithProgrammer = function()
   {
     url = "{{  url('CodebenderUtilitiesBundle_logdb', {actionid : 41 , meta: 'RUN_WITH_PROG_BUTTON_META'}) }}";
-    url = url.replace("RUN_WITH_PROG_BUTTON_META", JSON.stringify({ "port":$("#cb_cf_ports option:selected").text(), "board":$("#cb_cf_boards option:selected").text(), "programmer":$("#cb_cf_programmers option:selected").text(), "tabID": this.pluginHandler.tabID } ));
+    url = url.replace("RUN_WITH_PROG_BUTTON_META", JSON.stringify({ "port":$("#cb_cf_ports option:selected").text(), "board":$("#cb_cf_boards option:selected").text(), "programmer":$("#cb_cf_programmers option:selected").text(), "tabID": cb.pluginHandler.tabID } ));
     $.get(url);
 
-    if(this.pluginHandler.canflash(this.selectedBoard, this.selectedProgrammer, true))
+    if(cb.pluginHandler.canflash(cb.selectedBoard, cb.selectedProgrammer, true))
     {
-      var cb = this;
-      this.eventManager.fire('pre_flash');
-      this.setOperationOutput("<i class='icon-spinner icon-spin'> </i> Working...");
-      this.getbin(function(obj){
+      cb.eventManager.fire('pre_flash');
+      cb.setOperationOutput("<i class='icon-spinner icon-spin'> </i> Working...");
+      cb.getbin(function(obj){
         if (obj.success == 0) {
           cb.setOperationOutput("There was an error compiling.")
           cb.eventManager.fire('verification_failed', obj.message);
@@ -1292,15 +1299,13 @@ compilerflasher = function(lf) {
     }
     else
     {
-      this.setOperationOutput("Please select a valid port for the programmer!");
-      this.eventManager.fire('plugin_notification', "Please select a valid port for the programmer!");
+      cb.setOperationOutput("Please select a valid port for the programmer!");
+      cb.eventManager.fire('plugin_notification', "Please select a valid port for the programmer!");
     }
   }
 
-
   this.getbin = function(callback) {
-    var payload = this.generate_payload("binary");
-    var cb = this;
+    var payload = cb.generate_payload("binary");
     $.post("{{ url('CodebenderUtilitiesBundle_compile')}}", payload, function (data) {
       try{
         var obj = jQuery.parseJSON(data);
@@ -1321,13 +1326,12 @@ compilerflasher = function(lf) {
 
     var board = $("#cb_cf_boards option:selected").text();
     url = "{{  url('CodebenderUtilitiesBundle_logdb', {actionid : 47 , meta: 'VERIFY_META'}) }}";
-    url = url.replace("VERIFY_META", JSON.stringify({ "selectedBoard": board, "tabID": this.pluginHandler.tabID} ));
+    url = url.replace("VERIFY_META", JSON.stringify({ "selectedBoard": board, "tabID": cb.pluginHandler.tabID} ));
     $.get(url);
 
-    this.eventManager.fire('pre_verify');
-    this.setOperationOutput("<i class='icon-spinner icon-spin'> </i> Working...");
-    var cb = this;
-    this.getbin(function(obj){
+    cb.eventManager.fire('pre_verify');
+    cb.setOperationOutput("<i class='icon-spinner icon-spin'> </i> Working...");
+    cb.getbin(function(obj){
       if (obj.success == 0) {
         cb.setOperationOutput("Verification failed.");
         cb.eventManager.fire('verification_failed', obj.message);
@@ -1349,7 +1353,7 @@ compilerflasher = function(lf) {
     /*{#$("#start_button").prop('disabled', true);#}*/
 
 
-    if(this.pluginHandler.canBurnBootloader(this.selectedProgrammer))
+    if(cb.pluginHandler.canBurnBootloader(cb.selectedProgrammer))
     {
       var url = "{{  url('CodebenderUtilitiesBundle_logdb', {actionid : 25, meta: 'UPLOAD_BOOTLOADER_META'}) }}";
       url = url.replace("UPLOAD_BOOTLOADER_META", JSON.stringify({ "programmer" : $('#programmer option:selected').val(),
@@ -1389,7 +1393,7 @@ compilerflasher = function(lf) {
   this.disableCompilerFlasherActions = function(){
     $("#cb_cf_boards").attr("disabled", "disabled");
     $("#cb_cf_verify_btn").attr("disabled", "disabled");
-    if(compilerflasher.pluginHandler.plugin_running)
+    if(cb.pluginHandler.plugin_running)
     {
       $("#cb_cf_ports").attr("disabled", "disabled");
       $("#cb_cf_flash_btn").attr("disabled", "disabled");
@@ -1404,7 +1408,7 @@ compilerflasher = function(lf) {
   this.enableCompilerFlasherActions = function(){
     $("#cb_cf_boards").removeAttr("disabled");
     $("#cb_cf_verify_btn").removeAttr("disabled");
-    if(compilerflasher.pluginHandler.plugin_running)
+    if(cb.pluginHandler.plugin_running)
     {
       $("#cb_cf_ports").removeAttr("disabled");
       $("#cb_cf_flash_btn").removeAttr("disabled");
@@ -1424,21 +1428,19 @@ compilerflasher = function(lf) {
   this.on("pre_hex", this.disableCompilerFlasherActions);
   this.on("hex_succeed", this.enableCompilerFlasherActions);
   this.on("hex_failed", this.enableCompilerFlasherActions);
-
-
 };
 
 
 function boardsListCallback(data) {
-  compilerflasher.setBoardsList(data);
+  this.setBoardsList(data);
 
   $('#cb_cf_boards').find('option').remove().end();
   var found = false;
   if ($("#cb_cf_boards").data().board){
-    for (var i = 0; i < compilerflasher.boards_list.length; i++) {
-      if (compilerflasher.boards_list[i]["name"] == $("#cb_cf_boards").data().board)
+    for (var i = 0; i < this.boards_list.length; i++) {
+      if (this.boards_list[i]["name"] == $("#cb_cf_boards").data().board)
       {
-        compilerflasher.selectedBoard = compilerflasher.boards_list[i];
+        this.selectedBoard = this.boards_list[i];
         $('#cb_cf_boards').hide();
         found = true;
       }
@@ -1448,16 +1450,16 @@ function boardsListCallback(data) {
   if(!found)
   {
     /*{#$("#cb_cf_boards").html('{% filter escape('js') %}{% include 'CodebenderGenericBundle:CompilerFlasher:boardlist_section.html.twig'%}{% endfilter %}');#}*/
-    for (var i = 0; i < compilerflasher.boards_list.length; i++)
-      $("#cb_cf_boards").append($('<option></option>').val(compilerflasher.boards_list[i]["name"]).html(compilerflasher.boards_list[i]["name"]));
-    compilerflasher.loadBoard();
+    for (var i = 0; i < this.boards_list.length; i++)
+      $("#cb_cf_boards").append($('<option></option>').val(this.boards_list[i]["name"]).html(this.boards_list[i]["name"]));
+    this.loadBoard();
 
 
-    var board = compilerflasher.getDefaultBoard();
+    var board = this.getDefaultBoard();
     if(board !== 'undefined' && $("#cb_cf_boards option[value='"+board+"']").length == 1)
     {
       $("#cb_cf_boards").val(board);
-      compilerflasher.saveBoard();
+      this.saveBoard();
     }
 
     $('#cb_cf_boards').removeAttr('disabled');
@@ -1465,13 +1467,150 @@ function boardsListCallback(data) {
 }
 
 function programmersListCallback(data){
-  compilerflasher.programmers_list = data;
+  this.programmers_list = data;
   $('#cb_cf_programmers').find('option').remove().end();
-  for (var i = 0; i < compilerflasher.programmers_list.length; i++)
-    $("#cb_cf_programmers").append($('<option></option>').val(compilerflasher.programmers_list[i]["name"]).html(compilerflasher.programmers_list[i]["name"]));
-  compilerflasher.loadProgrammer();
+  for (var i = 0; i < this.programmers_list.length; i++)
+    $("#cb_cf_programmers").append($('<option></option>').val(this.programmers_list[i]["name"]).html(this.programmers_list[i]["name"]));
+  this.loadProgrammer();
   /*{#$('#cb_cf_programmers').removeAttr('disabled');#}*/
 }
 
 // {% include 'CodebenderGenericBundle:CompilerFlasher:compiler_scripts.js.twig' %}
+function logging() {
+  var payload = generate_payload("binary", true);
+  $.post("{{ path('CodebenderUtilitiesBundle_compile')}}", payload, function(data) {
+    var obj = jQuery.parseJSON(data);
+  });
+}
+
 // {% include 'CodebenderGenericBundle:CompilerFlasher:flasher_scripts.js.twig' %}
+
+window.flashing_errors = {
+  1: "Could not connect to your device. Make sure that you have connected it properly, that you have selected the correct settings (device type and port) and try again.",
+  256: "Could not connect to your device. Make sure that you have connected it properly, that you have selected the correct settings (device type and port) and try again.",
+  259: "Could not program your device, the process timed out. Make sure that you have connected it properly, that you have selected the correct settings (device type and port) and try again.",
+  "-1": "Couldn’t find an Arduino on the selected port. If you are using Leonardo check that you have the correct port selected. If it is correct, try pressing the board’s reset button after initiating the upload",
+  "-2": "There was a problem programming your Arduino. If you are using a non-English Windows version, or username please contact us.",
+  "-204": "Could not program your device, the process timed out. Make sure that you have connected it properly, that you have selected the correct settings (device type and port) and try again.",
+  "-22": "The selected port seems to be in use. Please check your board connection, and make sure that you are not using it from some other application, you don't have an open serial monitor.",
+  "-23": "Another flashing process is still active. Please wait until it is done and try again.",
+  "-55": "The specified port might not be available. Please check if it is used by another application. If the problem persists, unplug your device and plug it again.",
+  "-56": "The specified port might not be available. Please check if it is used by another application. If the problem persists, unplug your device and plug it again.",
+  "-57": "The specified port might not be available. Please check if it is used by another application. If the problem persists, unplug your device and plug it again.",
+  "126": "Something seems to be wrong with the plugin installation. You need to install the plugin again.",
+  "127": "Something seems to be wrong with the plugin installation. You need to install the plugin again.",
+  "-200": "There was a problem during the flashing process. Please try again, or contact us if the problem persists.",
+  100: "Could not connect to your device. Make sure that you have connected it properly, that you have selected the correct settings (device type and port) and try again.",
+  32001: "The selected port seems to be in use. Please make sure that you are not using it from some other program.",
+  33005: "This baudrate is not supported by the operating system.",
+  2001: "The selected port seems to be in use. Please make sure that you are not using it from some other program.",
+  3005: "This baudrate is not supported by the operating system."
+
+};
+//Scrolling function
+(function($) {
+  var h = $.scrollTo = function(a, b, c) {
+    $(window).scrollTo(a, b, c);
+  };
+  h.defaults = {
+    axis: 'xy',
+    duration: parseFloat($.fn.jquery) >= 1.3 ? 0 : 1,
+    limit: true
+  };
+  h.window = function(a) {
+    return $(window)._scrollable();
+  };
+  $.fn._scrollable = function() {
+    return this.map(function() {
+      var a = this,
+        isWin = !a.nodeName || $.inArray(a.nodeName.toLowerCase(), ['iframe', '#document', 'html', 'body']) != -1;
+      if (!isWin) return a;
+      var b = (a.contentWindow || a).document || a.ownerDocument || a;
+      return /webkit/i.test(navigator.userAgent) || b.compatMode == 'BackCompat' ? b.body : b.documentElement;
+    });
+  };
+  $.fn.scrollTo = function(e, f, g) {
+    if (typeof f == 'object') {
+      g = f;
+      f = 0;
+    }
+    if (typeof g == 'function') g = {
+      onAfter: g
+    };
+    if (e == 'max') e = 9e9;
+    g = $.extend({}, h.defaults, g);
+    f = f || g.duration;
+    g.queue = g.queue && g.axis.length > 1;
+    if (g.queue) f /= 2;
+    g.offset = both(g.offset);
+    g.over = both(g.over);
+    return this._scrollable().each(function() {
+      if (e == null) return;
+      var d = this,
+        $elem = $(d),
+        targ = e,
+        toff, attr = {},
+        win = $elem.is('html,body');
+      switch (typeof targ) {
+        case 'number':
+        case 'string':
+          if (/^([+-]=)?\d+(\.\d+)?(px|%)?$/.test(targ)) {
+            targ = both(targ);
+            break
+          }
+          targ = $(targ, this);
+          if (!targ.length) return;
+        case 'object':
+          if (targ.is || targ.style) toff = (targ = $(targ)).offset()
+      }
+      $.each(g.axis.split(''), function(i, a) {
+        var b = a == 'x' ? 'Left' : 'Top',
+          pos = b.toLowerCase(),
+          key = 'scroll' + b,
+          old = d[key],
+          max = h.max(d, a);
+        if (toff) {
+          attr[key] = toff[pos] + (win ? 0 : old - $elem.offset()[pos]);
+          if (g.margin) {
+            attr[key] -= parseInt(targ.css('margin' + b)) || 0;
+            attr[key] -= parseInt(targ.css('border' + b + 'Width')) || 0;
+          }
+          attr[key] += g.offset[pos] || 0;
+          if (g.over[pos]) attr[key] += targ[a == 'x' ? 'width' : 'height']() * g.over[pos];
+        } else {
+          var c = targ[pos];
+          attr[key] = c.slice && c.slice(-1) == '%' ? parseFloat(c) / 100 * max : c;
+        }
+        if (g.limit && /^\d+$/.test(attr[key])) attr[key] = attr[key] <= 0 ? 0 : Math.min(attr[key], max);
+        if (!i && g.queue) {
+          if (old != attr[key]) animate(g.onAfterFirst);
+          delete attr[key]
+        }
+      });
+      animate(g.onAfter);
+
+      function animate(a) {
+        $elem.animate(attr, f, g.easing, a && function() {
+          a.call(this, e, g);
+        });
+      }
+    }).end();
+  };
+
+  h.max = function(a, b) {
+    var c = b == 'x' ? 'Width' : 'Height',
+      scroll = 'scroll' + c;
+    if (!$(a).is('html,body')) return a[scroll] - $(a)[c.toLowerCase()]();
+    var d = 'client' + c,
+      thtml = a.ownerDocument.documentElement,
+      body = a.ownerDocument.body;
+    return Math.max(html[scroll], body[scroll]) - Math.min(html[d], body[d]);
+  };
+
+  function both(a) {
+    return typeof a == 'object' ? a : {
+      top: a,
+      left: a
+    }
+  }
+})(jQuery);
