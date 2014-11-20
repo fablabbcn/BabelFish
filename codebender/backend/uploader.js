@@ -117,8 +117,9 @@ function pad(data, pageSize) {
 function uploadCompiledSketch(hexData, deviceName, protocol) {
   sketchData_ = hexData;
   inSync_ = false;
-  if (protocol != "avr109_beta") {
+  if (protocol != "avr109_beta" && !readToBuffer.listening) {
     chrome.serial.onReceive.addListener(readToBuffer);
+    readToBuffer.listening = true;
   }
   if (protocol == "stk500") {
     // Recursive awesomeness: Disconnect all devices whose name is the
