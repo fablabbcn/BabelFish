@@ -12,7 +12,8 @@ $("#flash").click (function () {
   _backup_online_transactions("/web/blink-example.hex", function (blob) {
     dbg("Blob length: ", blob.split("\n").length);
     document.getElementById('hex').innerHTML = blob;
-    cf.pluginHandler.doflash(
+
+    var flash_args = [
       true,			//select
       {
 	upload: {
@@ -25,9 +26,19 @@ $("#flash").click (function () {
 	}
       },                     //device
       undefined, 		//Flush with programmer
-      blob,			//binary
+      ParseHexFile(blob),			//binary
       function (from, progress) {
 	console.log("Uploading", from, progress);
-      });
+      }];
+
+    // Mimic the usbflash behavior
+    if (cf.pluginHandler.connected == true) {
+      cf.pluginHandler.disconnect(false);
+      setTimeout(function(){
+	cf.pluginHandler.doflash.apply(cf.pluginHandler, flash_args);
+      }, 200);
+    } else {
+      cf.pluginHandler.doflash.apply(cf.pluginHandler, flash_args);
+    };
   });
 });

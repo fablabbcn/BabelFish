@@ -52,14 +52,29 @@ HostBus.prototype = {
   // message listener.
   hostListener: function (channel,  cb) {
     if (channel) {
+      var callback = cb, cleanup = function () {
+	console.warn("No cleanup function defined.");
+      };
+      if (typeof cb.start !== 'undefined') {
+	callback = cb.start;
+	cleanup = cb.cleanup;
+      }
+
       console.log("RPCBus Listening on: " + channel);
       this.addRuntimeListener('onConnectExternal', function  (port) {
 	// Message comes with port
 	if (channel == port.name) {
 	  log("Connected: " + channel);
-	  port.onMessage.addListener( function (msg) {
+
+	  var msgHandler = function (msg) {
 	    log("RPCBus reveived connection message: ", msg);
-	    return cb(msg, port.postMessage.bind(port));
+	    return callback(msg, port.postMessage.bind(port));
+	  };
+
+	  port.onMessage.addListener(msgHandler);
+	  port.onDisconnect.addListener( function () {
+	    console.log("Disconnecting a port...");
+	    cleanup(msgHandler);
 	  });
 	}
       });
@@ -139,13 +154,22 @@ function RPCHost (name, obj) {
   bus.hostListener(this.obj_name, listener_listener);
 }
 
+RPCHost.prototype.listenerPaths = function (listeners) {
+  return listeners.map(function (l) {
+    if (typeof l === 'string') {
+      return l;
+    } else {
+      return l.start;
+    }
+  });
+};
 
 // Listener on mesages: get the request, execute it and send the
 // formatted result through sendResp.
 RPCHost.prototype.listener = function (allowed_methods, request, sendResp) {
   // Ignore calls not for you
   if (this.obj_name != request.object ||
-      allowed_methods.indexOf(request.method) == -1)
+      this.listenerPaths(allowed_methods).indexOf(request.method) == -1)
     return false;
 
   var method = this.path2callable(request.method),
@@ -158,14 +182,15 @@ RPCHost.prototype.listener = function (allowed_methods, request, sendResp) {
     method.apply(this.obj, args);
   } catch (e) {
     this.sendError(e, sendResp);
+  } finally {
+    // Retain the ability to call sendResp
+    return true;
   }
-
-  // Retain the ability to call sendResp
-  return true;
 };
 
 RPCHost.prototype.sendError = function (error, sendResp) {
-  return sendResp(argsEncode([]), err.message);
+  sendResp({args: argsEncode([]), error: error.message});
+  throw error;
 };
 
 // XXX: Maybe this should block until the callback is done. If this
@@ -176,13 +201,17 @@ RPCHost.prototype.sendError = function (error, sendResp) {
 // Get a callable that when called will package it's arguments and
 // pass them to sendResp
 RPCHost.prototype.cbHandlerFactory = function (sendResp) {
-  return (function (sendResp, var_args) {
-    var args = Array.prototype.slice.call(arguments, 1),
-	msg = {args: argsEncode(args), err: null};
+  return (function (var_args) {
+    var args = Array.prototype.slice.call(arguments),
+	msg = {args: argsEncode(args), error: null};
 
     log("RPCHost requesting callback with args:", args);
-    sendResp(msg);
-  }).bind(this, sendResp);
+    try {
+      sendResp(msg);
+    } catch (e) {
+      console.warn("Tried to send to a closed connection. FIXME");
+    }
+  }).bind(this);
 };
 
 // Get a callable member of this.obj given the name. Dot paths are

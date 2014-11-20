@@ -37,7 +37,7 @@ $(CURDIR)/bundles:
 $(CURDIR)/npm_modules:
 	npm install
 
-$(CURDIR)/bundles/chrome-client.js $(CURDIR)/bundles/firefox-client.js: $(CLIENT_FILES)| $(CURDIR)/npm_modules $(CURDIR)/bundles
+browserify $(CURDIR)/bundles/chrome-client.js $(CURDIR)/bundles/firefox-client.js: $(CLIENT_FILES)| $(CURDIR)/npm_modules $(CURDIR)/bundles
 	npm run browserify
 
 plugin:

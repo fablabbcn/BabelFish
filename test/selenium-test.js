@@ -61,7 +61,6 @@ test.describe('Test', function() {
       });
   });
 
-  // Tests
   test.it("Echo bus service", function () {
     chrome.get("http://localhost:8080/test/testpages/echo/index.html").
       then(function () {
@@ -70,6 +69,13 @@ test.describe('Test', function() {
 	  assert.equal(entries[0], 'Received: "I mana sou"',
 		       "No proper echo mode.");
 	});
+      });
+  });
+
+  test.it("Errors", function () {
+    chrome.get("http://localhost:8080/test/testpages/chrome/error/index.html").
+      then(function () {
+
       });
   });
 

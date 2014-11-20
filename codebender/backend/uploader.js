@@ -43,7 +43,7 @@ function readToBuffer(readArg) {
 
   log(kDebugFine, "Pushing " + hexData.length + " bytes onto buffer for: " + readArg.connectionId + " " + hexData);
   for (var i = 0; i < hexData.length; ++i) {
-//    log(kDebugFine, i);
+    //    log(kDebugFine, i);
     databuffer[readArg.connectionId].push(hexData[i]);
   }
   log(kDebugFine, "Buffer for " + readArg.connectionId + " now of size " + databuffer[readArg.connectionId].length);
@@ -51,7 +51,8 @@ function readToBuffer(readArg) {
 
 function readFromBuffer(connectionId, maxBytes, callback) {
   if (typeof(databuffer[connectionId]) == "undefined") {
-    log(kDebugFine, "No buffer for: " + connectionId);
+    log(kDebugFine, "No buffer for: " + connectionId + ", creating...");
+    databuffer[connectionId] = [];
     callback({bytesRead: 0, data: []});
     return;
   }
@@ -120,7 +121,29 @@ function uploadCompiledSketch(hexData, deviceName, protocol) {
     chrome.serial.onReceive.addListener(readToBuffer);
   }
   if (protocol == "stk500") {
-    chrome.serial.connect(deviceName, { bitrate: 115200 }, stkConnectDone.bind(null, hexData));
+    // Recursive awesomeness: Disconnect all devices whose name is the
+    // deviceName and when you check everything connect to
+    // deviceName. Note that there is no way to find out the path of
+    // the device if the connect() method does not set it as name so
+    // we probably wont play with other serial frameworks.
+    chrome.serial.getConnections(function _maybeDisconnectFirst(connections){
+      if (connections.length == 0) {
+	log(kDebugFine, "Connecting to " + deviceName);
+	chrome.serial.connect(deviceName, { bitrate: 115200, name: deviceName },
+			      stkConnectDone.bind(null, hexData));
+	return;
+      }
+
+      var candid = connections.pop();
+      log(kDebugFine, "Checking connection " + candid.name);
+      if (candid.name == deviceName) {
+	chrome.serial.disconnect(candid.connectionId,function () {
+	  _maybeDisconnectFirst(connections);
+	});
+      } else {
+	_maybeDisconnectFirst(connections);
+      }
+    });
   } else if (protocol == "avr109") {
     // actually want tocheck that board is leonardo / micro / whatever
     kickLeonardoBootloader(deviceName);
@@ -206,7 +229,7 @@ function stkConsumeMessage(connectionId, payloadSize, callback) {
           }
         } else {
           log(kDebugError, "Expected STK_INSYNC (" + STK_INSYNC + "). Got: " + hexData[i] + ". Ignoring.");
-//          state = ReadState.ERROR;
+	  //          state = ReadState.ERROR;
         }
       } else if (state == ReadState.READY_FOR_PAYLOAD) {
         accum.push(hexData[i]);
@@ -249,8 +272,8 @@ function stkConsumeMessage(connectionId, payloadSize, callback) {
         // Mega hack (temporary)
         log(kDebugFine, "Mega Hack: Writing: " + hexRep([STK_GET_SYNC, STK_CRC_EOP]));
         chrome.serial.send(connectionId, hexToBin([STK_GET_SYNC, STK_CRC_EOP]), function() {
-            readFromBuffer(connectionId, 1024, handleRead);
-          });
+          readFromBuffer(connectionId, 1024, handleRead);
+        });
       } else {
         // Don't tight-loop waiting for the message.
         setTimeout(function() {
@@ -295,8 +318,8 @@ function stkWriteThenRead(connectionId, outgoingMsg, responsePayloadSize, callba
   var outgoingBinary = hexToBin(outgoingMsg);
   // schedule a read in 100ms
   chrome.serial.send(connectionId, outgoingBinary, function(writeArg) {
-      stkConsumeMessage(connectionId, responsePayloadSize, callback);
-    });
+    stkConsumeMessage(connectionId, responsePayloadSize, callback);
+  });
 }
 
 function stkConnectDone(hexCode, connectArg) {
@@ -323,8 +346,8 @@ function stkDtrSent(ok, connectionId) {
   log(kDebugFine, "DTR sent (low) real good");
 
   readFromBuffer(connectionId, 1024, function(readArg) {
-      stkDrainedAgain(readArg, connectionId);
-    });
+    stkDrainedAgain(readArg, connectionId);
+  });
 
 }
 
@@ -333,11 +356,13 @@ function stkDrainedAgain(readArg, connectionId) {
   if (readArg.bytesRead == 1024) {
     // keep draining
     readFromBuffer(connectionId, 1024, function(readArg) {
-        stkDrainedBytes(readArg, connectionId);
-      });
+      stkDrainedBytes(readArg, connectionId);
+    });
   } else {
     // Start the protocol
-    setTimeout(function() { stkWriteThenRead(connectionId, [STK_GET_SYNC, STK_CRC_EOP], 0, stkInSyncWithBoard); }, 50);
+    setTimeout(function() {
+      stkWriteThenRead(connectionId, [STK_GET_SYNC, STK_CRC_EOP],
+		       0, stkInSyncWithBoard); }, 50);
   }
 
 }
@@ -347,8 +372,8 @@ function stkDrainedBytes(readArg, connectionId) {
   if (readArg.bytesRead == 1024) {
     // keep draining
     readFromBuffer(connectionId, 1024, function(readArg) {
-        stkDrainedBytes(readArg, connectionId);
-      });
+      stkDrainedBytes(readArg, connectionId);
+    });
   } else {
     log(kDebugFine, "About to set DTR low");
 
@@ -450,13 +475,13 @@ function stkProgramFlash(connectionId, data, offset, length, doneCallback) {
   programMessage.push(STK_CRC_EOP);
 
   stkWriteThenRead(connectionId, loadAddressMessage, 0, function(connectionId, ok, reponse) {
-      if (!ok) { log(kDebugError, "Error programming the flash (load address)"); return; }
-      stkWriteThenRead(connectionId, programMessage, 0, function(connectionId, ok, response) {
-          if (!ok) { log(kDebugError, "Error programming the flash (send data)"); return }
-          // Program the next section
-          stkProgramFlash(connectionId, data, offset + length, length, doneCallback);
-        });
+    if (!ok) { log(kDebugError, "Error programming the flash (load address)"); return; }
+    stkWriteThenRead(connectionId, programMessage, 0, function(connectionId, ok, response) {
+      if (!ok) { log(kDebugError, "Error programming the flash (send data)"); return }
+      // Program the next section
+      stkProgramFlash(connectionId, data, offset + length, length, doneCallback);
     });
+  });
 }
 
 function storeAsTwoBytes(n) {
@@ -532,7 +557,7 @@ function waitForNewDevice(oldDevices, deadline) {
     } else {
       log(kDebugNormal, "Aha! Connecting to: " + appeared[0]);
       setTimeout(function() {
-        chrome.serial.connect(appeared[0], { bitrate: 57600 }, avrConnectDone)}, 500);
+        chrome.serial.connect(appeared[0], { bitrate: 57600, name: appeared[0] }, avrConnectDone);}, 500);
     }
   });
 }
@@ -543,14 +568,14 @@ function kickLeonardoBootloader(originalDeviceName) {
   var oldDevices = [];
   chrome.serial.getDevices(function(devicesArg) {
     oldDevices = devicesArg;
-    chrome.serial.connect(originalDeviceName, { bitrate: kMagicBaudRate }, function(connectArg) {
+    chrome.serial.connect(originalDeviceName, { bitrate: kMagicBaudRate, name: originalDeviceName}, function(connectArg) {
       log(kDebugNormal, "Made sentinel connection to " + originalDeviceName);
       chrome.serial.disconnect(connectArg.connectionId, function(disconnectArg) {
         log(kDebugNormal, "Disconnected from " + originalDeviceName);
         waitForNewDevice(oldDevices, (new Date().getTime()) + 10000);
-//        setTimeout(function() {
-//          chrome.serial.connect(originalDeviceName, { bitrate: 57600 }, avrConnectDone);
-//        }, 300);
+	//        setTimeout(function() {
+	//          chrome.serial.connect(originalDeviceName, { bitrate: 57600 }, avrConnectDone);
+	//        }, 300);
       });
     });
   });
@@ -650,8 +675,8 @@ function avrDrainedAgain(readArg, connectionId) {
   if (readArg.bytesRead == 1024) {
     // keep draining
     readFromBuffer(connectionId, 1024, function(readArg) {
-        avrDrainedBytes(readArg, connectionId);
-      });
+      avrDrainedBytes(readArg, connectionId);
+    });
   } else {
     // Start the protocol
 
@@ -731,8 +756,8 @@ function avrProgramFlash(connectionId, data, offset, length, doneCallback) {
     avrProgramFlash(connectionId, data, offset + length, length, doneCallback);
   });
 
-//  log(kDebugNormal, "Want to write: " + hexRep(loadAddressMessage));
-//  log(kDebugNormal, "Then: " + hexRep(programMessage));
+  //  log(kDebugNormal, "Want to write: " + hexRep(loadAddressMessage));
+  //  log(kDebugNormal, "Then: " + hexRep(programMessage));
 
-//  avrProgramFlash(connectionId, data, offset + length, length, doneCallback);
+  //  avrProgramFlash(connectionId, data, offset + length, length, doneCallback);
 }

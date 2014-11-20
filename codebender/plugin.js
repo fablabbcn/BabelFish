@@ -72,6 +72,8 @@ if (!chrome.serial) {
     this.version = "Chrome-serial (no plugin)";
     this.instance_id = window.plugins_initialized++;
 
+    this.connection_ = null;
+
     this.errorCallback = function () {}
   }
 
@@ -124,7 +126,7 @@ if (!chrome.serial) {
 	dbg("Code length", code.length, typeof code,
 	    "Protocol:", protocol,
 	    "Device:", device);
-	uploadCompiledSketch(ParseHexFile(code), device, protocol);
+	uploadCompiledSketch(code, device, protocol);
 	cb();
       }, 0);
     },
@@ -152,7 +154,9 @@ if (!chrome.serial) {
     probeUSB: function () {},
 
     // Inherently sync or void methods
-    disconnect: function () {},
+    disconnect: function () {
+      this.serial.disconnect();
+    },
 
     init: function () {},
 

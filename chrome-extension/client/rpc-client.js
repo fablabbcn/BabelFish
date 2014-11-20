@@ -28,10 +28,10 @@ if (!chrome) {
   // - ret: return value (not implemented)
   //
   var dbg = (function () {
-    var DEBUG=true;
+    var DEBUG=false;
     if (DEBUG) {
-      return function (msg) {
-	console.log("[Client] " + msg);
+      return function (var_args) {
+	console.log.apply(console, ["[Client] "].concat(Array.prototype.slice.call(arguments)));
       };
     } else {
       return function (msg) {};
@@ -49,20 +49,9 @@ if (!chrome) {
 
   function ClientBus(id) {
     this.extensionId = id;
-    this.pingTimeout = 5000;
     this.runtime_ = chrome.runtime;
 
-    this.clientMessage(false, "ping", function (msg) {
-      if (msg == "pong") {
-	this.hostExists_ = true;
-      }
-    });
-
-    setTimeout(function () {
-      if (!this.hostExists_)
-	err("Host did not respond in " + this.pingTimeout +
-		    "ms. Extension id: "+this.extensionId );
-    }.bind(this), this.pingTimeout);
+    console.log("Contacting host on id:", id);
   }
 
   ClientBus.prototype = {
@@ -85,10 +74,10 @@ if (!chrome) {
 	port.postMessage(msg);
 	port.onMessage.addListener(function (msg) {cb(msg);});
       } else {
-	dbg("Sending: " + str(msg));
+	dbg("Sending: ", msg);
 	this.runtime_.sendMessage (
 	  this.extensionId, msg, {}, (function (msg) {
-	    dbg("BUS received: " + str(msg));
+	    dbg("BUS received: ", msg);
 	    cb(msg);
 	  }).bind(this));
       }
@@ -145,13 +134,15 @@ if (!chrome) {
       this._setup = true;
     },
 
-    register_method: function (isListener, name) {
-      var names = name.split('.'),
+    register_method: function (isListener, entry) {
+      var name = entry.start || entry,
+	  names = name.split('.'),
 	  method = names.pop(),
 	  obj = names.reduce(function (ob, m) {
 	    ob[m] = ob[m] || {};
 	    return ob[m];
 	  }, this) || this;
+      dbg("Registering method", method);
       obj[method] = this._rpc.bind(this, isListener, name);
     },
 
@@ -178,8 +169,7 @@ if (!chrome) {
       // TODO: raise error in case of multiple callbacks.
       var args = Array.prototype.slice.call(arguments, 2),
 	  rich_args = argsEncode(args);
-      dbg("Calling chrome." + this.obj_name + '.' + fnname +
-	  "(" + args.map(JSON.stringify) + ")");
+      dbg("Calling chrome." + this.obj_name + '.' + fnname + "(", args, ")");
 
       // Send the rpc call.
       this._message({

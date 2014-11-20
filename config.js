@@ -4,7 +4,7 @@ var config = {
   extensionId: "mpnpognhgldjlcgnckgiofbdldbhpbnf",
   methods: {
     serial: {
-      methods: ['getDevices', 'send', 'connect', 'disconnect', 'setControlSignals', 'getControlSignals'],
+      methods: ['getDevices', 'send', 'connect', 'disconnect', 'setControlSignals', 'getControlSignals', 'getConnections'],
       listeners: ['onReceive.addListener']
     },
     runtime: {
