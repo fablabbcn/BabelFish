@@ -121,6 +121,7 @@ function uploadCompiledSketch(hexData, deviceName, protocol) {
     chrome.serial.onReceive.addListener(readToBuffer);
     readToBuffer.listening = true;
   }
+
   if (protocol == "stk500") {
     // Recursive awesomeness: Disconnect all devices whose name is the
     // deviceName and when you check everything connect to

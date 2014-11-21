@@ -1,3 +1,6 @@
+// XXXXX: REMOVE ME
+$.get = function () {};
+
 function EventManager () {
   this._listeners = {};
 }
@@ -61,8 +64,9 @@ EventManager.prototype = {
   }
 };
 
-function PluginHandler () {
-  this.owner = undefined;
+function PluginHandler (owner) {
+  // The compilerflasher object
+  this.owner = owner;
   this.max_monitor_length = 5000;
   this.tabID = this.uuid4();
   this.initializePlugin();
@@ -250,42 +254,45 @@ PluginHandler.prototype = {
     // XXX: Maybe uninitialize a previous plugin. C++ should be able to handle this case though.
     this.plugin_ = new Plugin();
 
-    window.plugin_init_interval = setInterval(function(){
-      if(typeof this.plugin_.probeUSB !== 'undefined')
+    var self = this;
+    function waitForPlugin_ () {
+      if(typeof self.plugin_.probeUSB !== 'undefined')
       {
-        clearInterval(window.plugin_init_interval);
-
-        this.plugin_initialized = true;
-        this.plugin_version = this.plugin_.version;
-        window.plugin_version = this.plugin_version;
+	console.log("Found plugin");
+        self.plugin_initialized = true;
+        self.plugin_version = self.plugin_.version;
+        window.plugin_version = self.plugin_version;
         url = "{{  url('CodebenderUtilitiesBundle_logdb', {actionid : 35, meta: 'PLUGIN_META'}) }}";
-        url = url.replace("PLUGIN_META", JSON.stringify({ "plugin" : true, "version": this.plugin_.version}) );
+        url = url.replace("PLUGIN_META", JSON.stringify({ "plugin" : true, "version": self.plugin_.version}) );
         $.get(url);
 
-        this.validateVersion(this.minVersion);
-        if (typeof this.plugin_.setErrorCallback !== 'undefined')
-          this.plugin_.setErrorCallback(this.plugin_error_logger);
+        self.validateVersion(self.minVersion);
+        if (typeof self.plugin_.setErrorCallback !== 'undefined')
+          self.plugin_.setErrorCallback(self.plugin_error_logger);
 
-	if (typeof this.plugin_.init !== 'undefined')
+	if (typeof self.plugin_.init !== 'undefined')
 	{
-	  this.plugin_.init();
-          if (this.plugin_.instance_id != 'undefined') {
-            this.tabID = parseInt(this.plugin_.instance_id);
+	  self.plugin_.init();
+          if (self.plugin_.instance_id != 'undefined') {
+            self.tabID = parseInt(self.plugin_.instance_id);
           }
 	}
 
-	if (typeof this.plugin_.closeTab !== 'undefined')
+	if (typeof self.plugin_.closeTab !== 'undefined')
 	{
 	  $( window ).unload(function ()
 		             {
-			       this.plugin_.closeTab();
-			       this.plugin_.deleteMap();
+			       self.plugin_.closeTab();
+			       self.plugin_.deleteMap();
 		             });
 	} else {
-	  this.disconnect();
+	  self.disconnect();
 	}
+      } else {
+	setTimeout(waitForPlugin_, 500);
       }
-    }.bind(this), 100);
+    }
+    waitForPlugin_();
   },
 
   showPlugin: function() {
@@ -329,12 +336,8 @@ PluginHandler.prototype = {
   },
 
   validateVersion: function(version) {
-    if (chrome && chrome.serial) {
-      this.plugin_validated = true;
-      return;
-    }
-
-    if (this.comparePluginVersions(this.parseVersionString(this.plugin_.version), this.parseVersionString(version)) < 0)
+    if (this.comparePluginVersions(this.parseVersionString(this.plugin_.version), this.parseVersionString(version)) < 0 &&
+	!(chrome && chrome.serial))
     {
       var alert = this.browserSpecificPluginInstall("You need to update the Codebender Plugin. ");
       this.owner.setOperationOutput(alert);
@@ -634,7 +637,7 @@ PluginHandler.prototype = {
 
 
     this.getFire();
-    setInterval(this.getFire.bind(this), 1000);
+    setInterval(this.getFire.bind(this), 5000);
   },
 
   show_alert: function(message, divname) {
@@ -652,7 +655,7 @@ PluginHandler.prototype = {
    Serial Monitor functions
    */
   connect: function() {
-    speed = $("#cb_cf_baud_rates option:selected").val();
+    speed = $("#cb_cf_baud_rates option:selected").val() || 9600;
     if (this.connected == false) {
       var url = "{{  url('CodebenderUtilitiesBundle_logdb', {actionid : 18, meta: 'SERIAL_MONITOR_META'}) }}";
       url = url.replace("SERIAL_MONITOR_META", JSON.stringify({ "baudrate" : speed, "port": $("#cb_cf_ports").val(), "tabID": this.tabID }) );
@@ -670,7 +673,7 @@ PluginHandler.prototype = {
 	    this.portslist.options[this.portslist.selectedIndex].text,
 	    speed,
 	    function (from, line) {
-              this.serialHudAppend(line);
+              pl.serialHudAppend(line);
 	    }
           );
         }
@@ -729,7 +732,7 @@ PluginHandler.prototype = {
 	  {
 	    var ph = this;
 	    window.portValidatorInterval = setInterval(function () {
-	      this.plugin_.availablePorts(function (ports) {
+	      ph.plugin_.availablePorts(function (ports) {
 		if (ports.indexOf(port) == -1){
 		  clearInterval(window.portValidatorInterval);
 		  ph.disconnect(false);
@@ -812,11 +815,11 @@ PluginHandler.prototype = {
 
   serialHudAppend: function(line) {
     if (isNaN(line)) {
-      serialHudWrite($("#serial_hud").html() + line + "<br>");
+      this.serialHudWrite($("#serial_hud").html() + line + "<br>");
     } else {
       if (line == "13")    return;
-      if (line == "10")    serialHudWrite($("#serial_hud").html() + "<br>");
-      if (line != "10")    serialHudWrite($("#serial_hud").html() + String.fromCharCode(line));
+      if (line == "10")    this.serialHudWrite($("#serial_hud").html() + "<br>");
+      if (line != "10")    this.serialHudWrite($("#serial_hud").html() + String.fromCharCode(line));
     }
   },
 
@@ -893,9 +896,7 @@ compilerflasher = function(lf) {
   }
 
 
-  this.pluginHandler = new PluginHandler();
-
-  this.pluginHandler.owner = this;
+  this.pluginHandler = new PluginHandler(this);
 
   var cb = this;
   if($("#cb_cf_operation_output").length > 0)
@@ -1523,7 +1524,7 @@ window.flashing_errors = {
   $.fn._scrollable = function() {
     return this.map(function() {
       var a = this,
-        isWin = !a.nodeName || $.inArray(a.nodeName.toLowerCase(), ['iframe', '#document', 'html', 'body']) != -1;
+          isWin = !a.nodeName || $.inArray(a.nodeName.toLowerCase(), ['iframe', '#document', 'html', 'body']) != -1;
       if (!isWin) return a;
       var b = (a.contentWindow || a).document || a.ownerDocument || a;
       return /webkit/i.test(navigator.userAgent) || b.compatMode == 'BackCompat' ? b.body : b.documentElement;
@@ -1547,28 +1548,28 @@ window.flashing_errors = {
     return this._scrollable().each(function() {
       if (e == null) return;
       var d = this,
-        $elem = $(d),
-        targ = e,
-        toff, attr = {},
-        win = $elem.is('html,body');
+          $elem = $(d),
+          targ = e,
+          toff, attr = {},
+          win = $elem.is('html,body');
       switch (typeof targ) {
-        case 'number':
-        case 'string':
-          if (/^([+-]=)?\d+(\.\d+)?(px|%)?$/.test(targ)) {
-            targ = both(targ);
-            break
-          }
-          targ = $(targ, this);
-          if (!targ.length) return;
-        case 'object':
-          if (targ.is || targ.style) toff = (targ = $(targ)).offset()
+      case 'number':
+      case 'string':
+        if (/^([+-]=)?\d+(\.\d+)?(px|%)?$/.test(targ)) {
+          targ = both(targ);
+          break
+        }
+        targ = $(targ, this);
+        if (!targ.length) return;
+      case 'object':
+        if (targ.is || targ.style) toff = (targ = $(targ)).offset()
       }
       $.each(g.axis.split(''), function(i, a) {
         var b = a == 'x' ? 'Left' : 'Top',
-          pos = b.toLowerCase(),
-          key = 'scroll' + b,
-          old = d[key],
-          max = h.max(d, a);
+            pos = b.toLowerCase(),
+            key = 'scroll' + b,
+            old = d[key],
+            max = h.max(d, a);
         if (toff) {
           attr[key] = toff[pos] + (win ? 0 : old - $elem.offset()[pos]);
           if (g.margin) {
@@ -1599,11 +1600,11 @@ window.flashing_errors = {
 
   h.max = function(a, b) {
     var c = b == 'x' ? 'Width' : 'Height',
-      scroll = 'scroll' + c;
+	scroll = 'scroll' + c;
     if (!$(a).is('html,body')) return a[scroll] - $(a)[c.toLowerCase()]();
     var d = 'client' + c,
-      thtml = a.ownerDocument.documentElement,
-      body = a.ownerDocument.body;
+	thtml = a.ownerDocument.documentElement,
+	body = a.ownerDocument.body;
     return Math.max(html[scroll], body[scroll]) - Math.min(html[d], body[d]);
   };
 

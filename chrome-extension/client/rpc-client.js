@@ -93,7 +93,7 @@ if (!chrome) {
   // id: the extension id
   // obj: name of the remote object
   // supported_calls: array of names of calls supported.
-  function RPCClient(id, obj_name, supported_methods, supported_listeners) {
+  function RPCClient(id, obj_name) {
     console.assert(typeof(id) == 'string', "Extension id should be a string");
     console.assert(typeof(obj_name) == 'string',
 		   "object name should be a string, not " + typeof(obj_name));
@@ -122,7 +122,7 @@ if (!chrome) {
 
     // XXX: The callback is called very very late.
     // bus.clientMessage(false, {method: 'setup', object: obj_name},
-    // 									this.setup_methods.bind(this));
+    // 				this.setup_methods.bind(this));
   }
 
   RPCClient.prototype = {
@@ -142,8 +142,13 @@ if (!chrome) {
 	    ob[m] = ob[m] || {};
 	    return ob[m];
 	  }, this) || this;
+
       dbg("Registering method", method);
       obj[method] = this._rpc.bind(this, isListener, name);
+
+      if (entry.cleanup) {
+	this.cleanUps[entry.cleanup] = true;
+      }
     },
 
     _msg_callback: function (callback, resp) {
@@ -160,7 +165,7 @@ if (!chrome) {
     // Send a message potentially opening a connection, running callback
     // on response. In the case of a connection the callback is being on
     // _every_ response on the created port thus creating a listener.
-    _message: function (msg, callback, isListener) {
+    _message: function (msg, callback, isListener, isCleanup) {
       bus.clientMessage(isListener && msg.object + '.' + msg.method,
 			msg, this._msg_callback.bind(this, callback));
     },
@@ -168,17 +173,20 @@ if (!chrome) {
     _rpc: function (isListener, fnname, var_args) {
       // TODO: raise error in case of multiple callbacks.
       var args = Array.prototype.slice.call(arguments, 2),
-	  rich_args = argsEncode(args);
+	  rich_args = argsEncode(args),
+	  msg = {
+	    timestamp: (new Date).getTime(),
+	    object: this.obj_name,
+	    method: fnname,
+	    args: rich_args,
+	    error: null
+	  };
       dbg("Calling chrome." + this.obj_name + '.' + fnname + "(", args, ")");
 
-      // Send the rpc call.
-      this._message({
-	timestamp: (new Date).getTime(),
-	object: this.obj_name,
-	method: fnname,
-	args: rich_args,
-	error: null
-      }, rich_args.callback, isListener);
+      this.listeningMethods[rich_args.callback] = msg.methodId;
+      // Send the rpc call. _message will deal with the callback
+      // cleanup.
+      this._message(msg, rich_args.callback, isListener);
     }
   };
 

@@ -42,3 +42,11 @@ $("#flash").click (function () {
     };
   });
 });
+
+$('#monitor').click(function () {
+  cf.pluginHandler.connected = false;
+  cf.pluginHandler.connect();
+  $('#monitor').click(function () {
+    cf.pluginHandler.disconnect();
+  });
+});

@@ -8,10 +8,7 @@ var config = {
       listeners: [{start: 'onReceive.addListener',
 		   cleanup: 'onReceive.removeListener'}]
     },
-    runtime: {
-      methods: ['getPlatformInfo'],
-      listeners: ['onLaunched.addListener']
-    },
+
     app: {
       methods: ['window.create'],
       listeners: ['runtime.onLaunched.addListener']
@@ -32,6 +29,11 @@ var config = {
     alarms: {
       methods: ['clear', 'create', 'getAll'],
       listeners: ['onAlarm.addListener']
+    },
+
+    runtime: {
+      methods: ['getPlatformInfo'],
+      listeners: ['onLaunched.addListener']
     }
   }
 };
