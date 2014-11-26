@@ -402,7 +402,7 @@ function stkInSyncWithBoard(connectionId, ok, data) {
   stkWriteThenRead(connectionId, [STK_GET_PARAMETER, STK_HW_VER, STK_CRC_EOP], 1, stkReadHardwareVersion);
 }
 
-function stkReadHardwareVersion(connectionId, ok, data) {
+xfunction stkReadHardwareVersion(connectionId, ok, data) {
   log(kDebugFine, "HardwareVersion: " + ok + " / " + data);
   stkWriteThenRead(connectionId, [STK_GET_PARAMETER, STK_SW_VER_MAJOR, STK_CRC_EOP], 1, stkReadSoftwareMajorVersion);
 }

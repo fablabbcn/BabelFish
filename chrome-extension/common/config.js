@@ -5,21 +5,24 @@ var config = {
   methods: {
     serial: {
       methods: ['getDevices', 'send', 'connect', 'disconnect', 'setControlSignals', 'getControlSignals', 'getConnections'],
-      listeners: [{start: 'onReceive.addListener',
-		   cleanup: 'onReceive.removeListener'}]
+      listeners: [{starter: 'onReceive.addListener',
+		   cleaner: 'onReceive.removeListener'}]
     },
 
     app: {
       methods: ['window.create'],
-      listeners: ['runtime.onLaunched.addListener']
+      listeners: [{starter: 'runtime.onLaunched.addListener',
+                   cleaner: 'runtime.onLaunched.removeListener'}]
     },
     notifications: {
       methods: ['create', 'clear'],
-      listeners: ['onClicked.addListener']
+      listeners: [{starter: 'onClicked.addListener',
+                   cleaner: 'onClicked.removeListener'}]
     },
     storage: {
       methods: ['local.get', 'local.set'],
-      listeners: ['onChanged.addListener']
+      listeners: [{starter: 'onChanged.addListener',
+                   cleaner: 'onChanged.removeListener'}]
     },
     syncFileSystem: {
       methods: ['requestFileSystem'],
@@ -28,12 +31,14 @@ var config = {
 
     alarms: {
       methods: ['clear', 'create', 'getAll'],
-      listeners: ['onAlarm.addListener']
+      listeners: [{starter: 'onAlarm.addListener',
+                   cleaner: 'onAlarm.removeListener'}]
     },
 
     runtime: {
       methods: ['getPlatformInfo'],
-      listeners: ['onLaunched.addListener']
+      listeners: [{starter: 'onLaunched.addListener',
+                   cleaner: 'onLaunched.removeListener'}]
     }
   }
 };

@@ -15,10 +15,10 @@ MOCHA = mocha $(DEBUG)
 
 ## CHROME TESTS
 # URL = http://localhost:8080/test/testpages/serial/index.html
-# URL = http://localhost:8080/test/testpages/chrome-listener/index.html
+URL = http://localhost:8080/test/testpages/chrome-listener/index.html
 
 ## Codebender tests
-URL = http://localhost:8080/codebender/test/test_ports/index.html
+# URL = http://localhost:8080/codebender/test/test_ports/index.html
 
 CHROME_TEST = test/selenium-test.js
 FIREFOX_TEST = test/firefox-test.js

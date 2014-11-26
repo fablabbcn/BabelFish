@@ -2,6 +2,10 @@ var msg = "I mana sou",
     cnt = 0;
 
 function rcv (msg) {
+  if (!msg) {
+    return true;
+  }
+
   if (msg.error) {
     log('errors', "Remote error(id: " + msg.extensionId + "): " + msg.error);
   } else {

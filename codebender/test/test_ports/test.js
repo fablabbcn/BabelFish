@@ -1,2 +1,2 @@
-var cf = new PluginHandler();
-cf.getFire();
+var cf = new compilerflasher();
+cf.pluginHandler.getFire();

@@ -11,10 +11,10 @@ function binToHex(bin) {
 
 // May be destructive
 function argsEncode(args) {
-  var ret = {callback: null};
+  var ret = {callbackRaw: null};
   ret.args = args.map(function (arg) {
     if (arg instanceof Function) {
-      ret.callback = arg;
+      ret.callbackRaw = arg;
     } else if (arg instanceof ArrayBuffer) {
       return {type: 'arraybuffer', val: binToHex(arg)};
     }

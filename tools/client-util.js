@@ -25,3 +25,6 @@ try {
 } catch (e) {
   ;
 }
+
+window.log = log;
+window.str = str;

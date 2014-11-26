@@ -2,5 +2,5 @@
 ;;; For more information see (info "(emacs) Directory Variables")
 
 ((nil
-  (compilation-directory . "/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/")
-  (compile-command . "make clean bundle.js")))
+  (compilation-directory . "/Users/drninjabatman/Projects/Codebendercc/BabelFish/")
+  (compile-command . "make browserify")))

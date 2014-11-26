@@ -1,5 +1,7 @@
 // File: /chrome-extension/client/rpc-client.js
 
+// XXX: move cleaner/listener management code to common.
+
 if (!chrome) {
   throw Error("This doesn't seem to be chrome. No chorme obj.");
 }
@@ -28,7 +30,7 @@ if (!chrome) {
   // - ret: return value (not implemented)
   //
   var dbg = (function () {
-    var DEBUG=false;
+    var DEBUG=true;
     if (DEBUG) {
       return function (var_args) {
 	console.log.apply(console, ["[Client] "].concat(Array.prototype.slice.call(arguments)));
@@ -42,14 +44,24 @@ if (!chrome) {
     throw new Error("[Client:error] " + msg);
   }
 
-  var method_type = {
+  // Methods bounce off the server once and listeners create a client
+  // side port.
+  var methodType = {
     METHOD: false,
+    CLEANER: true,
     LISTENER: true
   }, bus;
 
   function ClientBus(id) {
     this.extensionId = id;
-    this.runtime_ = chrome.runtime;
+
+    // Keep a clean reference of the real chrome.runtime to be able to
+    // send messages.
+    this.runtime_ = window.runtime_ || chrome.runtime;
+    window.runtime_ = this.runtime_;
+
+    // Each port is bound to a callback id
+    this.ports = {};
 
     console.log("Contacting host on id:", id);
   }
@@ -64,21 +76,24 @@ if (!chrome) {
     },
 
     // cb(msg)
-    clientMessage: function (persist, msg, cb) {
-      cb = cb  || this.default_cb;
+    clientMessage: function (persist, msg, callbackWrap) {
+      callbackWrap = callbackWrap;
       if (persist) {
-	dbg("Connecting: " + str(msg));
+	dbg("Connecting to channel", msg.object);
 	var port = this.runtime_.connect(this.extensionId, {name: msg.object});
-	// cb has access only to msg, not to any other arguments the API
-	// provides.
+	// cb has access only to msg, not to any other arguments the
+	// API may provides.
 	port.postMessage(msg);
-	port.onMessage.addListener(function (msg) {cb(msg);});
+        if (callbackWrap)
+	  port.onMessage.addListener(callbackWrap);
+        else
+          dbg("Sent cleaner msg",msg);
       } else {
-	dbg("Sending: ", msg);
+	dbg("Sending:", msg);
 	this.runtime_.sendMessage (
-	  this.extensionId, msg, {}, (function (msg) {
-	    dbg("BUS received: ", msg);
-	    cb(msg);
+	  this.extensionId, msg, {}, (function (rsp) {
+	    dbg("BUS received: ", rsp);
+	    callbackWrap(rsp);
 	  }).bind(this));
       }
     },
@@ -112,13 +127,14 @@ if (!chrome) {
     }
 
     // Make sure there is a bus available
-    if (!bus) bus = new ClientBus(id);
+    if (!window.bus) window.bus = new ClientBus(id);
     this.extensionId = id;
     this.obj_name = obj_name;
     if (!config.methods[obj_name])
       err('Tried to connect to unconfigured object: chrome.' + obj_name);
 
     this.setup_methods(config.methods[obj_name]);
+    this.bus = window.bus;
 
     // XXX: The callback is called very very late.
     // bus.clientMessage(false, {method: 'setup', object: obj_name},
@@ -126,16 +142,22 @@ if (!chrome) {
   }
 
   RPCClient.prototype = {
-    setup_methods: function (rcp) {
-      (rcp.methods || []).forEach(
-	this.register_method.bind(this, method_type.METHOD));
-      (rcp.listeners || []).forEach(
-	this.register_method.bind(this, method_type.LISTENER));
+    setup_methods: function (config) {
+      this.availableListeners = [];
+      this.availableCleaners = {};
+
+      (config.methods || []).forEach(
+	this.registerMethod.bind(this, methodType.METHOD));
+      (config.listeners || []).forEach(
+	this.registerMethod.bind(this, methodType.LISTENER));
+      (Object.getOwnPropertyNames(this.availableCleaners) || []).forEach(
+	this.registerMethod.bind(this, methodType.CLEANER));
+
       this._setup = true;
     },
 
-    register_method: function (isListener, entry) {
-      var name = entry.start || entry,
+    registerMethod: function (isListener, entry) {
+      var name = entry.starter || entry,
 	  names = name.split('.'),
 	  method = names.pop(),
 	  obj = names.reduce(function (ob, m) {
@@ -143,50 +165,80 @@ if (!chrome) {
 	    return ob[m];
 	  }, this) || this;
 
+      if (entry.cleaner)
+	this.availableCleaners[entry.cleaner] = entry.starter;
+
+      if (isListener)
+        this.availableListeners.push(name);
+
       dbg("Registering method", method);
-      obj[method] = this._rpc.bind(this, isListener, name);
-
-      if (entry.cleanup) {
-	this.cleanUps[entry.cleanup] = true;
-      }
+      obj[method] = this._rpc.bind(this, name);
     },
 
-    _msg_callback: function (callback, resp) {
-      if (resp.error) {
-	err(resp.error);
-      } else {
-	if (callback) {
-	  callback.apply(null, argsDecode(resp.args));
+    msgCallbackFactory: function (callback) {
+      if (!callback)
+        return callback;
+
+      var ret = function (resp) {
+        // Ignore free resoponses
+	if (!resp)
+	  return true;
+
+        // Raise an error if the server reports one.
+	if (resp.error) {
+	  err(resp.error);
+	} else {
+          // If there is a callback call it.
+	  if (callback) {
+	    return callback.apply(null, argsDecode(resp.args));
+	  }
 	}
-      }
+        return true;
+      };
+
+      ret.callbackId = callback.callbackId;
+      return ret;
     },
 
-
-    // Send a message potentially opening a connection, running callback
-    // on response. In the case of a connection the callback is being on
-    // _every_ response on the created port thus creating a listener.
-    _message: function (msg, callback, isListener, isCleanup) {
-      bus.clientMessage(isListener && msg.object + '.' + msg.method,
-			msg, this._msg_callback.bind(this, callback));
+    // People may need to override this
+    callbackIdFactory: function (cb) {
+      // Not very likely that two calls are less than a milisecond
+      // appart even in parallel.
+      var id = (cb && cb.callbackId) || (new Date).getTime();
+      cb.callbackId = id;
+      return id;
     },
 
-    _rpc: function (isListener, fnname, var_args) {
-      // TODO: raise error in case of multiple callbacks.
-      var args = Array.prototype.slice.call(arguments, 2),
+    _rpc: function (fnname, var_args) {
+      var args = Array.prototype.slice.call(arguments, 1),
 	  rich_args = argsEncode(args),
 	  msg = {
 	    timestamp: (new Date).getTime(),
 	    object: this.obj_name,
 	    method: fnname,
 	    args: rich_args,
-	    error: null
-	  };
+	    error: null,
+	    callbackId: this.callbackIdFactory(rich_args.callbackRaw)
+	  },
+          // false if it's a cleaner
+          clientCallback = !(this.availableCleaners[fnname]) &&
+            rich_args.callbackRaw;
       dbg("Calling chrome." + this.obj_name + '.' + fnname + "(", args, ")");
 
-      this.listeningMethods[rich_args.callback] = msg.methodId;
       // Send the rpc call. _message will deal with the callback
       // cleanup.
-      this._message(msg, rich_args.callback, isListener);
+      this._message(msg, clientCallback);
+    },
+
+    // Send a message potentially opening a connection, running callback
+    // on response. In the case of a connection the callback is being on
+    // _every_ response on the created port thus creating a listener.
+    _message: function (msg, callbackRaw) {
+      var isListener = (this.availableListeners.indexOf(msg.method) != -1),
+	  callbackWrap = this.msgCallbackFactory(callbackRaw);
+
+      this.bus.clientMessage(isListener && msg.object + '.' + msg.method,
+			     msg, callbackWrap);
     }
   };
 

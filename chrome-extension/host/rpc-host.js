@@ -1,6 +1,6 @@
 // All hosts should share the same global bus
-var bus, log = (function () {
-  var DEBUG = true, bus;
+var bus, dbg = (function () {
+  var DEBUG = true;
   return function (msg) {
     if (DEBUG) {
       console.log.apply(console, Array.prototype.slice.apply(arguments));
@@ -12,15 +12,29 @@ function err(msg) {
   console.error("[Server:ERR] " + msg);
 }
 
+// Get a callable member of this.obj given the name. Dot paths are
+// supported.
+function path2callable (object, name) {
+  var names =  name.split('.'),
+      method = names.pop(),
+      obj = (names.reduce(function (ob, meth) {return ob[meth];}, object)
+	     || object);
+
+  if (!obj[method])
+    throw new Error('Bad object chrome.*.'+name);
+
+  return obj[method].bind(obj);
+};
+
 function HostBus() {
-  log("Host bus started.");
+  dbg("Host bus started.");
   this._listeners = {};
   this.hostListener(false, this.commandListener.bind(this));
 
   // Echo mode
   this.hostListener(false, (function (msg, cb) {
     if (msg == "ping") {
-      log("Client connected...");
+      dbg("Client connected...");
       cb("pong");
       return true;
     }
@@ -50,36 +64,38 @@ HostBus.prototype = {
 
   // If channel is provided listen on that channel otherwise it's a
   // message listener.
-  hostListener: function (channel,  cb) {
+  hostListener: function (channel,  cb, cleanCb) {
     if (channel) {
       var callback = cb, cleanup = function () {
-	console.warn("No cleanup function defined.");
+        if(cleanCb)
+          cleanCb(channel);
+        else
+	  console.warn("No cleanup function defined.");
       };
-      if (typeof cb.start !== 'undefined') {
-	callback = cb.start;
-	cleanup = cb.cleanup;
+      if (typeof cb.starter !== 'undefined') {
+	callback = cb.starter;
       }
 
       console.log("RPCBus Listening on: " + channel);
       this.addRuntimeListener('onConnectExternal', function  (port) {
 	// Message comes with port
 	if (channel == port.name) {
-	  log("Connected: " + channel);
+	  dbg("Connected: " + channel);
 
 	  var msgHandler = function (msg) {
-	    log("RPCBus reveived connection message: ", msg);
+	    dbg("RPCBus reveived connection message: ", msg);
 	    return callback(msg, port.postMessage.bind(port));
 	  };
 
 	  port.onMessage.addListener(msgHandler);
 	  port.onDisconnect.addListener( function () {
-	    console.log("Disconnecting a port...");
+	    console.log("Disconnecting listener port for", channel);
 	    cleanup(msgHandler);
 	  });
 	}
       });
     } else {
-      this.addRuntimeListener('onMessageExternal', function (req, sender, sendResp) {
+      this.addRuntimeListener('onMessageExternal', function (req, sender, sendResp){
 	return cb(req, sendResp);
       });
     }
@@ -109,6 +125,40 @@ HostBus.prototype = {
   }
 };
 
+// All hosts should share the same global bus
+var bus, log = (function () {
+  var DEBUG = true, bus;
+  return function (msg) {
+    if (DEBUG) {
+      console.log.apply(console, Array.prototype.slice.apply(arguments));
+    }
+  };
+})();
+
+function err(msg) {
+  console.error("[Server:ERR] " + msg);
+}
+
+function HostBus() {
+  dbg("Host bus started.");
+  this._listeners = {};
+  this.hostListener(false, this.commandListener.bind(this));
+
+  // Echo mode
+  this.hostListener(false, (function (msg, cb) {
+    if (msg == "ping") {
+      dbg("Client connected...");
+      cb("pong");
+      return true;
+    }
+
+    if (this.echo_mode_enabled)
+      cb(msg);
+
+    return true;
+  }).bind(this));
+}
+
 // RPC call message is:
 // - timestamp
 // - method: method name
@@ -125,11 +175,16 @@ HostBus.prototype = {
 //
 function RPCHost (name, obj) {
   // One time methods.
-  this.supported_methods = config.methods[name].methods;
-  // Use connections for these
-  this.supported_listeners = config.methods[name].listeners;
+  this.supportedMethods = config.methods[name].methods;
+  // Connection based methods
+  this.supportedListeners = config.methods[name].listeners;
+  this.listenerCallbacks = {};
+  this.methodPaths(this.supportedListeners).forEach(function (p) {
+    this.listenerCallbacks[p] = [];
+  }.bind(this));
 
-  this.obj_name = name;
+  // Create the object
+  this.objName = name;
   this.obj = obj || chrome[name];
   if (config.extensionId != chrome.runtime.id) {
     console.error("The clients think my id is '" + config.extensionId +
@@ -137,93 +192,177 @@ function RPCHost (name, obj) {
 		  ") they wont be able to communicate");
   }
 
+  // Check the object
   if (!this.obj) {
-    throw new Error("No such object chrome." + this.obj_name);
+    throw new Error("No such object chrome." + this.objName);
   }
 
-  this.supported_methods.forEach((function (m) {
-    if (typeof(this.path2callable(m)) != 'function')
+  // Check the methods
+  this.supportedMethods.forEach((function (m) {
+    if (typeof(path2callable(this.obj, m)) != 'function')
       throw new Error("Not callable " + m);
   }).bind(this));
 
   if (!bus) bus = new HostBus();
 
-  var method_listener = this.listener.bind(this, this.supported_methods),
-      listener_listener = this.listener.bind(this, this.supported_listeners);
-  bus.hostListener(false, method_listener);
-  bus.hostListener(this.obj_name, listener_listener);
+  var listenerForMethods = this.listenerForStuff.bind(this, this.supportedMethods,
+                                                      false),
+      listenerForListeners = this.listenerForStuff.bind(this, this.supportedListeners,
+                                                        false);
+  bus.hostListener(false, listenerForMethods);
+  bus.hostListener(this.objName, listenerForListeners, this.cleanAllCallbacks.bind(this));
 }
 
-RPCHost.prototype.listenerPaths = function (listeners) {
-  return listeners.map(function (l) {
-    if (typeof l === 'string') {
-      return l;
-    } else {
-      return l.start;
-    }
-  });
-};
+RPCHost.prototype = {
 
-// Listener on mesages: get the request, execute it and send the
-// formatted result through sendResp.
-RPCHost.prototype.listener = function (allowed_methods, request, sendResp) {
-  // Ignore calls not for you
-  if (this.obj_name != request.object ||
-      this.listenerPaths(allowed_methods).indexOf(request.method) == -1)
-    return false;
+  methodIsListenerOrCleaner: function (methodNameOrObj) {
+    var strIsListener = function (m) {
+      return typeof this.listenerCallbacks[m] !== "undefined";
+    }.bind(this);
 
-  var method = this.path2callable(request.method),
-      // Replace the 'function' argument with the callback handler and
-      // unbox arguments.
-      args = argsDecode(request.args, this.cbHandlerFactory(sendResp));
+    return strIsListener(methodNameOrObj) ||
+      strIsListener(methodNameOrObj.starter);
+  },
 
-  log("RPCHost applying: " + request.method,  args);
-  try {
-    method.apply(this.obj, args);
-  } catch (e) {
-    this.sendError(e, sendResp);
-  } finally {
-    // Retain the ability to call sendResp
-    return true;
-  }
-};
+  // Get *all* the available method paths
+  methodPaths: function (listenerObjectsOrStrings) {
+    return listenerObjectsOrStrings.reduce(function (ls, obj) {
+      return ls.concat(obj.starter ? [obj.starter, obj.cleaner] : obj);
+    }, []);
+  },
 
-RPCHost.prototype.sendError = function (error, sendResp) {
-  sendResp({args: argsEncode([]), error: error.message});
-  throw error;
-};
+  // Listener on mesages: get the request, execute it and send the
+  // formatted result through sendResp.
+  listenerForStuff: function (allowedMethods, garbageCollect, request, sendResp) {
+    // Ignore calls not for you
+    if (this.objName != request.object ||
+        this.methodPaths(allowedMethods).indexOf(request.method) == -1)
+      return true;
 
-// XXX: Maybe this should block until the callback is done. If this
-// becomes a problem consider opening an adhoc connection for callback
-// finishing. Using a completely different channel for this will
-// reduce the noize in the operational channel and
+    var method = path2callable(this.obj, request.method),
+        // Replace the 'function' argument with the callback handler,
+        // assign the callbackId and unbox arguments.
+        cbHandler = this.cbHandlerFactory(sendResp, request.callbackId, request.method),
+        args = argsDecode(request.args, cbHandler);
 
-// Get a callable that when called will package it's arguments and
-// pass them to sendResp
-RPCHost.prototype.cbHandlerFactory = function (sendResp) {
-  return (function (var_args) {
-    var args = Array.prototype.slice.call(arguments),
-	msg = {args: argsEncode(args), error: null};
-
-    log("RPCHost requesting callback with args:", args);
+    dbg("RPCHost applying: " + request.method,  args);
     try {
-      sendResp(msg);
+      method.apply(this.obj, args);
     } catch (e) {
-      console.warn("Tried to send to a closed connection. FIXME");
+      this.sendError(e, sendResp);
+    } finally {
+      if (garbageCollect)
+        this.garbageCollectCallbacks();
+
+      // Retain the ability to call sendResp
+      return false;
     }
-  }).bind(this);
-};
+  },
 
-// Get a callable member of this.obj given the name. Dot paths are
-// supported.
-RPCHost.prototype.path2callable = function (name) {
-  var names =  name.split('.'),
-      method = names.pop(),
-      obj = (names.reduce(function (ob, meth) {return ob[meth];}, this.obj)
-	     || this.obj);
+  sendError: function (error, sendResp) {
+    sendResp({args: argsEncode([]), error: error.message});
+    throw error;
+  },
 
-  if (!obj[method])
-    throw new Error('Bad object chrome.'+ this.obj_name +'.'+name);
+  // XXX: Maybe this should block until the callback is done. If this
+  // becomes a problem consider opening an adhoc connection for callback
+  // finishing. Using a completely different channel for this will
+  // reduce the noize in the operational channel and
 
-  return obj[method].bind(obj);
+  // Get a callable that when called will package it's arguments and
+  // pass them to sendResp
+  cbHandlerFactory: function (sendResp, callbackId, methodPath) {
+    if (!callbackId)
+      return null;
+
+    var registered = [],
+        ret = function (var_args) {
+          var args = Array.prototype.slice.call(arguments),
+              msg = {args: argsEncode(args), error: null};
+
+          dbg("RPCHost requesting callback", callbackId, " with args:", args);
+          try {
+            sendResp(msg);
+	  } catch (e) {
+	    console.warn("Tried to send to a closed connection. FIXME. msg:", msg);
+	  }
+	};
+
+    if (this.methodIsListenerOrCleaner(methodPath)) {
+      dbg("Handling listener:", methodPath);
+      registered = this.getListenerCallbacks(methodPath).filter(function (m) {
+        return m.callbackId == callbackId;
+      });
+
+      // If we have seen this id before it's the one the client meant
+      if (registered.length > 0)
+        ret = registered[0];
+
+      // Populate the listenerCallbacks
+      if (this.listenerCallbacks[methodPath].indexOf(ret) == -1){
+        dbg("Adding callback to", methodPath,":", callbackId);
+        this.listenerCallbacks[methodPath].push(ret);
+      }
+    }
+
+    ret.callbackId = callbackId;
+    return ret;
+  },
+
+  // Get all stored callbacks related to listenerMethodName that may
+  // be a cleaner or a listener.
+  getListenerCallbacks: function (listenerMethodName) {
+    // Listeners that match the start or the cleaner
+    var listenerObjects = this.supportedListeners.filter(function (l) {
+      return (l.listCallbacks &&
+	      (l.cleaner == listenerMethodName ||
+	       l.starter == listenerMethodName));
+    }),
+	// Concat the listeners that match starts, cleaners and the methodname
+	ret = listenerObjects.reduce(function (lst, lo) {
+	  return lst.concat(this.listenerCallbacks[lo.starter]).
+	    concat(this.listenerCallbacks[lo.cleaner]);
+	}, []).concat(this.listenerCallbacks[listenerMethodName]);
+
+    return ret;
+  },
+
+  // Remove the cleaned from the lsitener stacks
+  garbageCollectCallbacks: function () {
+    dbg("Collecting garbage callbacks from stacks...");
+
+    var self = this;
+    self.supportedListeners.forEach(function (ls) {
+      if (ls.cleaner) {
+	self.listenerCallbacks[ls.cleaner].forEach(function (cleanedCb) {
+
+	  // Remove the cleaned listeners
+	  self.listenerCallbacks[ls.starter].reduce(function (lst, callback) {
+	    if (callback === cleanedCb) {
+              dbg("Garbage collecting callback:", callback.callbackId);
+	      return lst;
+            }
+	    return lst.concat([callback]);
+	  }, []);
+	});
+      }
+    });
+  },
+
+  cleanAllCallbacks: function () {
+    var self = this;
+    this.garbageCollectCallbacks();
+
+    self.supportedListeners.forEach(function (ls) {
+      if (ls.cleaner) {
+        dbg("Cleaning running callbacks for", ls.starter);
+        self.listenerCallbacks[ls.starter].forEach(function (cbToClean) {
+          dbg("Cleaning callback:", cbToClean.callbackId);
+          path2callable(self.obj, ls.cleaner)(cbToClean);
+        });
+      } else {
+        console.warn("Dont know how to clean callbacks of:", ls);
+      }
+    });
+  }
 };

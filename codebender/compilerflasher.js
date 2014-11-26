@@ -878,7 +878,7 @@ compilerflasher = function(lf) {
   this.programmers_list = [];
   this.selectedBoard = '';
   this.selectedProgrammer = '';
-  this.load_files = lf;
+  this.load_files = lf || function () {return [];};
   this.loaded_elements = [];
 
   this.minVersion = "1.6.0.1";

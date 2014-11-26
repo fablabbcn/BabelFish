@@ -72,13 +72,6 @@ test.describe('Test', function() {
       });
   });
 
-  test.it("Errors", function () {
-    chrome.get("http://localhost:8080/test/testpages/chrome/error/index.html").
-      then(function () {
-
-      });
-  });
-
   test.after(function() {
     chrome.quit();
     srv.stop();
