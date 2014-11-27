@@ -78,7 +78,7 @@ if (!chrome) {
 
     // cb(msg)
     clientMessage: function (persist, msg, callbackWrap) {
-      callbackWrap = callbackWrap || this.default_cb;
+      callbackWrap = callbackWrap;
       if (persist) {
 	dbg("Connecting to channel", msg.object);
 	var port = this.runtime_.connect(this.extensionId, {name: msg.object});

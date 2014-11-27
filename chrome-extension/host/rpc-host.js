@@ -272,9 +272,6 @@ RPCHost.prototype = {
   // Get a callable that when called will package it's arguments and
   // pass them to sendResp
   cbHandlerFactory: function (sendResp, callbackId, methodPath) {
-    if (!callbackId)
-      return null;
-
     var registered = [],
         ret = function (var_args) {
           var args = Array.prototype.slice.call(arguments),
@@ -290,6 +287,7 @@ RPCHost.prototype = {
 
     if (this.methodIsListenerOrCleaner(methodPath)) {
       dbg("Handling listener:", methodPath);
+      dbg("Found callbacks:", this.getListenerCallbacks(methodPath));
       registered = this.getListenerCallbacks(methodPath).filter(function (m) {
         return m.callbackId == callbackId;
       });
@@ -314,15 +312,14 @@ RPCHost.prototype = {
   getListenerCallbacks: function (listenerMethodName) {
     // Listeners that match the start or the cleaner
     var listenerObjects = this.supportedListeners.filter(function (l) {
-      return (l.listCallbacks &&
-	      (l.cleaner == listenerMethodName ||
-	       l.starter == listenerMethodName));
+      return (l.cleaner == listenerMethodName ||
+	       l.starter == listenerMethodName);
     }),
 	// Concat the listeners that match starts, cleaners and the methodname
 	ret = listenerObjects.reduce(function (lst, lo) {
 	  return lst.concat(this.listenerCallbacks[lo.starter]).
 	    concat(this.listenerCallbacks[lo.cleaner]);
-	}, []).concat(this.listenerCallbacks[listenerMethodName]);
+	}.bind(this), []).concat(this.listenerCallbacks[listenerMethodName]);
 
     return ret;
   },
