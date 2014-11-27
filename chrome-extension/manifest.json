@@ -10,7 +10,7 @@
     },
     "externally_connectable": {
 	"matches": [
-	    "http://localhost:8080/*"
+	    "http://*/*"
 	],
 	"accepts_tls_channel_id": false
     },
@@ -21,6 +21,6 @@
         { "fileSystem": ["write"]},
 	"syncFileSystem",
 	"serial",
-	"http://localhost:8080/*"
+	"http://*/*"
     ]
 }
