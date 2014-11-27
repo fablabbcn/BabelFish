@@ -10,7 +10,7 @@
     },
     "externally_connectable": {
 	"matches": [
-	    "http://*/*"
+	    "http://ec2-54-174-134-98.compute-1.amazonaws.com:8080/*"
 	],
 	"accepts_tls_channel_id": false
     },
@@ -21,6 +21,6 @@
         { "fileSystem": ["write"]},
 	"syncFileSystem",
 	"serial",
-	"http://*/*"
+	"http://ec2-54-174-134-98.compute-1.amazonaws.com:8080/*"
     ]
 }
