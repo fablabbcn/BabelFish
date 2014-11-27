@@ -15,6 +15,11 @@ window.onload = function () {
   storage_set({manasu: 'oles psofan!'});
   storage_set({manasu: 'dax den psofaei'});
 
+  // RPC calls are *truly* asynchronous. There is absolutely no
+  // guarantee that anything will run before anything else. Even
+  // trying this with 100ms timeouts fails. This may skew a lot from
+  // the expected behavior. Making the overhead smaller may reduce
+  // this problem but there is no true way of fixing this.
   setTimeout(function () {
     chrome.storage.onChanged.removeListener(_listener);
     setTimeout(function () {
