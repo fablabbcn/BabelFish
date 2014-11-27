@@ -5,17 +5,36 @@ var http = require('http'),
 
 function StaticServer(webroot, port) {
   this.port = port || 8080;
+  this.extensionId = null;
+
   var mimeTypes = {
     "html": "text/html",
     "jpeg": "image/jpeg",
     "jpg": "image/jpeg",
     "png": "image/png",
     "js": "text/javascript",
-    "css": "text/css"};
-
+    "css": "text/css"},
+      self = this;
   this.srv = http.createServer(function(req, res) {
-    var uri = url.parse(req.url).pathname;
-    var filename = path.join(webroot, uri);
+    var uri = url.parse(req.url).pathname,
+        filename = path.join(webroot, uri),
+        query = url.parse(req.url, true).query;
+    self.extensionId = query.extensionid || self.extensionId;
+
+    console.log("Request for:", req.url,"data:", query, "(", typeof query, ")");
+    if (uri == "/extension-id.js") {
+      console.log("sending", self.extensionId);
+      res.writeHead(200, {'Content-Type': 'text/javascript'});
+
+      if (self.extensionId)
+        res.write("config.extensionId='"+self.extensionId+"';");
+      else
+        res.write("// Make a call with ?extensionid=<id> to set the id");
+
+      res.end();
+      return;
+    }
+
     fs.stat(filename, function(err, stats) {
       if(!stats || stats.isDirectory()) {
         res.writeHead(404, {'Content-Type': 'text/plain'});
