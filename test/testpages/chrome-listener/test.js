@@ -15,6 +15,10 @@ window.onload = function () {
   storage_set({manasu: 'oles psofan!'});
   storage_set({manasu: 'dax den psofaei'});
 
-  chrome.storage.onChanged.removeListener(_listener);
-  setTimeout(function () {storage_set({manasu: 'Show only on client list'}); }, 1000);
+  setTimeout(function () {
+    chrome.storage.onChanged.removeListener(_listener);
+    setTimeout(function () {
+      storage_set({manasu: 'Show only on client list'});
+    }, 1000);
+  }, 1000);
 };
