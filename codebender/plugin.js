@@ -126,10 +126,8 @@ if (!chrome.serial) {
       if (typeof baudrate !== "number") baudrate = Number(baudrate);
 
       this.serial.connect(port, {bitrate: baudrate, name: port}, function (info) {
-	if (!self.readingInfo || self.readingInfo.name != info.name) {
-	  self.readingInfo = info;
-	  self.serial.onReceive.addListener(self.readingHandlerFactory(cb));
-	}
+	self.readingInfo = info;
+	self.serial.onReceive.addListener(self.readingHandlerFactory(cb));
       });
     },
 

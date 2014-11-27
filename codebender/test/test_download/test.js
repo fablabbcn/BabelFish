@@ -43,7 +43,7 @@ function startMonitor () {
   cf.pluginHandler.connected = false;
   cf.pluginHandler.connect();
   document.getElementById('monitor').innerHTML = "Disconnect";
-  document.getElementById('monitor').onclick =killMonitor;
+  document.getElementById('monitor').onclick = killMonitor;
 }
 
 function killMonitor () {
