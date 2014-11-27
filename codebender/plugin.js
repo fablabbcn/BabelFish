@@ -91,30 +91,34 @@ if (!chrome.serial) {
     },
 
     readingHandlerFactory: function (cb) {
-      this.readingInfo.handler = function (readArg) {
-	var bufferView = new Uint8Array(readArg.data),
-	    chars = [];
+      dbg("Reading Info:",this.readingInfo);
+      if (cb !== this.readingInfo.callbackUsedInHandler) {
+        this.readingInfo.callbackUsedInHandler = cb;
+        this.readingInfo.handler = function (readArg) {
+	  var bufferView = new Uint8Array(readArg.data),
+	      chars = [];
 
-	for (var i = 0; i < bufferView.length; ++i) {
-	  chars.push(bufferView[i]);
-	}
+	  for (var i = 0; i < bufferView.length; ++i) {
+	    chars.push(bufferView[i]);
+	  }
 
-	// FIXME: if the last line does not end in a newline it should
-	// be buffered
-	var msgs = String.fromCharCode.apply(null, chars).split("\n");
-	console.log("Received on monitor:", msgs);
-	// return cb("chrome-serial", rcv);
-	// XXX: This is a bit hacky but it should work.
-	// If we have complete messages or if the message so far is too large
-	this.readingInfo.buffer_ = this.readingInfo.buffer_ || "";
-	if (msgs.length > 1 ||
-	    (this.readingInfo.buffer_ + msgs[0]).length > this.bufferSize) {
-	  msgs[0] = this.readingInfo.buffer_ + msgs[0];
-	  this.readingInfo.buffer_ = "";
-	  msgs.forEach(function (line) {cb("chrome-serial", line);});
-	} else
-	  this.readingInfo.buffer_ += msgs[0];
-      }.bind(this);
+	  // FIXME: if the last line does not end in a newline it should
+	  // be buffered
+	  var msgs = String.fromCharCode.apply(null, chars).split("\n");
+	  console.log("Received on monitor:", msgs);
+	  // return cb("chrome-serial", rcv);
+	  // XXX: This is a bit hacky but it should work.
+	  // If we have complete messages or if the message so far is too large
+	  this.readingInfo.buffer_ = this.readingInfo.buffer_ || "";
+	  if (msgs.length > 1 ||
+	      (this.readingInfo.buffer_ + msgs[0]).length > this.bufferSize) {
+	    msgs[0] = this.readingInfo.buffer_ + msgs[0];
+	    this.readingInfo.buffer_ = "";
+	    msgs.forEach(function (line) {cb("chrome-serial", line);});
+	  } else
+	    this.readingInfo.buffer_ += msgs[0];
+        }.bind(this);
+      }
 
       return this.readingInfo.handler;
     },
@@ -126,15 +130,15 @@ if (!chrome.serial) {
       if (typeof baudrate !== "number") baudrate = Number(baudrate);
 
       this.serial.connect(port, {bitrate: baudrate, name: port}, function (info) {
-	self.readingInfo = info;
-	self.serial.onReceive.addListener(self.readingHandlerFactory(cb));
+        self.readingInfo = info;
+        self.serial.onReceive.addListener(self.readingHandlerFactory(cb));
       });
     },
 
     // Disconnect all chrome's connections.
     disconnectAll: function () {
       this.serial.getConnections(function (cons) {
-	this.serial.disconnect(cons[0].connectionID, this.disconnectAll.bind(this));
+        this.serial.disconnect(cons[0].connectionID, this.disconnectAll.bind(this));
       });
     },
 
@@ -150,13 +154,13 @@ if (!chrome.serial) {
 				   communication, speed, force,
 				   delay, mcu, cb) {
       var prog = new Programmer({
-	protocol: protocol,
-	speed: speed,
-	communication: communication,
-	force: force,
-	delay: delay,
-	mcu: mcu,
-	port: port
+        protocol: protocol,
+        speed: speed,
+        communication: communication,
+        force: force,
+        delay: delay,
+        mcu: mcu,
+        port: port
       });
       if (prog.validation() != 0) setTimeout(cb.bind(prog.validation()), 0);
 
@@ -175,11 +179,11 @@ if (!chrome.serial) {
       // uploadCompiledSketch by mr john
       // XXX: Move callback in backend
       setTimeout(function () {
-	dbg("Code length", code.length, typeof code,
+        dbg("Code length", code.length, typeof code,
 	    "Protocol:", protocol,
 	    "Device:", device);
-	uploadCompiledSketch(code, device, protocol);
-	cb();
+        uploadCompiledSketch(code, device, protocol);
+        cb();
       }, 0);
     },
 
@@ -188,14 +192,14 @@ if (!chrome.serial) {
     // Return a string of the port list
     availablePorts: function (cb) {
       this.serial.getDevices(function (devs) {
-	cb(this.pluginDevsFormat_(devs).map(function (d) {return d.port;}).join(','));
+        cb(this.pluginDevsFormat_(devs).map(function (d) {return d.port;}).join(','));
       }.bind(this));
     },
 
     // Return json files with the prots
     getPorts: function (cb) {
       this.serial.getDevices(function (devs) {
-	cb(this.pluginDevsFormat_(devs));
+        cb(this.pluginDevsFormat_(devs));
       }.bind(this));
     },
 
@@ -204,7 +208,7 @@ if (!chrome.serial) {
       devs.forEach(function (d) {set_[d.path] = true;});
 
       return Object.getOwnPropertyNames(set_).map(function (dev) {
-	return {port: dev};
+        return {port: dev};
       });
     },
 
@@ -213,18 +217,18 @@ if (!chrome.serial) {
     // Inherently sync or void methods
     disconnect: function () {
       if (this.readingInfo) {
-	this.serial.onReceive.removeListener(this.readingInfo.handler);
+        this.serial.onReceive.removeListener(this.readingInfo.handler);
 
-	this.serial.disconnect(this.readingInfo.connectionId, function (ok) {
+        this.serial.disconnect(this.readingInfo.connectionId, function (ok) {
 	  if (!ok) {
 	    throw Error("Failed to disconnect from " +
-			this.readingInfo.name + ", id: " + this.readingInfo.connectionId);
+		        this.readingInfo.name + ", id: " + this.readingInfo.connectionId);
 	    // XXX: Maybe try again
 	  } else {
 	    this.readingInfo = null;
 	    dbg("Diconnected ok.");
 	  }
-	});
+        });
       }
     },
 
