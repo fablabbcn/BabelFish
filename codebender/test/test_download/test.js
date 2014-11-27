@@ -1,15 +1,11 @@
-var cf = new compilerflasher(function (){return [];}),
-    _backup_online_transactions = $.get.bind($);
-$.get = function () {};
-
-// Populate the list once just so I can run the test
-cf.pluginHandler.getFire();
+var cf = new compilerflasher(function (){return [];});
 
 // Enable the plugin
 cf.pluginHandler.showPlugin();
 cf.enableCompilerFlasherActions();
 $("#flash").click (function () {
-  _backup_online_transactions("/web/blink-example.hex", function (blob) {
+  $.get("/web/blink-example.hex", function (blob) {
+    // Pretend to send logs
     dbg("Blob length: ", blob.split("\n").length);
     document.getElementById('hex').innerHTML = blob;
 
@@ -34,7 +30,7 @@ $("#flash").click (function () {
     // Mimic the usbflash behavior
     if (cf.pluginHandler.connected == true) {
       cf.pluginHandler.disconnect(false);
-      setTimeout(function(){
+      setTimeout(function() {
 	cf.pluginHandler.doflash.apply(cf.pluginHandler, flash_args);
       }, 200);
     } else {
@@ -43,10 +39,17 @@ $("#flash").click (function () {
   });
 });
 
-$('#monitor').click(function () {
+function startMonitor () {
   cf.pluginHandler.connected = false;
   cf.pluginHandler.connect();
-  $('#monitor').click(function () {
-    cf.pluginHandler.disconnect();
-  });
-});
+  document.getElementById('monitor').innerHTML = "Disconnect";
+  document.getElementById('monitor').onclick =killMonitor;
+}
+
+function killMonitor () {
+  cf.pluginHandler.disconnect();
+  document.getElementById('monitor').innerHTML = "Connect";
+  document.getElementById('monitor').onclick = startMonitor;
+}
+document.getElementById('monitor').innerHTML = "Connect";
+document.getElementById('monitor').onclick = startMonitor;

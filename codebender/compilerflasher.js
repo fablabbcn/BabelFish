@@ -1,5 +1,4 @@
-// XXXXX: REMOVE ME
-$.get = function () {};
+var $_get = function () {};
 
 function EventManager () {
   this._listeners = {};
@@ -107,7 +106,7 @@ PluginHandler.prototype = {
     var port = $("#cb_cf_ports option:selected").text();
     url = "{{  url('CodebenderUtilitiesBundle_logdb', {actionid : 43 , meta: 'CLICK_PORT_META'}) }}";
     url = url.replace("CLICK_PORT_META", JSON.stringify({ "selectedPort": port, "tabID": this.tabID } ));
-    $.get(url);
+    $_get(url);
   },
 
   savePort: function(port) {
@@ -129,7 +128,7 @@ PluginHandler.prototype = {
         var newPort = cb.loaded_port;
         url = "{{  url('CodebenderUtilitiesBundle_logdb', {actionid : 38 , meta: 'SAVEPORTMETA'}) }}";
         url = url.replace("SAVEPORTMETA", JSON.stringify({ "oldPort":oldPort, "newPort": newPort, "tabID": this.tabID } ));
-        $.get(url);
+        $_get(url);
       });}
     else
     {
@@ -140,7 +139,7 @@ PluginHandler.prototype = {
       var newPort = cb.loaded_port;
       url = "{{  url('CodebenderUtilitiesBundle_logdb', {actionid : 38 , meta: 'SAVEPORTMETA'}) }}";
       url = url.replace("SAVEPORTMETA", JSON.stringify({ "oldPort":oldPort, "newPort": newPort, "tabID": this.tabID } ));
-      $.get(url);
+      $_get(url);
     }
 
   },
@@ -177,7 +176,7 @@ PluginHandler.prototype = {
     {
       url = "{{  url('CodebenderUtilitiesBundle_logdb', {actionid : 35 , meta: 'PLUGIN_META'}) }}";
       url = url.replace("PLUGIN_META", JSON.stringify({ "plugin" : false, "message": "Unsupported OS/browser combination."} ));
-      $.get(url);
+      $_get(url);
 
       if((Browsers.isOs('Mac OS X') ||  Browsers.isOs('Windows')))
       {
@@ -212,7 +211,7 @@ PluginHandler.prototype = {
 
         url = "{{  url('CodebenderUtilitiesBundle_logdb', {actionid : 35 , meta: 'PLUGIN_META'}) }}";
         url = url.replace("PLUGIN_META", JSON.stringify({ "plugin" : false, "message": "Not on navigator plugins."} ));
-        $.get(url);
+        $_get(url);
         window.pluginSearchInterval = setInterval(function(){
           this.searchPlugin();
           if (this.plugin_found) {
@@ -244,7 +243,7 @@ PluginHandler.prototype = {
   runPlugin: function() {
     url = "{{  url('CodebenderUtilitiesBundle_logdb', {actionid : 35 , meta: 'PLUGIN_META'}) }}";
     url = url.replace("PLUGIN_META", JSON.stringify({ "plugin" : true, "message": "Found on navigator plugins."} ));
-    $.get(url);
+    $_get(url);
 
     if (this.owner){
       this.owner.setOperationOutput("<i class='icon-spinner icon-spin'></i>  Initializing Plugin... Make sure that you allow plugin execution on your browser. <a href='http://codebender.uservoice.com/knowledgebase/topics/57328-plugin'>More Info</a>");
@@ -264,7 +263,7 @@ PluginHandler.prototype = {
         window.plugin_version = self.plugin_version;
         url = "{{  url('CodebenderUtilitiesBundle_logdb', {actionid : 35, meta: 'PLUGIN_META'}) }}";
         url = url.replace("PLUGIN_META", JSON.stringify({ "plugin" : true, "version": self.plugin_.version}) );
-        $.get(url);
+        $_get(url);
 
         self.validateVersion(self.minVersion);
         if (typeof self.plugin_.setErrorCallback !== 'undefined')
@@ -344,7 +343,7 @@ PluginHandler.prototype = {
       this.owner.eventManager.fire('plugin_notification', alert);
       url = "{{  url('CodebenderUtilitiesBundle_logdb', {actionid : 27 , meta: 'PLUGIN_META'}) }}";
       url = url.replace("PLUGIN_META", JSON.stringify({ "success": true, "plugin" : false, "alert" : $("#alertupdatediv").html()}) );
-      $.get(url);
+      $_get(url);
       clearInterval(window.PluginLoggingInterval);
     } else if (this.plugin_.version == null){
       var alert = this.browserSpecificPluginInstall("To program your Arduino from your browser, install the Codebender Plugin. ");
@@ -352,7 +351,7 @@ PluginHandler.prototype = {
       this.owner.eventManager.fire('plugin_notification', alert);
       url = "{{  url('CodebenderUtilitiesBundle_logdb', {actionid : 27 , meta: 'PLUGIN_META'}) }}";
       url = url.replace("PLUGIN_META", JSON.stringify({ "success": true, "plugin" : false, "alert" : $("#alertupdatediv").html()}) );
-      $.get(url);
+      $_get(url);
       clearInterval(window.PluginLoggingInterval);
     } else {
       this.enableUSB();
@@ -383,7 +382,7 @@ PluginHandler.prototype = {
 								    "url":  window.location.pathname,
 								    "version": (Browsers.os.version == null || typeof Browsers.os.version.original === 'undefined') ? 'undefined' : Browsers.os.version.original }, "Browser": { "name": (typeof Browsers.browser.name === 'undefined') ? 'undefined' : Browsers.browser.name,
 																												 "version": (typeof Browsers.browser.version === 'undefined' || Browsers.browser.version == null) ? 'undefined' : Browsers.browser.version.original} }) );
-          $.get(url);
+          $_get(url);
           clearInterval(window.PluginLoggingInterval);
         }
         else
@@ -399,7 +398,7 @@ PluginHandler.prototype = {
             });
             var url = "{{  url('CodebenderUtilitiesBundle_logdb', {actionid : 36, meta: 'PLUGIN_META'}) }}";
             url = url.replace("PLUGIN_META", JSON.stringify({ "success": true, "plugin" : true, "version": this.plugin_.version, "ports" : ports}) );
-            $.get(url);
+            $_get(url);
           }
 
           oldPortsAvail = portsAvail;
@@ -417,10 +416,10 @@ PluginHandler.prototype = {
 
                 var url = "{{  url('CodebenderUtilitiesBundle_logdb', {actionid : 36, meta: 'PLUGIN_META'}) }}";
                 url = url.replace("PLUGIN_META", JSON.stringify({ "success": true, "plugin" : true, "version": this.plugin_.version, "tabID": pl.tabID, "serialLibPorts" : ports, "probeUSBports" : this.plugin_.probeUSB()}) );
-	        $.get(url);
+	        $_get(url);
 	        var url = "{{  url('CodebenderUtilitiesBundle_logdb', {actionid : 74, meta: 'PLUGIN_META'}) }}";
 	        url = url.replace("PLUGIN_META", JSON.stringify({ "success": true, "plugin" : true, "version": this.plugin_.version, "tabID": pl.tabID, "jsonPorts" : parsedList}) );
-	        $.get(url);
+	        $_get(url);
 	      }
 
 	      oldSerialPortsAvail = serialPortsAvail;
@@ -432,7 +431,7 @@ PluginHandler.prototype = {
       {
         url = "{{  url('CodebenderUtilitiesBundle_logdb', {actionid : 27 , meta: 'PLUGIN_META'}) }}";
         url = url.replace("PLUGIN_META", JSON.stringify({ "success" : false, "error" : err }) );
-        $.get(url);
+        $_get(url);
       }
     }, 500);
   },
@@ -553,10 +552,10 @@ PluginHandler.prototype = {
     url = "{{  url('CodebenderUtilitiesBundle_logdb', {actionid : 45 , meta: 'ADD_TO_META'}) }}";
     url = url.replace("ADD_TO_META", JSON.stringify({ "where": where} ));
     if (typeof (pluginUrl) === 'undefined')
-      $.get(url);
+      $_get(url);
     else
     {
-      $.get(url).done(function(){
+      $_get(url).done(function(){
         window.location.replace(pluginUrl);
       });
     }
@@ -659,7 +658,7 @@ PluginHandler.prototype = {
     if (this.connected == false) {
       var url = "{{  url('CodebenderUtilitiesBundle_logdb', {actionid : 18, meta: 'SERIAL_MONITOR_META'}) }}";
       url = url.replace("SERIAL_MONITOR_META", JSON.stringify({ "baudrate" : speed, "port": $("#cb_cf_ports").val(), "tabID": this.tabID }) );
-      $.get(url);
+      $_get(url);
       if ($("#cb_cf_ports").val() != null && $("#cb_cf_ports").val() != "") {
 
         $("#serial_monitor_content").show(1000);
@@ -694,7 +693,7 @@ PluginHandler.prototype = {
 										      "OS": { "name": (typeof Browsers.os.name === 'undefined') ? 'undefined' : Browsers.os.name,
 											      "version": (Browsers.os.version == null || typeof Browsers.os.version.original === 'undefined') ? 'undefined' : Browsers.os.version.original }, "Browser": { "name": (typeof Browsers.browser.name === 'undefined') ? 'undefined' : Browsers.browser.name,
 																															   "version": (typeof Browsers.browser.version === 'undefined' || Browsers.browser.version == null) ? 'undefined' : Browsers.browser.version.original}}));
-              $.get(url);
+              $_get(url);
               var msg = this.owner.getFlashFailMessage(line);
               this.owner.setOperationOutput(msg);
               this.owner.eventManager.fire("plugin_notification", msg);
@@ -731,14 +730,15 @@ PluginHandler.prototype = {
 	  if(typeof this.plugin_.availablePorts !== 'undefined')
 	  {
 	    var ph = this;
-	    window.portValidatorInterval = setInterval(function () {
-	      ph.plugin_.availablePorts(function (ports) {
-		if (ports.indexOf(port) == -1){
-		  clearInterval(window.portValidatorInterval);
-		  ph.disconnect(false);
-		};
-	      });
-	    }, 100);
+            // XXX: checking for devices interferes with ports.
+	    // window.portValidatorInterval = setInterval(function () {
+	    //   ph.plugin_.availablePorts(function (ports) {
+	    //     if (ports.indexOf(port) == -1){
+	    //       clearInterval(window.portValidatorInterval);
+	    //       ph.disconnect(false);
+	    //     };
+	    //   });
+	    // }, 100);
 	  }
         }
 
@@ -765,7 +765,7 @@ PluginHandler.prototype = {
 			    "port": $("#cb_cf_ports").val(),
 			    "tabID": this.tabID
 			  }));
-        $.get(url);
+        $_get(url);
       }
 
       if(typeof this.plugin_.availablePorts !== 'undefined')
@@ -856,7 +856,7 @@ PluginHandler.prototype = {
 							      "OS": { "name": (typeof Browsers.os.name === 'undefined') ? 'undefined' : Browsers.os.name,
 								      "version": (Browsers.os.version == null || typeof Browsers.os.version.original === 'undefined') ? 'undefined' : Browsers.os.version.original }, "Browser": { "name": (typeof Browsers.browser.name === 'undefined') ? 'undefined' : Browsers.browser.name,
 																												   "version": (typeof Browsers.browser.version === 'undefined' || Browsers.browser.version == null) ? 'undefined' : Browsers.browser.version.original}}));
-      $.get(url);
+      $_get(url);
     }
     else if(status ==1)
     {
@@ -866,7 +866,7 @@ PluginHandler.prototype = {
 								"OS": { "name": (typeof Browsers.os.name === 'undefined') ? 'undefined' : Browsers.os.name,
 									"version": (Browsers.os.version == null || typeof Browsers.os.version.original === 'undefined') ? 'undefined' : Browsers.os.version.original }, "Browser": { "name": (typeof Browsers.browser.name === 'undefined') ? 'undefined' : Browsers.browser.name,
 																												     "version": (typeof Browsers.browser.version === 'undefined' || Browsers.browser.version == null) ? 'undefined' : Browsers.browser.version.original}}));
-      $.get(url);
+      $_get(url);
     }
 
   }
@@ -1017,7 +1017,7 @@ compilerflasher = function(lf) {
     var newBoard = cb.selectedBoard.name;
     url = "{{  url('CodebenderUtilitiesBundle_logdb', {actionid : 37 , meta: 'SAVEBOARDMETA'}) }}";
     url = url.replace("SAVEBOARDMETA", JSON.stringify({ "oldBoard":oldBoard, "newBoard":newBoard, "tabID": cb.pluginHandler.tabID } ));
-    $.get(url);
+    $_get(url);
   };
 
   this.loadBoard = function() {
@@ -1062,7 +1062,7 @@ compilerflasher = function(lf) {
     var newProgrammer = cb.selectedProgrammer.name;
     url = "{{  url('CodebenderUtilitiesBundle_logdb', {actionid : 39 , meta: 'SAVEPROGRAMMERMETA'}) }}";
     url = url.replace("SAVEPROGRAMMERMETA", JSON.stringify({ "oldProgrammer":oldProgrammer, "newProgrammer":newProgrammer, "tabID": cb.pluginHandler.tabID } ));
-    $.get(url);
+    $_get(url);
 
   };
 
@@ -1119,7 +1119,7 @@ compilerflasher = function(lf) {
     var board = $("#cb_cf_boards option:selected").text();
     url = "{{  url('CodebenderUtilitiesBundle_logdb', {actionid : 42 , meta: 'CLICK_BOARD_META'}) }}";
     url = url.replace("CLICK_BOARD_META", JSON.stringify({ "selectedBoard": board, "tabID": cb.pluginHandler.tabID} ));
-    $.get(url);
+    $_get(url);
   }
 
   this.clickedProgrammer = function()
@@ -1127,7 +1127,7 @@ compilerflasher = function(lf) {
     var programmer = $("#cb_cf_programmers option:selected").text();
     url = "{{  url('CodebenderUtilitiesBundle_logdb', {actionid : 44 , meta: 'CLICK_PROGRAMMER_META'}) }}";
     url = url.replace("CLICK_PROGRAMMER_META", JSON.stringify({ "selectedProgrammer": programmer, "tabID": cb.pluginHandler.tabID} ));
-    $.get(url);
+    $_get(url);
   }
 
   this.generate_payload =  function(format, logging) {
@@ -1188,7 +1188,7 @@ compilerflasher = function(lf) {
 
     var url = "{{ url('CodebenderUtilitiesBundle_flash', {error: 'ERROR_CODE'}) }}";
     url = url.replace('ERROR_CODE', progress);
-    $.get(url);
+    $_get(url);
   }
 
 
@@ -1223,7 +1223,7 @@ compilerflasher = function(lf) {
 
     url = "{{  url('CodebenderUtilitiesBundle_logdb', {actionid : 40 , meta: 'RUN_BUTTON_META'}) }}";
     url = url.replace("RUN_BUTTON_META", JSON.stringify({ "port":$("#cb_cf_ports option:selected").text(), "board":$("#cb_cf_boards option:selected").text(), "programmer":$("#cb_cf_programmers option:selected").text(), "tabID": cb.pluginHandler.tabID } ));
-    $.get(url);
+    $_get(url);
 
     if(cb.pluginHandler.canflash(cb.selectedBoard, cb.selectedProgrammer))
     {
@@ -1271,7 +1271,7 @@ compilerflasher = function(lf) {
   {
     url = "{{  url('CodebenderUtilitiesBundle_logdb', {actionid : 41 , meta: 'RUN_WITH_PROG_BUTTON_META'}) }}";
     url = url.replace("RUN_WITH_PROG_BUTTON_META", JSON.stringify({ "port":$("#cb_cf_ports option:selected").text(), "board":$("#cb_cf_boards option:selected").text(), "programmer":$("#cb_cf_programmers option:selected").text(), "tabID": cb.pluginHandler.tabID } ));
-    $.get(url);
+    $_get(url);
 
     if(cb.pluginHandler.canflash(cb.selectedBoard, cb.selectedProgrammer, true))
     {
@@ -1328,7 +1328,7 @@ compilerflasher = function(lf) {
     var board = $("#cb_cf_boards option:selected").text();
     url = "{{  url('CodebenderUtilitiesBundle_logdb', {actionid : 47 , meta: 'VERIFY_META'}) }}";
     url = url.replace("VERIFY_META", JSON.stringify({ "selectedBoard": board, "tabID": cb.pluginHandler.tabID} ));
-    $.get(url);
+    $_get(url);
 
     cb.eventManager.fire('pre_verify');
     cb.setOperationOutput("<i class='icon-spinner icon-spin'> </i> Working...");
@@ -1360,7 +1360,7 @@ compilerflasher = function(lf) {
       url = url.replace("UPLOAD_BOOTLOADER_META", JSON.stringify({ "programmer" : $('#programmer option:selected').val(),
 								   "board" : $('#cb_cf_boards option:selected').val(), "port" : $('#cb_cf_ports option:selected').val(),
 								   "bootloader_file" : ((typeof this.selectedBoard['bootloader']['file']) === "undefined") ? "undefined" : this.selectedBoard['bootloader']['file'] }) );
-      $.get(url);
+      $_get(url);
 
       this.setOperationOutput("<i class='icon-spinner icon-spin'></i> Working...")
       if (typeof this.selectedBoard['bootloader']['file'] === "undefined")
@@ -1371,7 +1371,7 @@ compilerflasher = function(lf) {
       else
       {
         var cb = this;
-        $.get('{{ asset("bootloader/") }}' + this.selectedBoard['bootloader']['file'].replace(".hex", ".txt"))
+        $_get('{{ asset("bootloader/") }}' + this.selectedBoard['bootloader']['file'].replace(".hex", ".txt"))
           .success(function(data){
             this.plugin_.saveToHex(data);
             window.result = cb.pluginHandler.doflashBootloader(cb.selectedProgrammer, cb.selectedBoard);

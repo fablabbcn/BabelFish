@@ -250,7 +250,7 @@ if (!chrome.serial) {
 
     // Internals
     serialMonitorSetStatus: function () {
-
+      this.disconnect();
     }
   };
 }
