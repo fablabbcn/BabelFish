@@ -1,11 +1,11 @@
 var http = require('http'),
-		url = require('url'),
-		path = require('path'),
-		fs = require('fs');
+    url = require('url'),
+    path = require('path'),
+    fs = require('fs');
 
 function StaticServer(webroot, port) {
-	this.port = port || 8080;
-	var mimeTypes = {
+  this.port = port || 8080;
+  var mimeTypes = {
     "html": "text/html",
     "jpeg": "image/jpeg",
     "jpg": "image/jpeg",
@@ -13,7 +13,7 @@ function StaticServer(webroot, port) {
     "js": "text/javascript",
     "css": "text/css"};
 
-	this.srv = http.createServer(function(req, res) {
+  this.srv = http.createServer(function(req, res) {
     var uri = url.parse(req.url).pathname;
     var filename = path.join(webroot, uri);
     fs.stat(filename, function(err, stats) {
@@ -22,22 +22,22 @@ function StaticServer(webroot, port) {
         console.log("not exists (or is directory): " + filename);
         res.write("404: not exists (or is directory): " + filename);
         res.end();
-				return;
+	return;
       }
-			var path = filename.split("."),
-					mimeType = mimeTypes[path[path.length - 1]];
+      var path = filename.split("."),
+	  mimeType = mimeTypes[path[path.length - 1]];
       res.writeHead(200, {'Content-Type': mimeType});
 
       var fileStream = fs.createReadStream(filename);
       fileStream.pipe(res);
 
     }); //end path.exists
-	}).listen(port);
-	console.log('node-static running on http://localhost:%d', port);
+  }).listen(port);
+  console.log('node-static running on http://localhost:%d', port);
 }
 
 StaticServer.prototype.stop = function () {
-	this.srv.close();
+  this.srv.close();
 };
 
 exports.StaticServer = StaticServer;
