@@ -50,7 +50,7 @@ function RPCHost (name, obj) {
         this.listenerForStuff.bind(this, this.supportedListeners, false);
   bus.hostListener(false, listenerForMethods);
   bus.hostListener(this.objName, listenerForListeners,
-                   this.garbageCollectCallbacks.bind(this));
+                   this.cleanAllCallbacks.bind(this));
 }
 
 RPCHost.prototype = {
@@ -81,7 +81,7 @@ RPCHost.prototype = {
     var method = path2callable(this.obj, request.method),
         // Replace the 'function' argument with the callback handler,
         // assign the callbackId and unbox arguments.
-        cbHandler = this.cbHandlerFactory(sendResp, request.callbackId, request.method),
+        cbHandler = this.cbHandlerFactory(sendResp, request.callbackId, request.method, request.sender),
         args = argsDecode(request.args, cbHandler);
 
     dbg("RPCHost applying: " + request.method,  args);
@@ -110,7 +110,7 @@ RPCHost.prototype = {
 
   // Get a callable that when called will package it's arguments and
   // pass them to sendResp
-  cbHandlerFactory: function (sendResp, callbackId, methodPath) {
+  cbHandlerFactory: function (sendResp, callbackId, methodPath, sender) {
     var registered = [],
         ret = function (var_args) {
           var args = Array.prototype.slice.call(arguments),
@@ -142,6 +142,7 @@ RPCHost.prototype = {
       }
     }
 
+    ret.sender = sender;
     ret.callbackId = callbackId;
     return ret;
   },
@@ -152,7 +153,7 @@ RPCHost.prototype = {
     // Listeners that match the start or the cleaner
     var listenerObjects = this.supportedListeners.filter(function (l) {
       return (l.cleaner == listenerMethodName ||
-	       l.starter == listenerMethodName);
+	      l.starter == listenerMethodName);
     }),
 	// Concat the listeners that match starts, cleaners and the methodname
 	ret = listenerObjects.reduce(function (lst, lo) {
@@ -185,8 +186,7 @@ RPCHost.prototype = {
     });
   },
 
-  // WARNING: this destroys all callbacks for all tabs.
-  cleanAllCallbacks: function () {
+  cleanAllCallbacks: function (sender) {
     var self = this;
     this.garbageCollectCallbacks();
 
@@ -194,8 +194,10 @@ RPCHost.prototype = {
       if (ls.cleaner) {
         dbg("Cleaning running callbacks for", ls.starter);
         self.listenerCallbacks[ls.starter].forEach(function (cbToClean) {
-          dbg("Cleaning callback:", cbToClean.callbackId);
-          path2callable(self.obj, ls.cleaner)(cbToClean);
+          if (cbToClean.sender == sender) {
+            dbg("Cleaning callback:", cbToClean.callbackId);
+            path2callable(self.obj, ls.cleaner)(cbToClean);
+          }
         });
       } else {
         console.warn("Dont know how to clean callbacks of:", ls);

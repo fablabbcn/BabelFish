@@ -38,16 +38,11 @@ HostBus.prototype = {
   // message listener.
   hostListener: function (channel,  cb, cleanCb) {
     if (channel) {
-      var callback = cb, cleanup = function () {
-        if(cleanCb)
-          cleanCb(channel);
-        else
-	  console.warn("No cleanup function defined.");
-      };
-      if (typeof cb.starter !== 'undefined') {
-	callback = cb.starter;
-      }
+      // if (typeof cb.starter !== 'undefined') {
+      //   callback = cb.starter;
+      // }
 
+      // Channel: serial, storage, etc
       console.log("RPCBus Listening on: " + channel);
       this.addRuntimeListener('onConnectExternal', function  (port) {
 	// Message comes with port
@@ -56,8 +51,16 @@ HostBus.prototype = {
 
 	  var msgHandler = function (msg) {
 	    dbg("RPCBus reveived connection message: ", msg);
-	    return callback(msg, port.postMessage.bind(port));
+            msg.sender = port.sender;
+	    return cb(msg, port.postMessage.bind(port));
 	  };
+          var cleanup = function () {
+            if(cleanCb)
+              cleanCb(port.sender);
+            else
+	      console.warn("No cleanup function defined.");
+          };
+
 
 	  port.onMessage.addListener(msgHandler);
 	  port.onDisconnect.addListener( function () {
