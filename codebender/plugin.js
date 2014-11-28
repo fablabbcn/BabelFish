@@ -80,7 +80,21 @@ if (!chrome.serial) {
 
     this.bufferSize = 100;
 
-
+    var self = this;
+    self.serial.onReceiveError.addListener(function (info) {
+      log("PluginError", "Failed connection: " + info.connectionId +" ( " + info.error + " )");
+      self.serial.getConnections(function (connections) {
+        connections.forEach(function (ci) {
+          if (ci.connectionId == info.connectionId) {
+            self.serial.disconnect(info.connectionId, function (ok) {
+              if (!ok) {
+                console.error("Failed to disconnect serial from", info);
+              }
+            });
+          }
+        });
+      });
+    });
     this.errorCallback = function () {};
     this.readingInfo = null;
   }
@@ -257,7 +271,9 @@ if (!chrome.serial) {
 
     // Dummies for plugin garbage collection.
     deleteMap: function () {},
-    closeTab: function () {},
+    closeTab: function () {
+      this.disconnect();
+    },
 
     // Internals
     serialMonitorSetStatus: function () {
