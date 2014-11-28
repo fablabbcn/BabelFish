@@ -53,3 +53,39 @@ function killMonitor () {
 }
 document.getElementById('monitor').innerHTML = "Connect";
 document.getElementById('monitor').onclick = startMonitor;
+
+function populateConnections() {
+  var cnxul = document.getElementById('connections');
+
+  cf.pluginHandler.plugin_.serial.getConnections(function (cnxs) {
+    cnxul.innerHTML = "";
+    cnxs.forEach(function (cnx) {
+      var li = document.createElement("li"), btn = document.createElement("button");
+      li.innerHTML += cnx.name + " : " + cnx.connectionId;
+      btn.innerHTML = "Disconnect";
+      btn.onclick = function () {
+        cf.pluginHandler.plugin_.serial.disconnect(cnx.connectionId, function (ok) {
+          if (ok) {
+            // Remove from list
+            cnxul.removeChild(li);
+          } else {
+            btn.disabled = false;
+            btn.innerHTML = " failed";
+          };
+        });
+        btn.disabled = true;
+        btn.innerHTML = "Disconnecting...";
+      };
+      li.appendChild(btn);
+      cnxul.appendChild(li);
+    });
+  });
+}
+
+setInterval(populateConnections, 1000);
+
+function cleanLogs() {
+  var lglst = document.getElementsByClassName("loglist");
+  Array.prototype.forEach.call(lglst, function (el) {el.innerHTML = "";});
+}
+document.getElementById("cleanlogs").onclick = cleanLogs;

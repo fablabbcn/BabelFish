@@ -31,7 +31,7 @@ if (!chrome) {
   // - ret: return value (not implemented)
   //
   var dbg = (function () {
-    var DEBUG=true;
+    var DEBUG=false;
     if (DEBUG) {
       return function (var_args) {
 	console.log.apply(console, ["[Client] "].concat(Array.prototype.slice.call(arguments)));
@@ -323,6 +323,7 @@ function updateExtensionId (url, id) {
         xhr.status == 200 &&
         xhr.responseText.length > 0)
       config.extensionId = xhr.responseText;
+
     console.log("Extension id is:", config.extensionId);
   };
 
@@ -334,13 +335,7 @@ function updateExtensionId (url, id) {
   }
 }
 
-matchUrls.forEach(function (url) {
-  try {
-    updateExtensionId(url);
-  } catch(e) {
-    ;
-  }
-});
+matchUrls.forEach(function (url) { updateExtensionId(url);});
 
 try {
   module.exports = config;
@@ -455,22 +450,23 @@ try {
 
 // Log in a list called id
 function log(id, msg) {
-	var ele = document.getElementById(id);
-	if (!ele) {
-		var he = document.createElement('h3');
-		he.innerHTML = id;
-		ele = document.createElement('ul');
-		ele.id = id;
-		document.body.appendChild(he);
-		document.body.appendChild(ele);
-	}
+  var ele = document.getElementById(id);
+  if (!ele) {
+    var he = document.createElement('h3');
+    he.innerHTML = id;
+    ele = document.createElement('ul');
+    ele.id = id;
+    ele.className = "loglist";
+    document.body.appendChild(he);
+    document.body.appendChild(ele);
+  }
 
-	console.log("[" + id + "] " + msg );
-	ele.innerHTML += '<li>' + msg + '</li>';
+  console.log("[" + id + "] " + msg );
+  ele.innerHTML += '<li>' + msg + '</li>';
 }
 
 function str(obj) {
-	return JSON.stringify(obj);
+  return JSON.stringify(obj);
 }
 
 try {

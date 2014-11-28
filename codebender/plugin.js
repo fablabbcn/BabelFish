@@ -177,12 +177,13 @@ if (!chrome.serial) {
 		     mcu,
 		     cb) {
       // uploadCompiledSketch by mr john
-      // XXX: Move callback in backend
       setTimeout(function () {
         dbg("Code length", code.length, typeof code,
 	    "Protocol:", protocol,
 	    "Device:", device);
         uploadCompiledSketch(code, device, protocol);
+        // XXX: there is no guarantee that upload is finished, pass cb
+        // to backend
         cb();
       }, 0);
     },
@@ -212,7 +213,9 @@ if (!chrome.serial) {
       });
     },
 
-    probeUSB: function () {},
+    probeUSB: function () {
+      // Not used
+    },
 
     // Inherently sync or void methods
     disconnect: function () {
@@ -232,11 +235,17 @@ if (!chrome.serial) {
       }
     },
 
-    init: function () {},
+    init: function () {
+      // Constructor did everything.
+    },
 
-    saveToHex: function (strData) {},
+    saveToHex: function (strData) {
+      console.error("Not implemented");
+    },
 
-    serialWrite: function (strData) {},
+    serialWrite: function (strData) {
+      console.error("Not implemented");
+    },
 
     setCallback: function (cb) {
       this.callback = cb;

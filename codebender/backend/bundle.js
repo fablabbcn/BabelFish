@@ -917,7 +917,7 @@ function uploadCompiledSketch(hexData, deviceName, protocol) {
 //   2. boolean success: true iff a well-formed message was read
 //   3. int[] accum: if success is 'true' the payload data read (not
 //      including STK_INSYNC or STK_OK.
-function stkConsumeMessage(connectionId, payloadSize, callback) {
+function stkConsumeMessage(connectionId, payloadSize, callback, errorCb) {
   log(kDebugNormal, "stkConsumeMessage(conn=" + connectionId + ", payload_size=" + payloadSize + " ...)");
   var ReadState = {
     READY_FOR_IN_SYNC: 0,
@@ -936,6 +936,7 @@ function stkConsumeMessage(connectionId, payloadSize, callback) {
   var handleRead = function(arg) {
     if (reads++ >= kMaxReads) {
       log(kDebugError, "Too many reads. Bailing.");
+      errorCb(connectionId);
       return;
     }
     var hexData = binToHex(arg.data);
@@ -1046,7 +1047,16 @@ function stkWriteThenRead(connectionId, outgoingMsg, responsePayloadSize, callba
   var outgoingBinary = hexToBin(outgoingMsg);
   // schedule a read in 100ms
   chrome.serial.send(connectionId, outgoingBinary, function(writeArg) {
-    stkConsumeMessage(connectionId, responsePayloadSize, callback);
+    stkConsumeMessage(connectionId, responsePayloadSize, callback, function (connId) {
+      log(kDebugNormal, "Disconnecting from " + connId);
+
+      chrome.serial.disconnect(connId, function (ok) {
+        if (ok)
+          log(kDebugNormal, "Disconnected ok, You may now use your program!");
+        else
+          log(kDebugError, "Could not disconnect from " + connectionId);
+      });
+    });
   });
 }
 
@@ -1164,7 +1174,14 @@ function stkIsProgramming() {
 }
 
 function stkLeftProgmode(connectionId, ok, data) {
-  log(kDebugNormal, "Left progmode: " + ok + " / " + data);
+  log(kDebugNormal, "Left progmode: " + ok + " / " + data +
+      " Disconnecting " + connectionId + "...");
+  chrome.serial.disconnect(connectionId, function (ok) {
+    if (ok)
+      log(kDebugNormal, "Disconnected ok, You may now use your program!");
+    else
+      log(kDebugError, "Could not disconnect from " + connectionId);
+  });
 }
 
 function stkProgramFlash(connectionId, data, offset, length, doneCallback) {

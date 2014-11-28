@@ -66,6 +66,7 @@ function updateExtensionId (url, id) {
         xhr.status == 200 &&
         xhr.responseText.length > 0)
       config.extensionId = xhr.responseText;
+
     console.log("Extension id is:", config.extensionId);
   };
 
@@ -77,13 +78,7 @@ function updateExtensionId (url, id) {
   }
 }
 
-matchUrls.forEach(function (url) {
-  try {
-    updateExtensionId(url);
-  } catch(e) {
-    ;
-  }
-});
+matchUrls.forEach(function (url) { updateExtensionId(url);});
 
 try {
   module.exports = config;

@@ -30,7 +30,7 @@ if (!chrome) {
   // - ret: return value (not implemented)
   //
   var dbg = (function () {
-    var DEBUG=true;
+    var DEBUG=false;
     if (DEBUG) {
       return function (var_args) {
 	console.log.apply(console, ["[Client] "].concat(Array.prototype.slice.call(arguments)));
