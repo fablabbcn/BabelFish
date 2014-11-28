@@ -44,16 +44,16 @@ function RPCHost (name, obj) {
 
   if (!bus) bus = new HostBus();
 
-  var listenerForMethods = this.listenerForStuff.bind(this, this.supportedMethods,
-                                                      false),
-      listenerForListeners = this.listenerForStuff.bind(this, this.supportedListeners,
-                                                        false);
+  var listenerForMethods =
+        this.listenerForStuff.bind(this, this.supportedMethods, false),
+      listenerForListeners =
+        this.listenerForStuff.bind(this, this.supportedListeners, false);
   bus.hostListener(false, listenerForMethods);
-  bus.hostListener(this.objName, listenerForListeners, this.cleanAllCallbacks.bind(this));
+  bus.hostListener(this.objName, listenerForListeners,
+                   this.garbageCollectCallbacks.bind(this));
 }
 
 RPCHost.prototype = {
-
   methodIsListenerOrCleaner: function (methodNameOrObj) {
     var strIsListener = function (m) {
       return typeof this.listenerCallbacks[m] !== "undefined";
@@ -185,6 +185,7 @@ RPCHost.prototype = {
     });
   },
 
+  // WARNING: this destroys all callbacks for all tabs.
   cleanAllCallbacks: function () {
     var self = this;
     this.garbageCollectCallbacks();
