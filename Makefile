@@ -64,7 +64,7 @@ test-chrome:
 test: $(CURDIR)/bundles/chrome-client.js $(CURDIR)/bundles/firefox-client.js $(XPI) force
 	$(MOCHA) $(CHROME_TEST) | sed 's_http://localhost:8080_$(CURDIR)_g' # $(FIREFOX_TEST)
 
-serve:
+serve: browserify
 	node tools/serve.js
 
 async-serve:

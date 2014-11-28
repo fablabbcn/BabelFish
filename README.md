@@ -69,3 +69,11 @@ error | An error code or null
 
 *Note: not all the above functionality is thoroughly tested, the
  priority is to implement the chrome.serial.\* API*
+
+# Incompatibilities with the API
+
+- No return values are supported anywhere.
+- Everything is completely async, only callbacks can assure
+  sequentiality.
+- Callbacks do not outlive the tab. The above makes it impossible to
+  fix.
