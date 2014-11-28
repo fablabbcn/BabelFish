@@ -22,14 +22,14 @@ function StaticServer(webroot, port) {
     self.extensionId = query.extensionid || self.extensionId;
 
     console.log("Request for:", req.url,"data:", query, "(", typeof query, ")");
-    if (uri == "/extension-id.js") {
+    if (uri == "/extensionid") {
       console.log("sending", self.extensionId);
-      res.writeHead(200, {'Content-Type': 'text/javascript'});
+      res.writeHead(200, {'Content-Type': 'text/html'});
 
       if (self.extensionId)
-        res.write("config.extensionId='"+self.extensionId+"';");
+        res.write(self.extensionId);
       else
-        res.write("// Make a call with ?extensionid=<id> to set the id");
+        res.write("");
 
       res.end();
       return;

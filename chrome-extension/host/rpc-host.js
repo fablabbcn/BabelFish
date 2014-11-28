@@ -187,7 +187,7 @@ function RPCHost (name, obj) {
   this.objName = name;
   this.obj = obj || chrome[name];
   if (config.extensionId != chrome.runtime.id) {
-    console.error("The clients think my id is '" + config.extensionId +
+    console.error("The clients may think my id is '" + config.extensionId +
 		  "' (!=" + chrome.runtime.id +
 		  ") they wont be able to communicate");
   }

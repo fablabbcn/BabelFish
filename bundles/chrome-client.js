@@ -53,8 +53,8 @@ if (!chrome) {
     LISTENER: true
   }, bus;
 
-  function ClientBus(id) {
-    this.extensionId = id;
+  function ClientBus(config) {
+    this.config = config;
 
     // Keep a clean reference of the real chrome.runtime to be able to
     // send messages.
@@ -64,7 +64,7 @@ if (!chrome) {
     // Each port is bound to a callback id
     this.ports = {};
 
-    console.log("Contacting host on id:", id);
+    console.log("Contacting host on id:", this.config.id);
   }
 
   ClientBus.prototype = {
@@ -81,7 +81,7 @@ if (!chrome) {
       callbackWrap = callbackWrap;
       if (persist) {
 	dbg("Connecting to channel", msg.object);
-	var port = this.runtime_.connect(this.extensionId, {name: msg.object});
+	var port = this.runtime_.connect(this.config.extensionId, {name: msg.object});
 	// cb has access only to msg, not to any other arguments the
 	// API may provides.
 	port.postMessage(msg);
@@ -92,7 +92,7 @@ if (!chrome) {
       } else {
 	dbg("Sending:", msg);
 	this.runtime_.sendMessage (
-	  this.extensionId, msg, {}, (function (rsp) {
+	  this.config.extensionId, msg, {}, (function (rsp) {
 	    dbg("BUS received: ", rsp);
 	    callbackWrap(rsp);
 	  }).bind(this));
@@ -109,8 +109,9 @@ if (!chrome) {
   // id: the extension id
   // obj: name of the remote object
   // supported_calls: array of names of calls supported.
-  function RPCClient(id, obj_name) {
-    console.assert(typeof(id) == 'string', "Extension id should be a string");
+  function RPCClient(config, obj_name) {
+    console.assert(typeof(config.extensionId) == 'string',
+                   "Extension id should be a string");
     console.assert(typeof(obj_name) == 'string',
 		   "object name should be a string, not " + typeof(obj_name));
 
@@ -128,8 +129,7 @@ if (!chrome) {
     }
 
     // Make sure there is a bus available
-    if (!window.bus) window.bus = new ClientBus(id);
-    this.extensionId = id;
+    if (!window.bus) window.bus = new ClientBus(config);
     this.obj_name = obj_name;
     if (!config.methods[obj_name])
       err('Tried to connect to unconfigured object: chrome.' + obj_name);
@@ -245,7 +245,7 @@ if (!chrome) {
 
   // Access to the global scope
   Object.getOwnPropertyNames(config.methods).forEach(function (m) {
-    chrome[m] = new RPCClient(config.extensionId, m);
+    chrome[m] = new RPCClient(config, m);
   });
 
   if (window){
@@ -258,7 +258,9 @@ if (!chrome) {
 // File: /chrome-extension/common/config.js
 
 var config = {
-  extensionId: "iihpjpedfemglflaabiadnnjanplblia",
+  //  extensionId: "adkkcgijolkkeldfhjcabekomonffhck", // windows remote
+  // extensionId: "iihpjpedfemglflaabiadnnjanplblia", // mac local
+  extensionId: "a-fake-id",
   methods: {
     serial: {
       methods: ['getDevices', 'send', 'connect', 'disconnect', 'setControlSignals', 'getControlSignals', 'getConnections'],
@@ -298,7 +300,47 @@ var config = {
                    cleaner: 'onLaunched.removeListener'}]
     }
   }
-};
+}, matchUrls=["http://localhost:8080/*",
+              "http://ec2-54-174-134-98.compute-1.amazonaws.com:8080/*"];
+
+
+if (chrome.runtime.id)
+  config.extensionId = chrome.runtime.id;
+
+// Send the extension id to the server to send correct config to the
+// client. Kind of async but we have a backup and we will make many
+// more requests to the server before useing the extensionId
+function updateExtensionId (url, id) {
+  var xhr = new XMLHttpRequest(),
+      ext = "extensionid";
+
+  // Define it if you are an extension
+  if (chrome.runtime.id)
+    ext += "?extensionid="+ chrome.runtime.id;
+
+  xhr.onreadystatechange = function () {
+    if (xhr.readyState == 4 &&
+        xhr.status == 200 &&
+        xhr.responseText.length > 0)
+      config.extensionId = xhr.responseText;
+    console.log("Extension id is:", config.extensionId);
+  };
+
+  try {
+    xhr.open("GET", url.replace("*", ext), true);
+    xhr.send(null);
+  } catch (e) {
+    ;
+  }
+}
+
+matchUrls.forEach(function (url) {
+  try {
+    updateExtensionId(url);
+  } catch(e) {
+    ;
+  }
+});
 
 try {
   module.exports = config;
