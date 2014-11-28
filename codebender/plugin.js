@@ -82,7 +82,7 @@ if (!chrome.serial) {
 
     var self = this;
     self.serial.onReceiveError.addListener(function (info) {
-      log("PluginError", "Failed connection: " + info.connectionId +" ( " + info.error + " )");
+      console.error("Failed connection: " + info.connectionId +" ( " + info.error + " )");
       self.serial.getConnections(function (connections) {
         connections.forEach(function (ci) {
           if (ci.connectionId == info.connectionId) {
@@ -104,11 +104,14 @@ if (!chrome.serial) {
       console.error("["+ from + "] ", msg, "(status: " + status + ")");
     },
 
-    readingHandlerFactory: function (cb) {
+    readingHandlerFactory: function (connectionId, cb) {
       dbg("Reading Info:",this.readingInfo);
       if (cb !== this.readingInfo.callbackUsedInHandler) {
         this.readingInfo.callbackUsedInHandler = cb;
         this.readingInfo.handler = function (readArg) {
+          if (readArg.connectionId != connectionId)
+            return;
+
 	  var bufferView = new Uint8Array(readArg.data),
 	      chars = [];
 
@@ -145,7 +148,8 @@ if (!chrome.serial) {
 
       this.serial.connect(port, {bitrate: baudrate, name: port}, function (info) {
         self.readingInfo = info;
-        self.serial.onReceive.addListener(self.readingHandlerFactory(cb));
+        self.serial.onReceive.addListener(
+          self.readingHandlerFactory(info.connectionId, cb));
       });
     },
 
@@ -234,16 +238,18 @@ if (!chrome.serial) {
     // Inherently sync or void methods
     disconnect: function () {
       if (this.readingInfo) {
+        var self = this;
         this.serial.onReceive.removeListener(this.readingInfo.handler);
 
         this.serial.disconnect(this.readingInfo.connectionId, function (ok) {
 	  if (!ok) {
 	    throw Error("Failed to disconnect from " +
-		        this.readingInfo.name + ", id: " + this.readingInfo.connectionId);
+		        self.readingInfo.name + ", id: " +
+                        this.readingInfo.connectionId);
 	    // XXX: Maybe try again
 	  } else {
-	    this.readingInfo = null;
-	    dbg("Diconnected ok.");
+	    dbg("Diconnected ok:", self.readingInfo.connectionId);
+	    self.readingInfo = null;
 	  }
         });
       }
