@@ -81,7 +81,8 @@ RPCHost.prototype = {
     var method = path2callable(this.obj, request.method),
         // Replace the 'function' argument with the callback handler,
         // assign the callbackId and unbox arguments.
-        cbHandler = this.cbHandlerFactory(sendResp, request.callbackId, request.method, request.sender),
+        cbHandler = this.cbHandlerFactory(sendResp, request.callbackId,
+                                          request.method, request.sender),
         args = argsDecode(request.args, cbHandler);
 
     dbg("RPCHost applying: " + request.method,  args);
@@ -120,7 +121,12 @@ RPCHost.prototype = {
           try {
             sendResp(msg);
 	  } catch (e) {
-	    console.warn("Tried to send to a closed connection. FIXME. msg:", msg);
+	    console.warn("Tried to send to a closed connection. FIXME.",
+                         {
+                           msg: msg,
+                           error: e,
+                           sender: sender}
+                        );
 	  }
 	};
 
@@ -136,15 +142,25 @@ RPCHost.prototype = {
         ret = registered[0];
 
       // Populate the listenerCallbacks
-      if (this.listenerCallbacks[methodPath].indexOf(ret) == -1){
+      if (this.listenerCallbacks[methodPath].indexOf(ret) == -1) {
         dbg("Adding callback to", methodPath,":", callbackId);
         this.listenerCallbacks[methodPath].push(ret);
       }
+
+      this.garbageCollectCallbacks(this.getListenerObject(methodPath));
     }
 
     ret.sender = sender;
     ret.callbackId = callbackId;
     return ret;
+  },
+
+  // Given a starter or a cleaner, get the object
+  getListenerObject: function (listenerMethodName) {
+    return this.supportedListeners.filter(function (l) {
+      return (l.cleaner == listenerMethodName ||
+	      l.starter == listenerMethodName);
+    })[0];
   },
 
   // Get all stored callbacks related to listenerMethodName that may
@@ -165,25 +181,28 @@ RPCHost.prototype = {
   },
 
   // Remove the cleaned from the lsitener stacks
-  garbageCollectCallbacks: function () {
-    dbg("Collecting garbage callbacks from stacks...");
-
+  garbageCollectCallbacks: function (listener) {
     var self = this;
-    self.supportedListeners.forEach(function (ls) {
+    dbg("Garbage collection");
+    function gcListener(ls) {
       if (ls.cleaner) {
-	self.listenerCallbacks[ls.cleaner].forEach(function (cleanedCb) {
-
+	self.listenerCallbacks[ls.cleaner].forEach(function (cleanCb) {
 	  // Remove the cleaned listeners
-	  self.listenerCallbacks[ls.starter].reduce(function (lst, callback) {
-	    if (callback === cleanedCb) {
-              dbg("Garbage collecting callback:", callback.callbackId);
-	      return lst;
-            }
-	    return lst.concat([callback]);
-	  }, []);
-	});
+          dbg("[GC:", ls.cleaner,"] Callbacks cleaned:",
+              self.listenerCallbacks[ls.cleaner]);
+          dbg("[GC", ls.starter,"] Callbacks started:",
+              self.listenerCallbacks[ls.starter]);
+	  self.listenerCallbacks[ls.starter] =
+            self.listenerCallbacks[ls.starter].filter(
+	      function (callback) {
+                return callback.callbackId != cleanCb.callbackId;
+              });
+        });
+        self.listenerCallbacks[ls.cleaner] = [];
       }
-    });
+    }
+
+    self.supportedListeners.forEach(gcListener);
   },
 
   cleanAllCallbacks: function (sender) {

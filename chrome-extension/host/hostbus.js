@@ -50,8 +50,7 @@ HostBus.prototype = {
 	  dbg("Connected: " + channel);
 
 	  var msgHandler = function (msg) {
-	    dbg("RPCBus reveived connection message: ", msg);
-            msg.sender = port.sender;
+	    dbg("RPCBus reveived connection message: ", msg, "from", msg.sender);
 	    return cb(msg, port.postMessage.bind(port));
 	  };
           var cleanup = function () {
@@ -60,7 +59,6 @@ HostBus.prototype = {
             else
 	      console.warn("No cleanup function defined.");
           };
-
 
 	  port.onMessage.addListener(msgHandler);
 	  port.onDisconnect.addListener( function () {

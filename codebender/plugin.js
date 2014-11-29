@@ -239,18 +239,29 @@ if (!chrome.serial) {
     disconnect: function () {
       if (this.readingInfo) {
         var self = this;
-        this.serial.onReceive.removeListener(this.readingInfo.handler);
 
-        this.serial.disconnect(this.readingInfo.connectionId, function (ok) {
-	  if (!ok) {
-	    throw Error("Failed to disconnect from " +
-		        self.readingInfo.name + ", id: " +
-                        this.readingInfo.connectionId);
-	    // XXX: Maybe try again
-	  } else {
-	    dbg("Diconnected ok:", self.readingInfo.connectionId);
-	    self.readingInfo = null;
-	  }
+        function unsafeCleanReadingInfo () {
+          self.serial.onReceive.removeListener(self.readingInfo.handler);
+          self.serial.disconnect(self.readingInfo.connectionId, function (ok) {
+	    if (!ok) {
+	      throw Error("Failed to disconnect from " +
+		          self.readingInfo.name + ", id: " +
+                          self.readingInfo.connectionId);
+	      // XXX: Maybe try again
+	    } else {
+	      dbg("Diconnected ok:", self.readingInfo.connectionId);
+	      self.readingInfo = null;
+	    }
+          });
+        }
+
+        self.serial.getConnections(function (cnxs) {
+          cnxs.forEach(function (cnx) {
+            if (cnx.connectionId != self.readingInfo.connectionId)
+              return;
+
+            unsafeCleanReadingInfo();
+          });
         });
       }
     },

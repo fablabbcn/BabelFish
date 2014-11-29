@@ -1,3 +1,9 @@
+function poll(cb, time) {
+  var inter = setInterval(function () {
+    if(cb()) clearInterval(inter);
+  }, time || 500);
+}
+
 var cf = new compilerflasher(function (){return [];});
 
 // Enable the plugin
@@ -42,8 +48,19 @@ $("#flash").click (function () {
 function startMonitor () {
   cf.pluginHandler.connected = false;
   cf.pluginHandler.connect();
-  document.getElementById('monitor').innerHTML = "Disconnect";
-  document.getElementById('monitor').onclick = killMonitor;
+  document.getElementById('monitor').innerHTML = "Connecting..."
+  document.getElementById('monitor').disabled = true;
+
+  poll(function () {
+    if (!cf.pluginHandler.plugin_.readingInfo)
+      return false;
+
+    document.getElementById('monitor').innerHTML = "Disconnect: " +
+      cf.pluginHandler.plugin_.readingInfo.connectionId;
+    document.getElementById('monitor').onclick = killMonitor;
+    document.getElementById('monitor').disabled = false;
+    return true;
+  }, 500);
 }
 
 function killMonitor () {
@@ -51,6 +68,7 @@ function killMonitor () {
   document.getElementById('monitor').innerHTML = "Connect";
   document.getElementById('monitor').onclick = startMonitor;
 }
+
 document.getElementById('monitor').innerHTML = "Connect";
 document.getElementById('monitor').onclick = startMonitor;
 
