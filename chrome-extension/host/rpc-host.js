@@ -85,7 +85,7 @@ RPCHost.prototype = {
                                           request.method, request.sender),
         args = argsDecode(request.args, cbHandler);
 
-    dbg("RPCHost applying: " + request.method,  args);
+    dbg("RPCHost applying: ", request.method,  args);
     try {
       method.apply(this.obj, args);
     } catch (e) {

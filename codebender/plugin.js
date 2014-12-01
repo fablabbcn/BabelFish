@@ -250,9 +250,11 @@ if (!chrome.serial) {
 	      // XXX: Maybe try again
 	    } else {
 	      dbg("Diconnected ok:", self.readingInfo.connectionId);
-	      self.readingInfo = null;
 	    }
           });
+
+          // Cleanup syncrhronously
+	  self.readingInfo = null;
         }
 
         if (force)
@@ -294,6 +296,7 @@ if (!chrome.serial) {
     closeTab: function () {
       // Tab may close before the callback so do it unsafe.
       this.disconnect(true);
+      debugger;
     },
 
     // Internals
