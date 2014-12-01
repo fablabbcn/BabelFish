@@ -235,8 +235,8 @@ if (!chrome.serial) {
       // Not used
     },
 
-    // Inherently sync or void methods
-    disconnect: function () {
+    // Inherently sync or void methods. Force is if we don't know we will still be there to hear the callback.
+    disconnect: function (force) {
       if (this.readingInfo) {
         var self = this;
 
@@ -255,14 +255,17 @@ if (!chrome.serial) {
           });
         }
 
-        self.serial.getConnections(function (cnxs) {
-          cnxs.forEach(function (cnx) {
-            if (cnx.connectionId != self.readingInfo.connectionId)
-              return;
+        if (force)
+          unsafeCleanReadingInfo();
+        else
+          self.serial.getConnections(function (cnxs) {
+            cnxs.forEach(function (cnx) {
+              if (cnx.connectionId != self.readingInfo.connectionId)
+                return;
 
-            unsafeCleanReadingInfo();
+              unsafeCleanReadingInfo();
+            });
           });
-        });
       }
     },
 
@@ -289,7 +292,8 @@ if (!chrome.serial) {
     // Dummies for plugin garbage collection.
     deleteMap: function () {},
     closeTab: function () {
-      this.disconnect();
+      // Tab may close before the callback so do it unsafe.
+      this.disconnect(true);
     },
 
     // Internals

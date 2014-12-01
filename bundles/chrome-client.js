@@ -15,6 +15,8 @@ if (!chrome) {
       argsEncode = rargs.argsEncode,
       argsDecode = rargs.argsDecode;
 
+  if (!window._rpcSender) window._rpcSender = (new Date).getTime();
+
   // Notably insupported stuff:
   //
   // - Callbacks not to be called at the very end of the rpc
@@ -219,7 +221,8 @@ if (!chrome) {
 	    method: fnname,
 	    args: rich_args,
 	    error: null,
-	    callbackId: this.callbackIdFactory(rich_args.callbackRaw)
+	    callbackId: this.callbackIdFactory(rich_args.callbackRaw),
+            sender: window._rpcSender
 	  },
           // false if it's a cleaner
           clientCallback = !(this.availableCleaners[fnname]) &&
