@@ -122,7 +122,7 @@ if (!chrome.serial) {
 	  // FIXME: if the last line does not end in a newline it should
 	  // be buffered
 	  var msgs = String.fromCharCode.apply(null, chars).split("\n");
-	  console.log("Received on monitor:", msgs);
+	  console.log("Bytes received:", readArg.data.length);
 	  // return cb("chrome-serial", rcv);
 	  // XXX: This is a bit hacky but it should work.
 	  // If we have complete messages or if the message so far is too large
