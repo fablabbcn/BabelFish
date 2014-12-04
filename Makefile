@@ -2,7 +2,7 @@ build_script = $(CURDIR)/plugin/build.sh
 XPI = $(CURDIR)/plugin/codebendercc.xpi
 export CODEBENDER_XPI = $(XPI)
 PLUGIN = $(CURDIR)/plugin/npCodebendercc.so
-ΤΑRGETS = $(XPI) $(PLUGIN)
+ΤΑRGETS = $(XPI) $(PLUGIN) $(CHROME_ZIP)
 CPP_DIR = $(CURDIR)/plugin/Codebendercc
 CPP = $(CPP_DIR)/CodebenderccAPI.cpp $(CPP_DIR)/CodebenderccAPI.h $(CPP_DIR)/CodebenderccAPIJS.cpp $(CPP_DIR)/Codebendercc.cpp $(CPP_DIR)/Codebendercc.h
 
@@ -20,16 +20,30 @@ MOCHA = mocha $(DEBUG)
 ## Codebender tests
 URL = http://localhost:8080/codebender/test/test_download/index.html
 
-CHROME_TEST = test/selenium-test.js
-FIREFOX_TEST = test/firefox-test.js
+CHROME_TEST =  $(CURDIR)/test/selenium-test.js
+FIREFOX_TEST =  $(CURDIR)/test/firefox-test.js
 PLUGIN_FILES = $(build_script) $(CPP) $(CURDIR)/plugin/Codebendercc/fake_install.rdf
+CHROME_ZIP = $(CURDIR)/bundles/chrome-extension.zip
 
 CLIENT_FILES = $(CURDIR)/lib/plugin.js			\
 	$(CURDIR)/chrome-extension/client/rpc-client.js \
 	$(CURDIR)/chrome-extension/common/config.js	\
 	$(CURDIR)/chrome-extension/common/rpc-args.js
 
+HOST_FILES = $(CURDIR)/chrome-extension/manifest.json	\
+	$(CURDIR)/chrome-extension/host/rpc-host.js	\
+	$(CURDIR)/chrome-extension/host/background.js	\
+	$(CURDIR)/chrome-extension/host/hostbus.js	\
+	$(CURDIR)/chrome-extension/host/util.js		\
+	$(CURDIR)/chrome-extension/common/config.js	\
+	$(CURDIR)/chrome-extension/common/rpc-args.js
+
 force:;
+
+$(CHROME_ZIP): $(CURDIR)/bundles $(HOST_FILES)
+	@echo  "Zipping: $@"
+	zip $@ $(HOST_FILES)
+chrome-extension:
 
 $(CURDIR)/bundles:
 	mkdir $@
@@ -64,7 +78,7 @@ test-chrome:
 test: $(CURDIR)/bundles/chrome-client.js $(CURDIR)/bundles/firefox-client.js $(XPI) force
 	$(MOCHA) $(CHROME_TEST) | sed 's_http://localhost:8080_$(CURDIR)_g' # $(FIREFOX_TEST)
 
-serve: browserify
+serve: browserify $(CHROME_ZIP)
 	node tools/serve.js
 
 async-serve:
