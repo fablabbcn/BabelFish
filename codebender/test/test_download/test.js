@@ -47,10 +47,16 @@ $("#flash").click (function () {
   });
 });
 
+var send = document.getElementById("send");
+send.onclick = function () {
+  cf.pluginHandler.serialSend();
+};
+
+
 function startMonitor () {
   cf.pluginHandler.connected = false;
   cf.pluginHandler.connect();
-  document.getElementById('monitor').innerHTML = "Connecting..."
+  document.getElementById('monitor').innerHTML = "Connecting...";
   document.getElementById('monitor').disabled = true;
 
   poll(function () {

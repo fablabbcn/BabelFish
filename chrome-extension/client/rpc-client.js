@@ -206,9 +206,13 @@ if (!chrome) {
     callbackIdFactory: function (cb) {
       // Not very likely that two calls are less than a milisecond
       // appart even in parallel.
-      var id = (cb && cb.callbackId) || (new Date).getTime();
-      cb.callbackId = id;
-      return id;
+      if (typeof cb === 'function') {
+        var id = cb.callbackId || (new Date).getTime();
+        cb.callbackId = id;
+        return id;
+      } else {
+        return null;
+      }
     },
 
     _rpc: function (fnname, var_args) {

@@ -131,9 +131,14 @@ if (!chrome.serial) {
 	      (this.readingInfo.buffer_ + msgs[0]).length > this.bufferSize) {
 	    msgs[0] = this.readingInfo.buffer_ + msgs[0];
 	    this.readingInfo.buffer_ = "";
-	    msgs.forEach(function (line) {cb("chrome-serial", line);});
-	  } else
+	    cb("chrome-serial", msgs.join("\n"));
+	  } else {
 	    this.readingInfo.buffer_ += msgs[0];
+            setTimeout(function () {
+              cb("chrome-serial", this.readingInfo.buffer_);
+              this.readingInfo.buffer_ = "";
+            }.bind(this), 200);
+          }
         }.bind(this);
       }
 
@@ -230,7 +235,8 @@ if (!chrome.serial) {
       // Not used
     },
 
-    // Inherently sync or void methods. Force is if we don't know we will still be there to hear the callback.
+    // Inherently sync or void methods. Force is if we don't know we
+    // will still be there to hear the callback.
     disconnect: function (force) {
       if (this.readingInfo) {
         var self = this;
@@ -272,9 +278,27 @@ if (!chrome.serial) {
       console.error("Not implemented");
     },
 
-    serialWrite: function (strData) {
-      if (this.readingInfo)
-        this.serial.send(this.readingInfo);
+    serialWrite: function (strData, cb) {
+      var self = this;
+
+      if (this.readingInfo){
+        var data = new ArrayBuffer(strData.length);
+        var bufferView = new Uint8Array(data);
+        for (var i = 0; i < strData.length; i++) {
+          bufferView[i] = strData.charCodeAt(i);
+        }
+
+        console.log("Sending data:", data[0], "from string:", strData);
+        this.serial.send(this.readingInfo.connectionId, data, function (sendInfo){
+          if (sendInfo.error) {
+            throw Error("Failed to send through",
+                        self.readingInfo,":", sendInfo.error);
+          }
+
+          console.log("Sent bytes:", sendInfo.bytesSent, "connid: ");
+          if (cb) cb(sendInfo.bytesSent);
+        });
+      }
     },
 
     setCallback: function (cb) {

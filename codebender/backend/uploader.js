@@ -625,7 +625,7 @@ function avrWaitForBytes(connectionId, n, accum, deadline, callback) {
       }, 50);
       // TODO: deadline?
     }
-  }
+  };
 
   readFromBuffer(connectionId, n, handler);
 }
