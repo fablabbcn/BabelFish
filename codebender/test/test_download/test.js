@@ -14,7 +14,8 @@ $("#flash").click (function () {
   $.get("/codebender/backend/blink-example.hex", function (blob) {
     // Pretend to send logs
     dbg("Blob length: ", blob.split("\n").length);
-    document.getElementById('hex').innerHTML = blob;
+    document.getElementById('hex').innerHTML = "Program length: " +
+      blob.split("\n").length;
 
     var flash_args = [
       true,			//select
@@ -31,7 +32,7 @@ $("#flash").click (function () {
       undefined, 		//Flush with programmer
       ParseHexFile(blob),			//binary
       function (from, progress) {
-	console.log("Uploading", from, progress);
+	console.log("Uploading progress", from, progress);
       }];
 
     // Mimic the usbflash behavior

@@ -147,9 +147,14 @@ if (!chrome.serial) {
       if (typeof baudrate !== "number") baudrate = Number(baudrate);
 
       this.serial.connect(port, {bitrate: baudrate, name: port}, function (info) {
-        self.readingInfo = info;
-        self.serial.onReceive.addListener(
-          self.readingHandlerFactory(info.connectionId, cb));
+        if (info) {
+          console.log("Serial connected to: ", info);
+          self.readingInfo = info;
+          self.serial.onReceive.addListener(
+            self.readingHandlerFactory(self.readingInfo.connectionId, cb));
+        } else {
+          throw Error("Failed to connect serial:", {bitrate: baudrate, name: port});
+        }
       });
     },
 
@@ -167,9 +172,9 @@ if (!chrome.serial) {
     },
 
     doFlashbootloader: function (device, protocol, speed, force,
- 			       delay, high_fuses, low_fuses,
- 			       extended_fuses, unlock_bits, mcu,
- 			       cb) {
+ 			         delay, high_fuses, low_fuses,
+ 			         extended_fuses, unlock_bits, mcu,
+ 			         cb) {
       // Validate the data
       // Async run doFlashWithProgrammer
     },
@@ -234,12 +239,10 @@ if (!chrome.serial) {
           self.serial.onReceive.removeListener(self.readingInfo.handler);
           self.serial.disconnect(self.readingInfo.connectionId, function (ok) {
 	    if (!ok) {
-	      throw Error("Failed to disconnect from " +
-		          self.readingInfo.name + ", id: " +
-                          self.readingInfo.connectionId);
+	      throw Error("Failed to disconnect from ", self.readingInfo);
 	      // XXX: Maybe try again
 	    } else {
-	      dbg("Diconnected ok:", self.readingInfo.connectionId);
+	      dbg("Diconnected ok:", self.readingInfo);
 	    }
           });
 
@@ -271,7 +274,7 @@ if (!chrome.serial) {
 
     serialWrite: function (strData) {
       if (this.readingInfo)
-      this.serial.send(this.readingInfo);
+        this.serial.send(this.readingInfo);
     },
 
     setCallback: function (cb) {

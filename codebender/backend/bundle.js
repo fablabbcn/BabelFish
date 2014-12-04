@@ -847,37 +847,42 @@ function uploadCompiledSketch(hexData, deviceName, protocol) {
     chrome.serial.onReceive.addListener(readToBuffer);
     readToBuffer.listening = true;
   }
+  // Recursive awesomeness: Disconnect all devices whose name is the
+  // deviceName and when you check everything connect to
+  // deviceName. Note that there is no way to find out the path of
+  // the device if the connect() method does not set it as name so
+  // we probably wont play with other serial frameworks.
+  chrome.serial.getConnections(function _maybeDisconnectFirst(relevantConnections){
+    if (relevantConnections.length == 0) {
+      log(kDebugFine, "Connecting to ", deviceName);
 
-  if (protocol == "stk500" || protocol == "arduino") {
-    // Recursive awesomeness: Disconnect all devices whose name is the
-    // deviceName and when you check everything connect to
-    // deviceName. Note that there is no way to find out the path of
-    // the device if the connect() method does not set it as name so
-    // we probably wont play with other serial frameworks.
-    chrome.serial.getConnections(function _maybeDisconnectFirst(connections){
-      if (connections.length == 0) {
-	log(kDebugFine, "Connecting to " + deviceName);
+      if (protocol == "stk500" || protocol == "arduino") {
+
 	chrome.serial.connect(deviceName, { bitrate: 115200, name: deviceName },
 			      stkConnectDone.bind(null, hexData));
 	return;
-      }
-
-      var candid = connections.pop();
-      log(kDebugFine, "Checking connection " + candid.name);
-      if (candid.name == deviceName) {
-	chrome.serial.disconnect(candid.connectionId,function () {
-	  _maybeDisconnectFirst(connections);
-	});
+      } else if (protocol == "avr109") {
+        // actually want tocheck that board is leonardo / micro / whatever
+        kickLeonardoBootloader(deviceName, hexData);
       } else {
-	_maybeDisconnectFirst(connections);
+        log(kDebugError, "Unknown protocol: "  + protocol);
       }
-    });
-  } else if (protocol == "avr109") {
-    // actually want tocheck that board is leonardo / micro / whatever
-    kickLeonardoBootloader(deviceName);
-  } else {
-    log(kDebugError, "Unknown protocol: "  + protocol);
-  }
+    } else {
+      var candid = relevantConnections.pop();
+      log(kDebugFine, "Checking connection " + candid);
+      if (candid.name == deviceName) {
+        chrome.serial.disconnect(candid.connectionId, function (ok) {
+          if (ok)
+	    _maybeDisconnectFirst(relevantConnections);
+          else
+            throw Error("Failed to disconnect before programming:", candid.name);
+        });
+      } else {
+        _maybeDisconnectFirst(relevantConnections);
+      }
+    }
+  });
+
 }
 
 //
@@ -1260,7 +1265,7 @@ function findMissingNeedlesInHaystack(needles, haystack) {
   return r;
 }
 
-function waitForNewDevice(oldDevices, deadline) {
+function waitForDeviceAndConnect(dev, deadline, cb) {
   log(kDebugFine, "Waiting for new device...");
   if (new Date().getTime() > deadline) {
     log(kDebugError, "Exceeded deadline");
@@ -1269,47 +1274,44 @@ function waitForNewDevice(oldDevices, deadline) {
 
   var found = false;
   chrome.serial.getDevices(function(newDevices) {
-    var appeared = findMissingNeedlesInHaystack(newDevices, oldDevices);
-    var disappeared = findMissingNeedlesInHaystack(oldDevices, newDevices);
-
-    for (var i = 0; i < disappeared.length; ++i) {
-      log(kDebugNormal, "Disappeared: " + disappeared[i]);
-    }
-    for (var i = 0; i < appeared.length; ++i) {
-      log(kDebugNormal, "Appeared: " + appeared[i]);
-    }
+    // XXX: Maybe name checking is bad
+    var appeared = newDevices.filter(function (d) {return d.path == dev.name;});
 
     if (appeared.length == 0) {
-      setTimeout(function() { waitForNewDevice(newDevices, deadline); }, 100);
-    } else {
-      log(kDebugNormal, "Aha! Connecting to: " + appeared[0]);
       setTimeout(function() {
-        chrome.serial.connect(appeared[0], { bitrate: 57600, name: appeared[0] }, avrConnectDone);}, 500);
+        waitForDeviceAndConnect(dev, deadline, cb);
+      }, 100);
+    } else if ((new Date().getTime()) > deadline){
+      log(kDebugError, "Waited too long for " + dev.name);
+    } else {
+      log(kDebugNormal, "Aha! Connecting to: " + dev.name);
+      chrome.serial.connect(dev.name, { bitrate: 57600, name: appeared[0].path }, cb);
     }
   });
 }
 
-function kickLeonardoBootloader(originalDeviceName) {
+function kickLeonardoBootloader(originalDeviceName, hexData) {
   log(kDebugNormal, "kickLeonardoBootloader(" + originalDeviceName + ")");
   var kMagicBaudRate = 1200;
   var oldDevices = [];
   chrome.serial.getDevices(function(devicesArg) {
     oldDevices = devicesArg;
-    chrome.serial.connect(originalDeviceName, { bitrate: kMagicBaudRate, name: originalDeviceName}, function(connectArg) {
+    chrome.serial.connect(originalDeviceName, { bitrate: kMagicBaudRate, name: originalDeviceName}, function(connectInfo) {
       log(kDebugNormal, "Made sentinel connection to " + originalDeviceName);
-      chrome.serial.disconnect(connectArg.connectionId, function(disconnectArg) {
-        log(kDebugNormal, "Disconnected from " + originalDeviceName);
-        waitForNewDevice(oldDevices, (new Date().getTime()) + 10000);
-	//        setTimeout(function() {
-	//          chrome.serial.connect(originalDeviceName, { bitrate: 57600 }, avrConnectDone);
-	//        }, 300);
-      });
+      setTimeout(function () {
+        chrome.serial.disconnect(connectInfo.connectionId, function(disconnectOk) {
+          log(kDebugNormal, "Disconnected from " + originalDeviceName);
+          waitForDeviceAndConnect(connectInfo, (new Date().getTime()) + 10000, function (connectInfo) {
+            avrConnectDone(connectInfo, hexData);
+          });
+        });
+      }, 2000);
     });
   });
 }
 
 
-function avrConnectDone(connectArg) {
+function avrConnectDone(connectArg, hexData) {
   if (typeof(connectArg) == "undefined" ||
       typeof(connectArg.connectionId) == "undefined" ||
       connectArg.connectionId == -1) {
@@ -1320,7 +1322,7 @@ function avrConnectDone(connectArg) {
   log(kDebugFine, "Connected to board. ID: " + connectArg.connectionId);
 
   readFromBuffer(connectArg.connectionId, 1024, function(readArg) {
-    avrDrainedBytes(readArg, connectArg.connectionId);
+    avrDrainedBytes(readArg, connectArg.connectionId, hexData);
   });
 };
 
@@ -1363,7 +1365,7 @@ var AVR = {
   TYPE_FLASH: 0x46,
   EXIT_BOOTLOADER: 0x45,
   CR: 0x0D,
-  READ_PAGE: 0x67,
+  READ_PAGE: 0x67
 };
 
 function avrWriteThenRead(connectionId, writePayload, readSize, callback) {
@@ -1373,57 +1375,55 @@ function avrWriteThenRead(connectionId, writePayload, readSize, callback) {
   });
 }
 
-function avrGotVersion(connectionId, version) {
+function avrGotVersion(connectionId, version, hexData) {
   log(kDebugNormal, "Got version: " + version);
-  avrPrepareToProgramFlash(connectionId, sketchData_, avrProgrammingDone);
+  avrPrepareToProgramFlash(connectionId, hexData, avrProgrammingDone);
 }
-
-function avrEnterProgramMode(connectionId) {
-  avrWriteThenRead(
-    connectionId, [ AVR.ENTER_PROGRAM_MODE ], 1,
-    function(connectionId, payload) {
-      avrProgramFlash(connectionId, sketch_data_, 0, 128, avrProgrammingDone);
-    });
-}
-
 
 function avrProgrammingDone(connectionId) {
   log(kDebugNormal, "avrProgrammingDone");
   avrWriteThenRead(connectionId, [ AVR.LEAVE_PROGRAM_MODE ], 1, function(connectionId, payload) {
     avrWriteThenRead(connectionId, [ AVR.EXIT_BOOTLOADER ], 1, function(connection, payload) {
-      log(kDebugNormal, "ALL DONE");
+      chrome.serial.disconnect(connectionId, function (ok) {
+        if (ok)
+          log(kDebugNormal, "ALL DONE");
+        else
+          throw Error("Did not disconnect correctly from connection " + connectionId);
+      });
     });
   });
 }
 
-function avrDrainedAgain(readArg, connectionId) {
+function avrDrainedAgain(readArg, connectionId, hexData) {
   log(kDebugFine, "avrDrainedAgain({readarg}, " + connectionId);
   log(kDebugError, "DRAINED " + readArg.bytesRead + " BYTES");
   if (readArg.bytesRead == 1024) {
     // keep draining
     readFromBuffer(connectionId, 1024, function(readArg) {
-      avrDrainedBytes(readArg, connectionId);
+      avrDrainedBytes(readArg, connectionId, hexData);
     });
   } else {
     // Start the protocol
 
-    avrWriteThenRead(connectionId, [ AVR.SOFTWARE_VERSION ], 2, avrGotVersion);
+    avrWriteThenRead(connectionId, [ AVR.SOFTWARE_VERSION ], 2, function (connectionId, version) {
+      avrGotVersion(connectionId, version, hexData);
+    });
   }
 }
 
-function avrDrainedBytes(readArg, connectionId) {
+function avrDrainedBytes(readArg, connectionId, hexData) {
   log(kDebugError, "DRAINED " + readArg.bytesRead + " BYTES on " + connectionId);
   if (readArg.bytesRead == 1024) {
     // keep draining
     readFromBuffer(connectionId, 1024, function(readArg) {
-      avrDrainedBytes(readArg, connectionId);
+      avrDrainedBytes(readArg, connectionId, hexData);
     });
   } else {
-    setTimeout(function() { avrDtrSent(true, connectionId); }, 1000);
+    setTimeout(function() { avrDtrSent(true, connectionId, hexData); }, 1000);
   }
 }
 
-function avrDtrSent(ok, connectionId) {
+function avrDtrSent(ok, connectionId, hexData) {
   if (!ok) {
     log(kDebugError, "Couldn't send DTR");
     return;
@@ -1431,7 +1431,7 @@ function avrDtrSent(ok, connectionId) {
   log(kDebugFine, "DTR sent (low) real good on connection: " + connectionId);
 
   readFromBuffer(connectionId, 1024, function(readArg) {
-    avrDrainedAgain(readArg, connectionId);
+    avrDrainedAgain(readArg, connectionId, hexData);
   });
 }
 
