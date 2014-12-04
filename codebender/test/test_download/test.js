@@ -11,7 +11,7 @@ var protocol = "avr109";
 cf.pluginHandler.showPlugin();
 cf.enableCompilerFlasherActions();
 $("#flash").click (function () {
-  $.get("/codebender/backendt/blink-example.hex", function (blob) {
+  $.get("/codebender/backend/blink-example.hex", function (blob) {
     // Pretend to send logs
     dbg("Blob length: ", blob.split("\n").length);
     document.getElementById('hex').innerHTML = blob;
