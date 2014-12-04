@@ -5,12 +5,13 @@ function poll(cb, time) {
 }
 
 var cf = new compilerflasher(function (){return [];});
+var protocol = "avr109";
 
 // Enable the plugin
 cf.pluginHandler.showPlugin();
 cf.enableCompilerFlasherActions();
 $("#flash").click (function () {
-  $.get("/web/blink-example.hex", function (blob) {
+  $.get("/codebender/backendt/blink-example.hex", function (blob) {
     // Pretend to send logs
     dbg("Blob length: ", blob.split("\n").length);
     document.getElementById('hex').innerHTML = blob;
@@ -21,7 +22,7 @@ $("#flash").click (function () {
 	upload: {
 	  disbale_flushing: undefined,
 	  maximum_size: 4096,
-	  protocol: "stk500",
+	  protocol: protocol,
 	  speed: 112500},
 	build: {
 	  mcu: undefined

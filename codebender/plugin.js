@@ -160,30 +160,18 @@ if (!chrome.serial) {
       });
     },
 
-    flashBootloader: function (device, protocol, speed, force,
+
+    doflashWithProgrammer: function (device, code, maxsize, string,
+                                     programmerData, mcu, flash_callback) {
+
+    },
+
+    doFlashbootloader: function (device, protocol, speed, force,
  			       delay, high_fuses, low_fuses,
  			       extended_fuses, unlock_bits, mcu,
  			       cb) {
       // Validate the data
       // Async run doFlashWithProgrammer
-    },
-
-    flashWithProgrammer: function (port, code, maxsize, protocol,
-				   communication, speed, force,
-				   delay, mcu, cb) {
-      var prog = new Programmer({
-        protocol: protocol,
-        speed: speed,
-        communication: communication,
-        force: force,
-        delay: delay,
-        mcu: mcu,
-        port: port
-      });
-      if (prog.validation() != 0) setTimeout(cb.bind(prog.validation()), 0);
-
-      setTimeout(this.doFlashWithProgrammer.bind(this), 0);
-      return 0;
     },
 
     flash: function (device,
@@ -199,6 +187,8 @@ if (!chrome.serial) {
         dbg("Code length", code.length, typeof code,
 	    "Protocol:", protocol,
 	    "Device:", device);
+
+        // STK500v1
         uploadCompiledSketch(code, device, protocol);
         // XXX: there is no guarantee that upload is finished, pass cb
         // to backend
@@ -280,7 +270,8 @@ if (!chrome.serial) {
     },
 
     serialWrite: function (strData) {
-      console.error("Not implemented");
+      if (this.readingInfo)
+      this.serial.send(this.readingInfo);
     },
 
     setCallback: function (cb) {
@@ -296,7 +287,6 @@ if (!chrome.serial) {
     closeTab: function () {
       // Tab may close before the callback so do it unsafe.
       this.disconnect(true);
-      debugger;
     },
 
     // Internals

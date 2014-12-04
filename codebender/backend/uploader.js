@@ -122,7 +122,7 @@ function uploadCompiledSketch(hexData, deviceName, protocol) {
     readToBuffer.listening = true;
   }
 
-  if (protocol == "stk500") {
+  if (protocol == "stk500" || protocol == "arduino") {
     // Recursive awesomeness: Disconnect all devices whose name is the
     // deviceName and when you check everything connect to
     // deviceName. Note that there is no way to find out the path of
@@ -149,28 +149,10 @@ function uploadCompiledSketch(hexData, deviceName, protocol) {
   } else if (protocol == "avr109") {
     // actually want tocheck that board is leonardo / micro / whatever
     kickLeonardoBootloader(deviceName);
-  } else if (protocol == "avr109_beta") {
-    var boardObj = NewAvr109Board(chrome.serial, 128, globalDispatcher);
-    if (!boardObj.status.ok()) {
-      log(kDebugError, "Couldn't create AVR109 Board: " + boardObj.status.toString());
-      return;
-    }
-    var board = boardObj.board;
-    board.connect(deviceName, function(status) {
-      if (status.ok()) {
-        board.writeFlash(0, pad(hexData, 128), function(status) {
-          log(kDebugNormal, "AVR programming status: " + status.toString());
-
-        });
-      } else {
-        log(kDebugNormal, "AVR connection error: " + status.toString());
-      }
-    });
   } else {
     log(kDebugError, "Unknown protocol: "  + protocol);
   }
 }
-
 
 //
 // Internal/implementation
@@ -589,13 +571,15 @@ function kickLeonardoBootloader(originalDeviceName) {
     oldDevices = devicesArg;
     chrome.serial.connect(originalDeviceName, { bitrate: kMagicBaudRate, name: originalDeviceName}, function(connectArg) {
       log(kDebugNormal, "Made sentinel connection to " + originalDeviceName);
-      chrome.serial.disconnect(connectArg.connectionId, function(disconnectArg) {
-        log(kDebugNormal, "Disconnected from " + originalDeviceName);
-        waitForNewDevice(oldDevices, (new Date().getTime()) + 10000);
-	//        setTimeout(function() {
-	//          chrome.serial.connect(originalDeviceName, { bitrate: 57600 }, avrConnectDone);
-	//        }, 300);
-      });
+      setTimeout(function () {
+        chrome.serial.disconnect(connectArg.connectionId, function(disconnectArg) {
+          log(kDebugNormal, "Disconnected from " + originalDeviceName);
+          waitForNewDevice(oldDevices, (new Date().getTime()) + 10000);
+	  //        setTimeout(function() {
+	  //          chrome.serial.connect(originalDeviceName, { bitrate: 57600 }, avrConnectDone);
+	  //        }, 300);
+        });
+      }, 2000);
     });
   });
 }
