@@ -35,7 +35,11 @@ Log.prototype = {
   },
   info: function (var_args) {
     if (this.verbosity > 2)
-      this.console_('log', arraify(arguments), 0, this.prefix());
+      this.console_('log', arraify(arguments, 0, this.prefix()));
+  },
+  log: function (var_args) {
+    if (this.verbosity > 2)
+      this.console_('log', arraify(arguments, 0, this.prefix()));
   }
 };
 

@@ -438,6 +438,9 @@ function storeAsTwoBytes(n) {
 
 // Async reading to and from buffer
 function binToBuf(hex) {
+  if (hex instanceof ArrayBuffer)
+    return hex;
+
   var buffer = new ArrayBuffer(hex.length);
   var bufferView = new Uint8Array(buffer);
   for (var i = 0; i < hex.length; i++) {
@@ -447,12 +450,16 @@ function binToBuf(hex) {
   return buffer;
 }
 
-function bufToBin(bin) {
-  var bufferView = new Uint8Array(bin);
+function bufToBin(buf) {
+  if (!buf instanceof ArrayBuffer)
+    return buf;
+
+  var bufferView = new Uint8Array(buf);
   var hexes = [];
   for (var i = 0; i < bufferView.length; ++i) {
     hexes.push(bufferView[i]);
   }
+
   return hexes;
 }
 
@@ -478,19 +485,190 @@ Buffer.prototype = {
   },
 
   write: function (readArg) {
-    var hexData = binToBuf(readArg.data);
-    log.log("Pushing ", hexData.length, "bytes onto buffer for:", readArg.connectionId, hexData);
-    this.databuffer.concat(hexData);
+    var hexData = bufToBin(readArg.data);
+    log.log("Pushing to buffer:", hexData);
+    this.databuffer = this.databuffer.concat(hexData);
     log.log("Buffer now of size ", this.databuffer.length);
   }
 };
 
+function hexRep(intArray) {
+  var buf = "[";
+  var sep = "";
+  for (var i = 0; i < intArray.length; ++i) {
+    buf += (sep + "0x" + intArray[i].toString(16));
+    sep = ",";
+  }
+  buf += "]";
+  return buf;
+}
+
 module.exports.Buffer = Buffer;
+module.exports.hexRep = hexRep;
 module.exports.bufToBin = bufToBin;
 module.exports.storeAsTwoBytes = storeAsTwoBytes;
 module.exports.binToBuf = binToBuf;
 
-},{"./logging":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/logging.js","./util":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/util.js"}],"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/logging.js":[function(require,module,exports){
+},{"./logging":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/logging.js","./util":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/util.js"}],"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/hexparser.js":[function(require,module,exports){
+// Parse an Intel hex file (http://en.wikipedia.org/wiki/Intel_HEX).
+//
+// For simplicity: Requires that the hex file specifies a single, contiguous
+// block of data, starting at address 0.
+//
+// input: A string (separated by '\n' newlines) representing the file.
+//
+// returns: an array of integers (necessarily in the range [0,255]) where the n-th
+//   array entry represents the byte at address 'n'.
+//
+// TODOs:
+// - Validate checksum
+// - Handle other record types
+function ParseHexFile(input) {
+  var kStartcodeBytes = 1;
+  var kSizeBytes = 2;
+  var kAddressBytes = 4;
+  var kRecordTypeBytes = 2;
+  var kChecksumBytes = 2;
+
+  var inputLines = input.split("\n");
+
+  var out = [];
+
+  var nextAddress = 0;
+
+  for (var i = 0; i < inputLines.length; ++i) {
+    var line = inputLines[i];
+
+    //
+    // Startcode
+    //
+    if (line[0] != ":") {
+      console.log("Bad line [" + i + "]. Missing startcode: " + line);
+      return "FAIL";
+    }
+
+    //
+    // Data Size
+    //
+    var ptr = kStartcodeBytes;
+    if (line.length < kStartcodeBytes + kSizeBytes) {
+      console.log("Bad line [" + i + "]. Missing length bytes: " + line);
+      return "FAIL";
+    }
+    var dataSizeHex = line.substring(ptr, ptr + kSizeBytes);
+    ptr += kSizeBytes;
+    var dataSize = hexToDecimal(dataSizeHex);
+
+    //
+    // Address
+    //
+    if (line.length < ptr + kAddressBytes) {
+      console.log("Bad line [" + i + "]. Missing address bytes: " + line);
+      return "FAIL";
+    }
+    var addressHex = line.substring(ptr, ptr + kAddressBytes);
+    ptr += kAddressBytes;
+    var address = hexToDecimal(addressHex);
+
+    //
+    // Record Type
+    //
+    if (line.length < ptr + kRecordTypeBytes) {
+      console.log("Bad line [" + i + "]. Missing record type bytes: " + line);
+      return "FAIL";
+    }
+    var recordTypeHex = line.substring(ptr, ptr + kRecordTypeBytes);
+    ptr += kRecordTypeBytes;
+
+    //
+    // Data
+    //
+    var dataChars = 2 * dataSize;  // Each byte is two chars
+    if (line.length < (ptr + dataChars)) {
+      console.log("Bad line [" + i + "]. Too short for data: " + line);
+      return "FAIL";
+    }
+    var dataHex = line.substring(ptr, ptr + dataChars);
+    ptr += dataChars;
+
+    //
+    // Checksum
+    //
+    if (line.length < (ptr + kChecksumBytes)) {
+      console.log("Bad line [" + i + "]. Missing checksum: " + line);
+      return "FAIL";
+    }
+    var checksumHex = line.substring(ptr, ptr + kChecksumBytes);
+
+    //
+    // Permit trailing whitespace
+    //
+    if (line.length > ptr + kChecksumBytes + 1) {
+      var leftover = line.substring(ptr, line.length);
+      if (!leftover.match("$\w+^")) {
+          console.log("Bad line [" + i + "]. leftover data: " + line);
+          return "FAIL";
+      }
+    }
+
+    var kDataRecord = "00";
+    var kEndOfFileRecord = "01";
+
+    if (recordTypeHex == kEndOfFileRecord) {
+      return out;
+    } else if (recordTypeHex == kDataRecord) {
+      if (address != nextAddress) {
+        console.log("I need contiguous addresses");
+        return "FAIL";
+      }
+      nextAddress = address + dataSize;
+
+      var bytes = hexCharsToByteArray(dataHex);
+      if (bytes == -1) {
+        console.log("Couldn't parse hex data: " + dataHex);
+        return "FAIL";
+      }
+      out = out.concat(bytes);
+    } else {
+      console.log("I can't handle records of type: " + recordTypeHex);
+      return "FAIL";
+    }
+  }
+
+  console.log("Never found EOF!");
+  return "FAIL";
+}
+
+function hexToDecimal(h) {
+  if (!h.match("^[0-9A-Fa-f]*$")) {
+    console.log("Invalid hex chars: " + h);
+    return -1;
+  }
+  return parseInt(h, 16);
+}
+
+function hexCharsToByteArray(hc) {
+  if (hc.length % 2 != 0) {
+    console.log("Need 2-char hex bytes");
+    return -1; // :(
+  }
+
+  var bytes = [];
+  for (var i = 0; i < hc.length / 2; ++i) {
+    var hexChars = hc.substring(i * 2, (i * 2) + 2);
+    var byte = hexToDecimal(hexChars);
+    if (byte == -1) {
+      return -1;
+    }
+    bytes.push(byte);
+  }
+  return bytes;
+}
+
+window.ParseHexFile = ParseHexFile;
+module.exports.ParseHexFile = ParseHexFile;
+
+},{}],"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/logging.js":[function(require,module,exports){
 var arraify = require('./util').arraify;
 
 function Log (name, verbosity) {
@@ -528,7 +706,11 @@ Log.prototype = {
   },
   info: function (var_args) {
     if (this.verbosity > 2)
-      this.console_('log', arraify(arguments), 0, this.prefix());
+      this.console_('log', arraify(arguments, 0, this.prefix()));
+  },
+  log: function (var_args) {
+    if (this.verbosity > 2)
+      this.console_('log', arraify(arguments, 0, this.prefix()));
   }
 };
 
@@ -537,7 +719,7 @@ module.exports.Log = Log;
 },{"./util":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/util.js"}],"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/protocols.js":[function(require,module,exports){
 module.exports.protocols = {
   stk: require('./protocols/stk500').STK500Transaction,
-  avr: require('./protocols/butterfly').AVR109Transaction
+  avr109: require('./protocols/butterfly').AVR109Transaction
 };
 
 },{"./protocols/butterfly":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/protocols/butterfly.js","./protocols/stk500":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/protocols/stk500.js"}],"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/protocols/butterfly.js":[function(require,module,exports){
@@ -545,7 +727,7 @@ var SerialTransaction = require('./serialtransaction'),
     Log = require('./../logging').Log,
     log = new Log('avr109'),
     arraify = require('./../util').arraify,
-    buffer = require("./../buffer.js");
+    buffer = require("./../buffer");
 
 function AVR109Transaction () {
   SerialTransaction.apply(this, arraify(arguments));
@@ -561,6 +743,7 @@ function AVR109Transaction () {
     CR: 0x0D,
     READ_PAGE: 0x67
   };
+  this.log = log;
 }
 AVR109Transaction.prototype = new SerialTransaction();
 
@@ -569,22 +752,25 @@ AVR109Transaction.prototype.flash = function (devName, hexData) {
       oldDevices = [],
       self = this;
 
+  self.hexData = hexData;
   self.serial.getDevices(function(devicesArg) {
     oldDevices = devicesArg;
 
     self.serial.connect(devName, { bitrate: kMagicBaudRate, name: devName}, function(connectInfo) {
-      log.log("Made sentinel connection to " + devName);
+      log.log("Made sentinel connection:", connectInfo, "waiting 2s ...");
       setTimeout(function () {
         self.serial.disconnect(connectInfo.connectionId, function(ok) {
           if (ok) {
             log.log("Disconnected from ", devName);
-            self.waitForDeviceAndConnect(connectInfo, (new Date().getTime()) + 10000,
-                                         this.transitionCb('connectDone'));
+            setTimeout(function () {
+              self.waitForDeviceAndConnect(connectInfo, (new Date().getTime()) + 10000,
+                                           self.transitionCb('connectDone'));
+            }, 500);
           } else {
             throw Error("Failed to disconnect from " + devName);
           }
-        }, 2000);
-      });
+        });
+      }, 2000);
     });
   });
 };
@@ -616,18 +802,31 @@ AVR109Transaction.prototype.waitForDeviceAndConnect = function(dev, deadline, cb
 };
 
 
-AVR109Transaction.prototype.gotVersion = function (version, hexData) {
+AVR109Transaction.prototype.connectDone = function (connectArg) {
+  if (typeof(connectArg) == "undefined" ||
+      typeof(connectArg.connectionId) == "undefined" ||
+      connectArg.connectionId == -1) {
+    log.error("(AVR) Bad connectionId / Couldn't connect to board");
+    return;
+  }
+
+  log.log("Connected to board. ID: " + connectArg.connectionId);
+
+  this.connectionId = connectArg.connectionId;
+  this.buffer.read(1024, this.transitionCb('drainedBytes'));
+};
+
+AVR109Transaction.prototype.gotVersion = function (version) {
   log.log("Got version: ", version);
-  this.prepareToProgramFlash(this.connectionId, hexData,
-                             this.transitionCb('programmingDone'));
+  this.transition('prepareToProgramFlash');
 };
 
 AVR109Transaction.prototype.programmingDone = function () {
   var self = this;
 
   log.log("avrProgrammingDone");
-  this.writeThenRead(this.connectionId, [ this.AVR.LEAVE_PROGRAM_MODE ], 1, function(payload) {
-    self.writeThenRead_([ self.AVR.EXIT_BOOTLOADER ], 1, function(connection, payload) {
+  this.writeThenRead_([ this.AVR.LEAVE_PROGRAM_MODE ], 1, function(payload) {
+    self.writeThenRead_([ self.AVR.EXIT_BOOTLOADER ], 1, function(payload) {
       self.serial.disconnect(self.connectionId, function (ok) {
         if (ok)
           log.log("ALL DONE");
@@ -639,8 +838,8 @@ AVR109Transaction.prototype.programmingDone = function () {
   });
 }
 
-AVR109Transaction.prototype.drainedAgain = function (readArg, connectionId, hexData) {
-  log.log("avrDrainedAgain({readarg}, " + connectionId);
+AVR109Transaction.prototype.drainedAgain = function (readArg) {
+  log.log("drainedAgain(", readArg ,")");
   log.log("DRAINED " + readArg.bytesRead + " BYTES");
   if (readArg.bytesRead == 1024) {
     // keep draining
@@ -657,6 +856,7 @@ AVR109Transaction.prototype.drainedBytes = function (readArg) {
     // keep draining
     this.buffer.read(1024, this.transitionCb('drainedBytes'));
   } else {
+    var self = this;
     setTimeout(function() { self.transition('dtrSent', true);}, 1000);
   }
 }
@@ -666,29 +866,29 @@ AVR109Transaction.prototype.dtrSent = function (ok) {
     log.error("Couldn't send DTR");
     return;
   }
-  log.log("DTR sent (low) real good on connection: " + connectionId);
+  log.log("DTR sent (low) real good on connection: " + this.connectionId);
 
-  this.buffer.read(1024, this.callbackCb('drainedAgain'));
+  this.buffer.read(1024, this.transitionCb('drainedAgain'));
 }
 
-AVR109Transaction.prototype.prepareToProgramFlash = function (data, doneCallback) {
-  var addressBytes = buffer.storeAsTwoBytes(0);
+AVR109Transaction.prototype.prepareToProgramFlash = function () {
+  var addressBytes = buffer.storeAsTwoBytes(0),
+      self = this,
+      loadAddressMessage = [
+        this.AVR.SET_ADDRESS, addressBytes[1], addressBytes[0]];
 
-  var loadAddressMessage = [
-    this.AVR.SET_ADDRESS, addressBytes[1], addressBytes[0]];
-
-  this.writeThenRead_(loadAddressMessage, 1, function(connectionId, response) {
-    self.transition('programFlash', data, 0, 128, doneCallback);
+  this.writeThenRead_(loadAddressMessage, 1, function(response) {
+    self.transition('programFlash', self.hexData, 0, 128);
   });
 };
 
-AVR109Transaction.prototype.programFlash = function (data, offset, length, doneCallback) {
+AVR109Transaction.prototype.programFlash = function (data, offset, length) {
   log.log("program flash: data.length: " + data.length + ", offset: " + offset + ", length: " + length);
   var payload;
 
   if (offset >= data.length) {
     log.log("Done programming flash");
-    doneCallback();
+    this.transition('programmingDone');
     return;
   }
 
@@ -706,55 +906,124 @@ AVR109Transaction.prototype.programFlash = function (data, offset, length, doneC
     payload = data.slice(offset, offset + length);
   }
 
-  var sizeBytes = buffer.storeAsTwoBytes(length);
-  var kFlashMemoryType = 0x46;
-  var programMessage = [
-    this.AVR.WRITE, sizeBytes[0], sizeBytes[1], this.AVR.TYPE_FLASH ];
+  var sizeBytes = buffer.storeAsTwoBytes(length),
+      programMessage = [
+        this.AVR.WRITE, sizeBytes[0], sizeBytes[1], this.AVR.TYPE_FLASH ];
   programMessage = programMessage.concat(payload);
 
   var self = this;
-  this.writeThenRead_(programMessage, 1, function(ok, _) {
-    self.transition('programFlash', data, offset + length, length, doneCallback);
+  this.writeThenRead_(programMessage, 1, function(resp) {
+    // XXX: check respeonse.
+    self.transition('programFlash', data, offset + length, length);
   });
 }
 
-},{"./../buffer.js":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/buffer.js","./../logging":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/logging.js","./../util":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/util.js","./serialtransaction":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/protocols/serialtransaction.js"}],"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/protocols/serialtransaction.js":[function(require,module,exports){
-var Transaction = require('./../transaction').Transaction,
+
+// Simply wayt for byte
+SerialTransaction.prototype.consumeMessage = function (payloadSize, callback, errorCb) {
+  // Hide the strange arguments.
+  this.waitForBytes(payloadSize, [], (new Date().getTime()) + 1000, callback);
+};
+
+AVR109Transaction.prototype.waitForBytes = function (n, accum, deadline, callback) {
+  var self = this;
+
+  if (new Date().getTime() > deadline) {
+    log.error("Deadline passed while waiting for " + n + " bytes");
+    return;
+  }
+  log.log("Waiting for", n, "bytes");
+
+  var handler = function(readArg) {
+    var hexData = buffer.bufToBin(readArg.data);
+    for (var i = 0; i < hexData.length; ++i) {
+      accum.push(hexData[i]);
+      n--;
+    }
+
+    if (n < 0) {
+      log.error("Read too many bytes !?");
+    } else if (n == 0) {
+      log.log("Response (remaining bytes:", n, "):", buffer.hexRep(accum));
+      log.log("Callback:", callback);
+      callback(accum);
+    } else { // still want more data
+      setTimeout(function() {
+        self.waitForBytes(n, accum, deadline, callback);
+      }, 50);
+      // TODO: deadline?
+    }
+  };
+
+  self.buffer.read(n, handler);
+};
+
+module.exports.AVR109Transaction = AVR109Transaction;
+
+},{"./../buffer":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/buffer.js","./../logging":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/logging.js","./../util":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/util.js","./serialtransaction":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/protocols/serialtransaction.js"}],"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/protocols/serialtransaction.js":[function(require,module,exports){
+var _create_chrome_client = require('./../../../chrome-extension/client/rpc-client'),
+    Transaction = require('./../transaction').Transaction,
     arraify = require('./../util').arraify,
     buffer = require("./../buffer.js");
 
 function SerialTransaction () {
   Transaction.apply(this, arraify(arguments));
 
-  this.buffer = buffer.Buffer();
+  this.buffer = new buffer.Buffer();
   this.serial = chrome.serial;
+  this.log = console;
+
+  // XXX: Remove me at the end. Maybe this could be in the buffer.
+  this.listenerHandler = this.readToBuffer.bind(this);
+  this.log.log("Listening on buffer");
+  this.serial.onReceive.addListener(this.listenerHandler);
 }
 SerialTransaction.prototype = new Transaction();
 
 SerialTransaction.prototype.writeThenRead_ = function (outgoingMsg, responsePayloadSize, callback) {
-  log.log("Writing: " + buffer.hexRep(outgoingMsg));
+  this.log.log("Writing: " + buffer.hexRep(outgoingMsg));
   var outgoingBinary = buffer.binToBuf(outgoingMsg),
       self = this;
 
   // schedule a read in 100ms
   this.serial.send(this.connectionId, outgoingBinary, function(writeArg) {
     self.consumeMessage(responsePayloadSize, callback, function (connId) {
-      log.log("Disconnecting from " + connId);
+      this.log.log("Disconnecting from", connId);
 
       self.serial.disconnect(connId, function (ok) {
         if (ok) {
           self.connectionId = null;
-          log.log("Disconnected ok, You may now use your program!");
+          this.log.log("Disconnected ok, You may now use your program!");
         } else
-          log.error("Could not disconnect from " + this.connectionId);
+          this.log.error("Could not disconnect from " + this.connectionId);
       });
     });
   });
 };
 
+// Simply wayt for byte
+SerialTransaction.prototype.consumeMessage = function (payloadSize, callback, errorCb) {
+  throw Error("Not implemented");
+};
+
+
+SerialTransaction.prototype.readToBuffer = function (readArg) {
+  if (this.connectionId != readArg.connectionId) {
+    return true;
+  }
+
+  this.buffer.write(readArg);
+  this.log.log("Received", readArg, "buffer is now", this.buffer);
+
+  // Note that in BabelFish this does not ensure that the listener
+  // stops.
+  return false;
+};
+
+
 module.exports = SerialTransaction;
 
-},{"./../buffer.js":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/buffer.js","./../transaction":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/transaction.js","./../util":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/util.js"}],"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/protocols/stk500.js":[function(require,module,exports){
+},{"./../../../chrome-extension/client/rpc-client":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/chrome-extension/client/rpc-client.js","./../buffer.js":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/buffer.js","./../transaction":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/transaction.js","./../util":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/util.js"}],"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/protocols/stk500.js":[function(require,module,exports){
 var SerialTransaction = require('./serialtransaction'),
     Log = require('./../logging').Log,
     log = new Log('STK500'),
@@ -779,6 +1048,7 @@ function STK500Transaction () {
     SW_VER_MINOR: 0x82,
     SW_VER_MAJOR: 0x81
   };
+  this.log = log;
 }
 
 STK500Transaction.prototype = new SerialTransaction();
@@ -789,130 +1059,6 @@ STK500Transaction.prototype.flash = function (deviceName, sketchData) {
                       function (connectArg) {
                         this.transition('connectDone', sketchData, connectArg);
                       });
-};
-
-STK500Transaction.prototype.writeThenRead_ = function (outgoingMsg, responsePayloadSize, callback) {
-  log.log("Writing: " + buffer.hexRep(outgoingMsg));
-  var outgoingBinary = buffer.binToBuf(outgoingMsg),
-      self = this;
-
-  // schedule a read in 100ms
-  this.serial.send(this.connectionId, outgoingBinary, function(writeArg) {
-    self.consumeMessage(responsePayloadSize, callback, function (connId) {
-      log.log("Disconnecting from " + connId);
-
-      self.serial.disconnect(connId, function (ok) {
-        if (ok) {
-          self.connectionId = null;
-          log.log("Disconnected ok, You may now use your program!");
-        } else
-          log.error("Could not disconnect from " + this.connectionId);
-      });
-    });
-  });
-};
-
-
-STK500Transaction.prototype.consumeMessage = function (payloadSize, callback) {
-  var self = this;
-  log.log("stkConsumeMessage(conn=", self.connectionId,
-          ", payload_size=", payloadSize, " ...)");
-  var ReadState = {
-    READY_FOR_IN_SYNC: 0,
-    READY_FOR_PAYLOAD: 1,
-    READY_FOR_OK: 2,
-    DONE: 3,
-    ERROR: 4
-  };
-
-  var accum = [];
-  var state = ReadState.READY_FOR_IN_SYNC;
-  var kMaxReads = 100;
-  var reads = 0;
-  var payloadBytesConsumed = 0;
-
-  var handleRead = function(arg) {
-    if (reads++ >= kMaxReads) {
-      log.error("Too many reads. Bailing.");
-      self.errorCb(self.connectionId);
-      return;
-    }
-    var hexData = buffer.bufToBin(arg.data);
-    if (arg.bytesRead > 0) {
-      log.log("Read:" + hexData);
-    } else {
-      log.log("No data read.");
-    }
-    for (var i = 0; i < hexData.length; ++i) {
-      log.log("Byte " + i + " of " + hexData.length + ": " + hexData[i]);
-      if (state == ReadState.READY_FOR_IN_SYNC) {
-        if (hexData[i] == self.STK.INSYNC) {
-          if (payloadSize == 0) {
-            log.log("Got IN_SYNC, no payload, now READY_FOR_OK");
-            state = ReadState.READY_FOR_OK;
-          } else {
-            log.log("Got IN_SYNC, now READY_FOR_PAYLOAD");
-            state = ReadState.READY_FOR_PAYLOAD;
-          }
-        } else {
-          log.log("Expected self.STK.INSYNC (" + self.STK.INSYNC + "). Got: " + hexData[i] + ". Ignoring.");
-          //          state = ReadState.ERROR;
-        }
-      } else if (state == ReadState.READY_FOR_PAYLOAD) {
-        accum.push(hexData[i]);
-        payloadBytesConsumed++;
-        if (payloadBytesConsumed == payloadSize) {
-          log.log("Got full payload, now READY_FOR_OK");
-          state = ReadState.READY_FOR_OK;
-        } else if (payloadBytesConsumed > payloadSize) {
-          log.log("Got too many payload bytes, now ERROR");
-          state = ReadState.ERROR;
-          log.error("Read too many payload bytes!");
-        }
-      } else if (state == ReadState.READY_FOR_OK) {
-        if (hexData[i] == self.STK.OK) {
-          log.log("Got OK now DONE");
-          state = ReadState.DONE;
-        } else {
-          log.error("Expected STK_OK. Got: " + hexData[i]);
-          state = ReadState.ERROR;
-        }
-      } else if (state == ReadState.DONE) {
-        log.error("Out of sync (ignoring data)");
-        state = ReadState.ERROR;
-      } else if (state == ReadState.ERROR) {
-        log.error("In error state. Draining byte: " + hexData[i]);
-        // Remains in state ERROR
-      } else {
-        log.error("Unknown state: " + state);
-        state = ReadState.ERROR;
-      }
-    }
-
-    if (state == ReadState.ERROR || state == ReadState.DONE) {
-      log.log("Finished in state: " + state);
-      callback(self.connectionId, state == ReadState.DONE, accum);
-    } else {
-      log.log("Paused in state: " + state + ". Reading again.");
-
-      if (!self.inSync_ && (reads % 3) == 0) {
-        // Mega hack (temporary)
-        log.log("Mega Hack: Writing: " + buffer.hexRep([self.STK.GET_SYNC, self.STK.CRC_EOP]));
-        self.serial.send(self.connectionId, buffer.hexToBin([self.STK.GET_SYNC, self.STK.CRC_EOP]), function() {
-          self.buffer.read(1024, handleRead);
-        });
-      } else {
-        // Don't tight-loop waiting for the message.
-        setTimeout(function() {
-          self.buffer.read(1024, handleRead);
-        }, 10);
-      }
-
-    }
-  };
-
-  log.log("Scheduling a read in .1s");
-  setTimeout(function() { self.buffer.read(1024, handleRead); }, 10);
 };
 
 STK500Transaction.prototype.connectDone = function (hexCode, connectArg) {
@@ -1102,6 +1248,114 @@ STK500Transaction.prototype.programFlash = function (data, offset, length, doneC
   });
 };
 
+
+STK500Transaction.prototype.consumeMessage = function (payloadSize, callback, errorCb) {
+  var self = this;
+  self.log.log("stkConsumeMessage(conn=", self.connectionId,
+               ", payload_size=", payloadSize, " ...)");
+  var ReadState = {
+    READY_FOR_IN_SYNC: 0,
+    READY_FOR_PAYLOAD: 1,
+    READY_FOR_OK: 2,
+    DONE: 3,
+    ERROR: 4
+  };
+
+  var accum = [];
+  var state = ReadState.READY_FOR_IN_SYNC;
+  var kMaxReads = 100;
+  var reads = 0;
+  var payloadBytesConsumed = 0;
+
+  var handleRead = function(arg) {
+    if (reads++ >= kMaxReads) {
+      log.error("Too many reads. Bailing.");
+      errorCb(self.connectionId);
+      return;
+    }
+
+    var hexData = buffer.bufToBin(arg.data);
+    if (arg.bytesRead > 0) {
+      log.log("Read:" + hexData);
+    } else {
+      log.log("No data read.");
+    }
+
+    for (var i = 0; i < hexData.length; ++i) {
+      log.log("Byte " + i + " of " + hexData.length + ": " + hexData[i]);
+      if (state == ReadState.READY_FOR_IN_SYNC) {
+        if (hexData[i] == self.STK.INSYNC) {
+          if (payloadSize == 0) {
+            log.log("Got IN_SYNC, no payload, now READY_FOR_OK");
+            state = ReadState.READY_FOR_OK;
+          } else {
+            log.log("Got IN_SYNC, now READY_FOR_PAYLOAD");
+            state = ReadState.READY_FOR_PAYLOAD;
+          }
+        } else {
+          log.log("Expected self.STK.INSYNC (" + self.STK.INSYNC + "). Got: " + hexData[i] + ". Ignoring.");
+          //          state = ReadState.ERROR;
+        }
+      } else if (state == ReadState.READY_FOR_PAYLOAD) {
+        accum.push(hexData[i]);
+        payloadBytesConsumed++;
+        if (payloadBytesConsumed == payloadSize) {
+          log.log("Got full payload, now READY_FOR_OK");
+          state = ReadState.READY_FOR_OK;
+        } else if (payloadBytesConsumed > payloadSize) {
+          log.log("Got too many payload bytes, now ERROR");
+          state = ReadState.ERROR;
+          log.error("Read too many payload bytes!");
+        }
+      } else if (state == ReadState.READY_FOR_OK) {
+        if (hexData[i] == self.STK.OK) {
+          log.log("Got OK now DONE");
+          state = ReadState.DONE;
+        } else {
+          log.error("Expected STK_OK. Got: " + hexData[i]);
+          state = ReadState.ERROR;
+        }
+      } else if (state == ReadState.DONE) {
+        log.error("Out of sync (ignoring data)");
+        state = ReadState.ERROR;
+      } else if (state == ReadState.ERROR) {
+        log.error("In error state. Draining byte: " + hexData[i]);
+        // Remains in state ERROR
+      } else {
+        log.error("Unknown state: " + state);
+        state = ReadState.ERROR;
+      }
+    }
+
+    if (state == ReadState.ERROR || state == ReadState.DONE) {
+      log.log("Finished in state: " + state);
+      callback(self.connectionId, state == ReadState.DONE, accum);
+    } else {
+      log.log("Paused in state: " + state + ". Reading again.");
+
+      if (!self.inSync_ && (reads % 3) == 0) {
+        // Mega hack (temporary)
+        log.log("Mega Hack: Writing: " + buffer.hexRep([self.STK.GET_SYNC, self.STK.CRC_EOP]));
+        self.serial.send(self.connectionId, buffer.hexToBin([self.STK.GET_SYNC, self.STK.CRC_EOP]), function() {
+          self.buffer.read(1024, handleRead);
+        });
+      } else {
+        // Don't tight-loop waiting for the message.
+        setTimeout(function() {
+          self.buffer.read(1024, handleRead);
+        }, 10);
+      }
+
+    }
+  };
+
+  log.log("Scheduling a read in .1s");
+  setTimeout(function() { self.buffer.read(1024, handleRead); }, 10);
+};
+
+
+module.exports.STK500Transaction = STK500Transaction;
+
 },{"./../buffer.js":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/buffer.js","./../logging":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/logging.js","./../util":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/util.js","./serialtransaction":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/protocols/serialtransaction.js"}],"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/transaction.js":[function(require,module,exports){
 var utilModule = require("./util"),
     arraify = utilModule.arraify,
@@ -1129,15 +1383,15 @@ Transaction.prototype = {
   // Will trigger 'leave' and 'enter' hooks and possibly call a
   // callback when done.
   transition: function(state, varArgs) {
-    var oldState = this.state;
+    var oldState = this.state, args = arraify(arguments, 1);
 
-    this.triggerHook(['leave', oldState], this.context);
+    // this.triggerHook(['leave', oldState], this.context);
     this.state = state;
-    this.callHook(['enter', this.state], this.context);
+    // this.triggerHook(['enter', this.state], this.context);
     // this.transitions.push([state, oldState, deepCopy(this.context)]);
 
-    if (this[state])
-      this[state].apply(this, arraify(1, arguments));
+    console.log("Jumping to state\'", state, "' arguments:", args);
+    this[state].apply(this, args);
   },
 
   transitionCb: function (state) {
@@ -1176,8 +1430,9 @@ module.exports.arraify = arraify;
 module.exports.deepCopy = deepCopy;
 
 },{}],"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/plugin.js":[function(require,module,exports){
-var protocols = require('./backend/protocols').protocols;
-var create_the_client = require('./../chrome-extension/client/rpc-client');
+var protocols = require('./backend/protocols').protocols,
+    _create_chrome_client = require('./../chrome-extension/client/rpc-client'),
+    _create_hex_parser = require('./backend/hexparser');
 
 var dbg = (function  () {
   var DEBUG = false;
@@ -1372,14 +1627,15 @@ if (!chrome.serial) {
                      speed,
                      mcu,
                      cb) {
-      // uploadCompiledSketch by mr john
+
+      var transaction = new protocols[protocol]();
       setTimeout(function () {
-        dbg("Code length", code.length, typeof code,
-            "Protocol:", protocol,
-            "Device:", device);
+        console.log("Code length", code.length, typeof code,
+                    "Protocol:", protocols,
+                    "Device:", device);
 
         // STK500v1
-        transaction.flash(code, device, cb);
+        transaction.flash(device, code);
       }, 0);
     },
 
@@ -1512,7 +1768,7 @@ ReadHandler.prototype = {
   stopAllReaders: function () {}
 };
 
-},{"./../chrome-extension/client/rpc-client":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/chrome-extension/client/rpc-client.js","./backend/protocols":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/protocols.js"}],"/Users/drninjabatman/Projects/Codebendercc/BabelFish/tools/client-util.js":[function(require,module,exports){
+},{"./../chrome-extension/client/rpc-client":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/chrome-extension/client/rpc-client.js","./backend/hexparser":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/hexparser.js","./backend/protocols":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/protocols.js"}],"/Users/drninjabatman/Projects/Codebendercc/BabelFish/tools/client-util.js":[function(require,module,exports){
 // File: /tools/client-util.js
 
 // Log in a list called id
@@ -1545,4 +1801,4 @@ try {
 window.log = log;
 window.str = str;
 
-},{}]},{},["/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/buffer.js","/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/transaction.js","/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/protocols/butterfly.js","/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/protocols/stk500.js","/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/plugin.js","/Users/drninjabatman/Projects/Codebendercc/BabelFish/chrome-extension/client/rpc-client.js","/Users/drninjabatman/Projects/Codebendercc/BabelFish/chrome-extension/common/config.js","/Users/drninjabatman/Projects/Codebendercc/BabelFish/chrome-extension/common/rpc-args.js","/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/logging.js","/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/protocols/serialtransaction.js","/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/util.js"]);
+},{}]},{},["/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/buffer.js","/Users/drninjabatman/Projects/Codebendercc/BabelFish/chrome-extension/common/config.js","/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/transaction.js","/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/logging.js","/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/protocols/butterfly.js","/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/protocols/serialtransaction.js","/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/protocols/stk500.js","/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/plugin.js"]);

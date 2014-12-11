@@ -1,5 +1,6 @@
-var protocols = require('./backend/protocols').protocols;
-var create_the_client = require('./../chrome-extension/client/rpc-client');
+var protocols = require('./backend/protocols').protocols,
+    _create_chrome_client = require('./../chrome-extension/client/rpc-client'),
+    _create_hex_parser = require('./backend/hexparser');
 
 var dbg = (function  () {
   var DEBUG = false;
@@ -194,14 +195,15 @@ if (!chrome.serial) {
                      speed,
                      mcu,
                      cb) {
-      // uploadCompiledSketch by mr john
+
+      var transaction = new protocols[protocol]();
       setTimeout(function () {
-        dbg("Code length", code.length, typeof code,
-            "Protocol:", protocol,
-            "Device:", device);
+        console.log("Code length", code.length, typeof code,
+                    "Protocol:", protocols,
+                    "Device:", device);
 
         // STK500v1
-        transaction.flash(code, device, cb);
+        transaction.flash(device, code);
       }, 0);
     },
 

@@ -12,24 +12,23 @@ cf.pluginHandler.showPlugin();
 cf.enableCompilerFlasherActions();
 cf.pluginHandler.scan();
 $("#flash").click (function () {
-  $.get("/codebender/backend/blink-example.hex", function (blob) {
+  var protocol = document.getElementById("protocols").value;
+  $.get("/codebender/sketches/blink-" + protocol + ".hex", function (blob) {
     // Pretend to send logs
-    dbg("Blob length: ", blob.split("\n").length);
+    console.log("Blob length: ", blob.split("\n").length);
     document.getElementById('hex').innerHTML = "Program length: " +
       blob.split("\n").length;
 
-    protocol = document.getElementById("protocols").value,
-
     var board = {
-      upload: {
-        disbale_flushing: undefined,
-        maximum_size: 4096,
-        protocol: protocol,
-        speed: 112500},
-      build: {
-        mcu: undefined
-      }
-    },
+          upload: {
+            disbale_flushing: undefined,
+            maximum_size: 4096,
+            protocol: protocol,
+            speed: 112500},
+          build: {
+            mcu: undefined
+          }
+        },
         flash_args = [
           true,                     //select
           board,                     //device
