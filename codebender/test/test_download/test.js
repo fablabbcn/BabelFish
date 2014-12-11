@@ -18,23 +18,26 @@ $("#flash").click (function () {
     document.getElementById('hex').innerHTML = "Program length: " +
       blob.split("\n").length;
 
-    var flash_args = [
-      true,                     //select
-      {
-        upload: {
-          disbale_flushing: undefined,
-          maximum_size: 4096,
-          protocol: protocol,
-          speed: 112500},
-        build: {
-          mcu: undefined
-        }
-      },                     //device
-      undefined,                //Flush with programmer
-      ParseHexFile(blob),                       //binary
-      function (from, progress) {
-        console.log("Uploading progress", from, progress);
-      }];
+    protocol = document.getElementById("protocols").value,
+
+    var board = {
+      upload: {
+        disbale_flushing: undefined,
+        maximum_size: 4096,
+        protocol: protocol,
+        speed: 112500},
+      build: {
+        mcu: undefined
+      }
+    },
+        flash_args = [
+          true,                     //select
+          board,                     //device
+          undefined,                //Flush with programmer
+          ParseHexFile(blob),                       //binary
+          function (from, progress) {
+            console.log("Uploading progress", from, progress);
+          }];
 
     // Mimic the usbflash behavior
     if (cf.pluginHandler.connected == true) {
@@ -110,7 +113,6 @@ function populateConnections() {
 }
 
 setInterval(populateConnections, 1000);
-
 function cleanLogs() {
   var lglst = document.getElementsByClassName("loglist");
   Array.prototype.forEach.call(lglst, function (el) {el.innerHTML = "";});
