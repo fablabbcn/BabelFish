@@ -1,4 +1,4 @@
-(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({"/Users/drninjabatman/Projects/Codebendercc/BabelFish/chrome-extension/client/rpc-client.js":[function(require,module,exports){
 // File: /chrome-extension/client/rpc-client.js
 
 // XXX: move cleaner/listener management code to common.
@@ -36,7 +36,7 @@ if (!chrome) {
     var DEBUG=false;
     if (DEBUG) {
       return function (var_args) {
-	console.log.apply(console, ["[Client] "].concat(Array.prototype.slice.call(arguments)));
+        console.log.apply(console, ["[Client] "].concat(Array.prototype.slice.call(arguments)));
       };
     } else {
       return function (msg) {};
@@ -72,32 +72,32 @@ if (!chrome) {
   ClientBus.prototype = {
     default_cb: function (msg) {
       if (!msg)
-	err("Chrome's last error: " + this.runtime_.lastError);
+        err("Chrome's last error: " + this.runtime_.lastError);
 
       if (msg.error)
-	throw err(msg.error);
+        throw err(msg.error);
     },
 
     // cb(msg)
     clientMessage: function (persist, msg, callbackWrap) {
       callbackWrap = callbackWrap;
       if (persist) {
-	dbg("Connecting to channel", msg.object);
-	var port = this.runtime_.connect(this.config.extensionId, {name: msg.object});
-	// cb has access only to msg, not to any other arguments the
-	// API may provides.
-	port.postMessage(msg);
+        dbg("Connecting to channel", msg.object);
+        var port = this.runtime_.connect(this.config.extensionId, {name: msg.object});
+        // cb has access only to msg, not to any other arguments the
+        // API may provides.
+        port.postMessage(msg);
         if (callbackWrap)
-	  port.onMessage.addListener(callbackWrap);
+          port.onMessage.addListener(callbackWrap);
         else
           dbg("Sent cleaner msg",msg);
       } else {
-	dbg("Sending:", msg);
-	this.runtime_.sendMessage (
-	  this.config.extensionId, msg, {}, (function (rsp) {
-	    dbg("BUS received: ", rsp);
-	    callbackWrap(rsp);
-	  }).bind(this));
+        dbg("Sending:", msg);
+        this.runtime_.sendMessage (
+          this.config.extensionId, msg, {}, (function (rsp) {
+            dbg("BUS received: ", rsp);
+            callbackWrap(rsp);
+          }).bind(this));
       }
     },
 
@@ -115,18 +115,18 @@ if (!chrome) {
     console.assert(typeof(config.extensionId) == 'string',
                    "Extension id should be a string");
     console.assert(typeof(obj_name) == 'string',
-		   "object name should be a string, not " + typeof(obj_name));
+                   "object name should be a string, not " + typeof(obj_name));
 
     // do not override an existing object
     if (chrome[obj_name]) {
       var props = Object.getOwnPropertyNames(chrome[obj_name]);
       props.forEach( function (p) {
-	var prop = chrome[obj_name][p];
-	if (prop instanceof Function) {
-	  this[p] = prop.bind(chrome[obj_name]);
-	} else {
-	  this[p] = prop;
-	}
+        var prop = chrome[obj_name][p];
+        if (prop instanceof Function) {
+          this[p] = prop.bind(chrome[obj_name]);
+        } else {
+          this[p] = prop;
+        }
       }.bind(this));
     }
 
@@ -141,7 +141,7 @@ if (!chrome) {
 
     // XXX: The callback is called very very late.
     // bus.clientMessage(false, {method: 'setup', object: obj_name},
-    // 				this.setup_methods.bind(this));
+    //                          this.setup_methods.bind(this));
   }
 
   RPCClient.prototype = {
@@ -150,26 +150,26 @@ if (!chrome) {
       this.availableCleaners = {};
 
       (config.methods || []).forEach(
-	this.registerMethod.bind(this, methodType.METHOD));
+        this.registerMethod.bind(this, methodType.METHOD));
       (config.listeners || []).forEach(
-	this.registerMethod.bind(this, methodType.LISTENER));
+        this.registerMethod.bind(this, methodType.LISTENER));
       (Object.getOwnPropertyNames(this.availableCleaners) || []).forEach(
-	this.registerMethod.bind(this, methodType.CLEANER));
+        this.registerMethod.bind(this, methodType.CLEANER));
 
       this._setup = true;
     },
 
     registerMethod: function (isListener, entry) {
       var name = entry.starter || entry,
-	  names = name.split('.'),
-	  method = names.pop(),
-	  obj = names.reduce(function (ob, m) {
-	    ob[m] = ob[m] || {};
-	    return ob[m];
-	  }, this) || this;
+          names = name.split('.'),
+          method = names.pop(),
+          obj = names.reduce(function (ob, m) {
+            ob[m] = ob[m] || {};
+            return ob[m];
+          }, this) || this;
 
       if (entry.cleaner)
-	this.availableCleaners[entry.cleaner] = entry.starter;
+        this.availableCleaners[entry.cleaner] = entry.starter;
 
       if (isListener)
         this.availableListeners.push(name);
@@ -184,18 +184,18 @@ if (!chrome) {
 
       var ret = function (resp) {
         // Ignore free resoponses
-	if (!resp)
-	  return true;
+        if (!resp)
+          return true;
 
         // Raise an error if the server reports one.
-	if (resp.error) {
-	  err(resp.error);
-	} else {
+        if (resp.error) {
+          err(resp.error);
+        } else {
           // If there is a callback call it.
-	  if (callback) {
-	    return callback.apply(null, argsDecode(resp.args));
-	  }
-	}
+          if (callback) {
+            return callback.apply(null, argsDecode(resp.args));
+          }
+        }
         return true;
       };
 
@@ -207,23 +207,27 @@ if (!chrome) {
     callbackIdFactory: function (cb) {
       // Not very likely that two calls are less than a milisecond
       // appart even in parallel.
-      var id = (cb && cb.callbackId) || (new Date).getTime();
-      cb.callbackId = id;
-      return id;
+      if (typeof cb === 'function') {
+        var id = cb.callbackId || (new Date).getTime();
+        cb.callbackId = id;
+        return id;
+      } else {
+        return null;
+      }
     },
 
     _rpc: function (fnname, var_args) {
       var args = Array.prototype.slice.call(arguments, 1),
-	  rich_args = argsEncode(args),
-	  msg = {
-	    timestamp: (new Date).getTime(),
-	    object: this.obj_name,
-	    method: fnname,
-	    args: rich_args,
-	    error: null,
-	    callbackId: this.callbackIdFactory(rich_args.callbackRaw),
+          rich_args = argsEncode(args),
+          msg = {
+            timestamp: (new Date).getTime(),
+            object: this.obj_name,
+            method: fnname,
+            args: rich_args,
+            error: null,
+            callbackId: this.callbackIdFactory(rich_args.callbackRaw),
             sender: window._rpcSender
-	  },
+          },
           // false if it's a cleaner
           clientCallback = !(this.availableCleaners[fnname]) &&
             rich_args.callbackRaw;
@@ -239,10 +243,10 @@ if (!chrome) {
     // _every_ response on the created port thus creating a listener.
     _message: function (msg, callbackRaw) {
       var isListener = (this.availableListeners.indexOf(msg.method) != -1),
-	  callbackWrap = this.msgCallbackFactory(callbackRaw);
+          callbackWrap = this.msgCallbackFactory(callbackRaw);
 
       this.bus.clientMessage(isListener && msg.object + '.' + msg.method,
-			     msg, callbackWrap);
+                             msg, callbackWrap);
     }
   };
 
@@ -257,7 +261,7 @@ if (!chrome) {
   }
 })();
 
-},{"./../../tools/client-util":5,"./../common/config":2,"./../common/rpc-args":4}],2:[function(require,module,exports){
+},{"./../../tools/client-util":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/tools/client-util.js","./../common/config":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/chrome-extension/common/config.js","./../common/rpc-args":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/chrome-extension/common/rpc-args.js"}],"/Users/drninjabatman/Projects/Codebendercc/BabelFish/chrome-extension/common/config.js":[function(require,module,exports){
 // File: /chrome-extension/common/config.js
 
 var config = {
@@ -348,34 +352,7 @@ try {
   ;
 }
 
-},{}],3:[function(require,module,exports){
-function FunctionSotrage () {
-  this.idPool = 0;
-  this.functions_ = {};
-}
-FunctionSotrage.prototype = {
-  getId: function (fn) {
-    return Object.getOwnPropertyNames(this.functions_).filter(function (id) {
-      return this.functions_[id] === fn;
-    })[0];
-  },
-
-  getFn: function (id) {
-    return this.functions_[id];
-  },
-
-  addFn: function (fn) {
-    var id = this.idPool++;
-    this.functions_[id] = fn;
-    return id;
-  },
-
-  rmFn: function (fn) {
-    delete this.functions_[this.getId(fn)];
-  }
-};
-
-},{}],4:[function(require,module,exports){
+},{}],"/Users/drninjabatman/Projects/Codebendercc/BabelFish/chrome-extension/common/rpc-args.js":[function(require,module,exports){
 // File: /chrome-extension/common/rpc-args.js
 
 function binToHex(bin) {
@@ -447,7 +424,1095 @@ try {
   window.binToHex = binToHex;
 } catch (e) {;}
 
-},{}],5:[function(require,module,exports){
+},{}],"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/buffer.js":[function(require,module,exports){
+var arraify = require('./util').arraify,
+    Log = require('./logging').Log,
+    log = new Log('Buffer');
+
+function storeAsTwoBytes(n) {
+  var lo = (n & 0x00FF);
+  var hi = (n & 0xFF00) >> 8;
+  return [hi, lo];
+}
+
+
+// Async reading to and from buffer
+function binToBuf(hex) {
+  var buffer = new ArrayBuffer(hex.length);
+  var bufferView = new Uint8Array(buffer);
+  for (var i = 0; i < hex.length; i++) {
+    bufferView[i] = hex[i];
+  }
+
+  return buffer;
+}
+
+function bufToBin(bin) {
+  var bufferView = new Uint8Array(bin);
+  var hexes = [];
+  for (var i = 0; i < bufferView.length; ++i) {
+    hexes.push(bufferView[i]);
+  }
+  return hexes;
+}
+
+function Buffer () {
+}
+
+Buffer.prototype = {
+  read: function (maxBytes, callback) {
+    if (typeof(this.databuffer) == "undefined") {
+      log.log("Creating buffer...");
+      this.databuffer = [];
+      callback({bytesRead: 0, data: []});
+      return;
+    }
+
+    var bytes = Math.min(maxBytes, this.databuffer.length);
+    log.log("Reading", bytes, " from buffer");
+
+    var accum = this.databuffer.slice(0, bytes);
+    this.databuffer = this.databuffer.slice(bytes);
+    log.log("readFromBuffer -> " + bufToBin(accum));
+    callback({bytesRead: bytes, data: accum});
+  },
+
+  write: function (readArg) {
+    var hexData = binToBuf(readArg.data);
+    log.log("Pushing ", hexData.length, "bytes onto buffer for:", readArg.connectionId, hexData);
+    this.databuffer.concat(hexData);
+    log.log("Buffer now of size ", this.databuffer.length);
+  }
+};
+
+module.exports.Buffer = Buffer;
+module.exports.bufToBin = bufToBin;
+module.exports.storeAsTwoBytes = storeAsTwoBytes;
+module.exports.binToBuf = binToBuf;
+
+},{"./logging":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/logging.js","./util":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/util.js"}],"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/logging.js":[function(require,module,exports){
+var arraify = require('./util').arraify;
+
+function Log (name, verbosity) {
+  this.verbosity = verbosity || 3;
+  this.name = name;
+}
+
+Log.prototype = {
+  timestampString: function () {
+    var now = new Date();
+    var pad = function(n) {
+      if (n < 10) { return "0" + n; }
+      return n;
+    };
+    return pad(now.getHours()) + ":" + pad(now.getMinutes())
+      + ":" + pad(now.getSeconds()) + "." + now.getMilliseconds();
+  },
+
+  prefix: function () {
+    return "[" + this.timestampString() +  " : " + this.name + "]";
+  },
+
+  console_: function (type, args) {
+    return console[type]
+      .apply(console, args);
+  },
+
+  error: function (var_args) {
+    if (this.verbosity > 0)
+      this.console_('error', arraify(arguments, 0, this.prefix()));
+  },
+  warning: function (var_args) {
+    if (this.verbosity > 1)
+      this.console_('warning', arraify(arguments, 0, this.prefix()));
+  },
+  info: function (var_args) {
+    if (this.verbosity > 2)
+      this.console_('log', arraify(arguments), 0, this.prefix());
+  }
+};
+
+module.exports.Log = Log;
+
+},{"./util":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/util.js"}],"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/protocols.js":[function(require,module,exports){
+module.exports.protocols = {
+  stk: require('./protocols/stk500').STK500Transaction,
+  avr: require('./protocols/butterfly').AVR109Transaction
+};
+
+},{"./protocols/butterfly":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/protocols/butterfly.js","./protocols/stk500":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/protocols/stk500.js"}],"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/protocols/butterfly.js":[function(require,module,exports){
+var SerialTransaction = require('./serialtransaction'),
+    Log = require('./../logging').Log,
+    log = new Log('avr109'),
+    arraify = require('./../util').arraify,
+    buffer = require("./../buffer.js");
+
+function AVR109Transaction () {
+  SerialTransaction.apply(this, arraify(arguments));
+
+  this.AVR = {
+    SOFTWARE_VERSION: 0x56,
+    ENTER_PROGRAM_MODE: 0x50,
+    LEAVE_PROGRAM_MODE: 0x4c,
+    SET_ADDRESS: 0x41,
+    WRITE: 0x42, // TODO: WRITE_PAGE
+    TYPE_FLASH: 0x46,
+    EXIT_BOOTLOADER: 0x45,
+    CR: 0x0D,
+    READ_PAGE: 0x67
+  };
+}
+AVR109Transaction.prototype = new SerialTransaction();
+
+AVR109Transaction.prototype.flash = function (devName, hexData) {
+  var kMagicBaudRate = 1200,
+      oldDevices = [],
+      self = this;
+
+  self.serial.getDevices(function(devicesArg) {
+    oldDevices = devicesArg;
+
+    self.serial.connect(devName, { bitrate: kMagicBaudRate, name: devName}, function(connectInfo) {
+      log.log("Made sentinel connection to " + devName);
+      setTimeout(function () {
+        self.serial.disconnect(connectInfo.connectionId, function(ok) {
+          if (ok) {
+            log.log("Disconnected from ", devName);
+            self.waitForDeviceAndConnect(connectInfo, (new Date().getTime()) + 10000,
+                                         this.transitionCb('connectDone'));
+          } else {
+            throw Error("Failed to disconnect from " + devName);
+          }
+        }, 2000);
+      });
+    });
+  });
+};
+
+AVR109Transaction.prototype.waitForDeviceAndConnect = function(dev, deadline, cb) {
+  log.log("Waiting for new device...");
+  if (new Date().getTime() > deadline) {
+    log.error("Exceeded deadline");
+    return;
+  }
+
+  var found = false,
+      self = this;
+  self.serial.getDevices(function(newDevices) {
+    // XXX: Maybe name checking is not the best option
+    var appeared = newDevices.filter(function (d) {return d.path == dev.name;});
+
+    if (appeared.length == 0) {
+      setTimeout(function() {
+        self.waitForDeviceAndConnect(dev, deadline, cb);
+      }, 100);
+    } else if ((new Date().getTime()) > deadline){
+      log.error("Waited too long for " + dev.name);
+    } else {
+      log.log("Aha! Connecting to: " + dev.name);
+      self.serial.connect(dev.name, { bitrate: 57600, name: appeared[0].path }, cb);
+    }
+  });
+};
+
+
+AVR109Transaction.prototype.gotVersion = function (version, hexData) {
+  log.log("Got version: ", version);
+  this.prepareToProgramFlash(this.connectionId, hexData,
+                             this.transitionCb('programmingDone'));
+};
+
+AVR109Transaction.prototype.programmingDone = function () {
+  var self = this;
+
+  log.log("avrProgrammingDone");
+  this.writeThenRead(this.connectionId, [ this.AVR.LEAVE_PROGRAM_MODE ], 1, function(payload) {
+    self.writeThenRead_([ self.AVR.EXIT_BOOTLOADER ], 1, function(connection, payload) {
+      self.serial.disconnect(self.connectionId, function (ok) {
+        if (ok)
+          log.log("ALL DONE");
+        else
+          throw Error("Did not disconnect correctly from connection ",
+                      self.connectionId);
+      });
+    });
+  });
+}
+
+AVR109Transaction.prototype.drainedAgain = function (readArg, connectionId, hexData) {
+  log.log("avrDrainedAgain({readarg}, " + connectionId);
+  log.log("DRAINED " + readArg.bytesRead + " BYTES");
+  if (readArg.bytesRead == 1024) {
+    // keep draining
+    this.buffer.read(1024, self.transitionCb('drainedBytes'));
+  } else {
+    // Start the protocol
+    this.writeThenRead_([this.AVR.SOFTWARE_VERSION], 2, this.transitionCb('gotVersion'));
+  }
+}
+
+AVR109Transaction.prototype.drainedBytes = function (readArg) {
+  log.log("DRAINED " + readArg.bytesRead + " BYTES on " + this.connectionId);
+  if (readArg.bytesRead == 1024) {
+    // keep draining
+    this.buffer.read(1024, this.transitionCb('drainedBytes'));
+  } else {
+    setTimeout(function() { self.transition('dtrSent', true);}, 1000);
+  }
+}
+
+AVR109Transaction.prototype.dtrSent = function (ok) {
+  if (!ok) {
+    log.error("Couldn't send DTR");
+    return;
+  }
+  log.log("DTR sent (low) real good on connection: " + connectionId);
+
+  this.buffer.read(1024, this.callbackCb('drainedAgain'));
+}
+
+AVR109Transaction.prototype.prepareToProgramFlash = function (data, doneCallback) {
+  var addressBytes = buffer.storeAsTwoBytes(0);
+
+  var loadAddressMessage = [
+    this.AVR.SET_ADDRESS, addressBytes[1], addressBytes[0]];
+
+  this.writeThenRead_(loadAddressMessage, 1, function(connectionId, response) {
+    self.transition('programFlash', data, 0, 128, doneCallback);
+  });
+};
+
+AVR109Transaction.prototype.programFlash = function (data, offset, length, doneCallback) {
+  log.log("program flash: data.length: " + data.length + ", offset: " + offset + ", length: " + length);
+  var payload;
+
+  if (offset >= data.length) {
+    log.log("Done programming flash");
+    doneCallback();
+    return;
+  }
+
+  if (offset + length > data.length) {
+    log.log("Grabbing bytes " + offset + " to " +
+            data.length + " bytes would go past the end.");
+    payload = data.slice(offset, data.length);
+    var padSize = length - payload.length;
+    log.log("Padding " + padSize + " 0 byte at the end");
+    for (var i = 0; i < padSize; ++i) {
+      payload.push(0);
+    }
+  } else {
+    log.log("Grabbing bytes: " + offset + " until " + (offset + length));
+    payload = data.slice(offset, offset + length);
+  }
+
+  var sizeBytes = buffer.storeAsTwoBytes(length);
+  var kFlashMemoryType = 0x46;
+  var programMessage = [
+    this.AVR.WRITE, sizeBytes[0], sizeBytes[1], this.AVR.TYPE_FLASH ];
+  programMessage = programMessage.concat(payload);
+
+  var self = this;
+  this.writeThenRead_(programMessage, 1, function(ok, _) {
+    self.transition('programFlash', data, offset + length, length, doneCallback);
+  });
+}
+
+},{"./../buffer.js":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/buffer.js","./../logging":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/logging.js","./../util":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/util.js","./serialtransaction":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/protocols/serialtransaction.js"}],"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/protocols/serialtransaction.js":[function(require,module,exports){
+var Transaction = require('./../transaction').Transaction,
+    arraify = require('./../util').arraify,
+    buffer = require("./../buffer.js");
+
+function SerialTransaction () {
+  Transaction.apply(this, arraify(arguments));
+
+  this.buffer = buffer.Buffer();
+  this.serial = chrome.serial;
+}
+SerialTransaction.prototype = new Transaction();
+
+SerialTransaction.prototype.writeThenRead_ = function (outgoingMsg, responsePayloadSize, callback) {
+  log.log("Writing: " + buffer.hexRep(outgoingMsg));
+  var outgoingBinary = buffer.binToBuf(outgoingMsg),
+      self = this;
+
+  // schedule a read in 100ms
+  this.serial.send(this.connectionId, outgoingBinary, function(writeArg) {
+    self.consumeMessage(responsePayloadSize, callback, function (connId) {
+      log.log("Disconnecting from " + connId);
+
+      self.serial.disconnect(connId, function (ok) {
+        if (ok) {
+          self.connectionId = null;
+          log.log("Disconnected ok, You may now use your program!");
+        } else
+          log.error("Could not disconnect from " + this.connectionId);
+      });
+    });
+  });
+};
+
+module.exports = SerialTransaction;
+
+},{"./../buffer.js":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/buffer.js","./../transaction":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/transaction.js","./../util":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/util.js"}],"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/protocols/stk500.js":[function(require,module,exports){
+var SerialTransaction = require('./serialtransaction'),
+    Log = require('./../logging').Log,
+    log = new Log('STK500'),
+    arraify = require('./../util').arraify,
+    buffer = require("./../buffer.js");
+
+function STK500Transaction () {
+  SerialTransaction.apply(this, arraify(arguments));
+
+  this.STK = {
+    OK: 0x10,
+    INSYNC: 0x14,
+    CRC_EOP: 0x20,
+    GET_SYNC: 0x30,
+    GET_PARAMETER: 0x41,
+    ENTER_PROGMODE: 0x50,
+    LEAVE_PROGMODE: 0x51,
+    LOAD_ADDRESS: 0x55,
+    PROG_PAGE: 0x64,
+    READ_SIGN: 0x75,
+    HW_VER: 0x80,
+    SW_VER_MINOR: 0x82,
+    SW_VER_MAJOR: 0x81
+  };
+}
+
+STK500Transaction.prototype = new SerialTransaction();
+
+STK500Transaction.prototype.flash = function (deviceName, sketchData) {
+  this.sketchData = sketchData;
+  this.serial.connect(deviceName, {bitrate: 115200, name: deviceName},
+                      function (connectArg) {
+                        this.transition('connectDone', sketchData, connectArg);
+                      });
+};
+
+STK500Transaction.prototype.writeThenRead_ = function (outgoingMsg, responsePayloadSize, callback) {
+  log.log("Writing: " + buffer.hexRep(outgoingMsg));
+  var outgoingBinary = buffer.binToBuf(outgoingMsg),
+      self = this;
+
+  // schedule a read in 100ms
+  this.serial.send(this.connectionId, outgoingBinary, function(writeArg) {
+    self.consumeMessage(responsePayloadSize, callback, function (connId) {
+      log.log("Disconnecting from " + connId);
+
+      self.serial.disconnect(connId, function (ok) {
+        if (ok) {
+          self.connectionId = null;
+          log.log("Disconnected ok, You may now use your program!");
+        } else
+          log.error("Could not disconnect from " + this.connectionId);
+      });
+    });
+  });
+};
+
+
+STK500Transaction.prototype.consumeMessage = function (payloadSize, callback) {
+  var self = this;
+  log.log("stkConsumeMessage(conn=", self.connectionId,
+          ", payload_size=", payloadSize, " ...)");
+  var ReadState = {
+    READY_FOR_IN_SYNC: 0,
+    READY_FOR_PAYLOAD: 1,
+    READY_FOR_OK: 2,
+    DONE: 3,
+    ERROR: 4
+  };
+
+  var accum = [];
+  var state = ReadState.READY_FOR_IN_SYNC;
+  var kMaxReads = 100;
+  var reads = 0;
+  var payloadBytesConsumed = 0;
+
+  var handleRead = function(arg) {
+    if (reads++ >= kMaxReads) {
+      log.error("Too many reads. Bailing.");
+      self.errorCb(self.connectionId);
+      return;
+    }
+    var hexData = buffer.bufToBin(arg.data);
+    if (arg.bytesRead > 0) {
+      log.log("Read:" + hexData);
+    } else {
+      log.log("No data read.");
+    }
+    for (var i = 0; i < hexData.length; ++i) {
+      log.log("Byte " + i + " of " + hexData.length + ": " + hexData[i]);
+      if (state == ReadState.READY_FOR_IN_SYNC) {
+        if (hexData[i] == self.STK.INSYNC) {
+          if (payloadSize == 0) {
+            log.log("Got IN_SYNC, no payload, now READY_FOR_OK");
+            state = ReadState.READY_FOR_OK;
+          } else {
+            log.log("Got IN_SYNC, now READY_FOR_PAYLOAD");
+            state = ReadState.READY_FOR_PAYLOAD;
+          }
+        } else {
+          log.log("Expected self.STK.INSYNC (" + self.STK.INSYNC + "). Got: " + hexData[i] + ". Ignoring.");
+          //          state = ReadState.ERROR;
+        }
+      } else if (state == ReadState.READY_FOR_PAYLOAD) {
+        accum.push(hexData[i]);
+        payloadBytesConsumed++;
+        if (payloadBytesConsumed == payloadSize) {
+          log.log("Got full payload, now READY_FOR_OK");
+          state = ReadState.READY_FOR_OK;
+        } else if (payloadBytesConsumed > payloadSize) {
+          log.log("Got too many payload bytes, now ERROR");
+          state = ReadState.ERROR;
+          log.error("Read too many payload bytes!");
+        }
+      } else if (state == ReadState.READY_FOR_OK) {
+        if (hexData[i] == self.STK.OK) {
+          log.log("Got OK now DONE");
+          state = ReadState.DONE;
+        } else {
+          log.error("Expected STK_OK. Got: " + hexData[i]);
+          state = ReadState.ERROR;
+        }
+      } else if (state == ReadState.DONE) {
+        log.error("Out of sync (ignoring data)");
+        state = ReadState.ERROR;
+      } else if (state == ReadState.ERROR) {
+        log.error("In error state. Draining byte: " + hexData[i]);
+        // Remains in state ERROR
+      } else {
+        log.error("Unknown state: " + state);
+        state = ReadState.ERROR;
+      }
+    }
+
+    if (state == ReadState.ERROR || state == ReadState.DONE) {
+      log.log("Finished in state: " + state);
+      callback(self.connectionId, state == ReadState.DONE, accum);
+    } else {
+      log.log("Paused in state: " + state + ". Reading again.");
+
+      if (!self.inSync_ && (reads % 3) == 0) {
+        // Mega hack (temporary)
+        log.log("Mega Hack: Writing: " + buffer.hexRep([self.STK.GET_SYNC, self.STK.CRC_EOP]));
+        self.serial.send(self.connectionId, buffer.hexToBin([self.STK.GET_SYNC, self.STK.CRC_EOP]), function() {
+          self.buffer.read(1024, handleRead);
+        });
+      } else {
+        // Don't tight-loop waiting for the message.
+        setTimeout(function() {
+          self.buffer.read(1024, handleRead);
+        }, 10);
+      }
+
+    }
+  };
+
+  log.log("Scheduling a read in .1s");
+  setTimeout(function() { self.buffer.read(1024, handleRead); }, 10);
+};
+
+STK500Transaction.prototype.connectDone = function (hexCode, connectArg) {
+  if (typeof(connectArg) == "undefined" ||
+      typeof(connectArg.connectionId) == "undefined" ||
+      connectArg.connectionId == -1) {
+    log.error("Bad connectionId / Couldn't connect to board");
+    return;
+  }
+
+  this.connectionId = connectArg.connectionId;
+  log.log("Connected to board. ID: " + connectArg.connectionId);
+  this.buffer.read(this.connectionId, 1024, function(readArg) {
+    this.transition('drainedBytes', readArg);
+  });
+};
+
+STK500Transaction.prototype.dtrSent = function (ok) {
+  if (!ok) {
+    log.log("Couldn't send DTR");
+    return;
+  }
+  log.log("DTR sent (low) real good");
+
+  this.buffer.read(1024, function(readArg) {
+    self.transition('drainedAgain', readArg);
+  });
+
+}
+
+STK500Transaction.prototype.drainedAgain = function (readArg) {
+  var self = this;
+  log.log("DRAINED " + readArg.bytesRead + " BYTES");
+  if (readArg.bytesRead == 1024) {
+    // keep draining
+    self.buffer.read(1024, this.trasitioncb('drainedBytes'));
+  } else {
+    // Start the protocol
+    setTimeout(function() {
+      self.writeThenRead([self.STK.GET_SYNC, self.STK.CRC_EOP],
+                         0, self.transitionCb('inSyncWithBoard'));
+    }, 50);
+  }
+
+};
+
+STK500Transaction.prototype.drainedBytes = function (readArg) {
+  var self = this;
+
+  log.log("DRAINED " + readArg.bytesRead + " BYTES");
+  if (readArg.bytesRead == 1024) {
+    // keep draining
+    self.buffer.read(1024, function(readArg) {
+      this.drainedBytes(readArg);
+    });
+  } else {
+    log.log("About to set DTR low");
+
+    setTimeout(function() {
+      self.serial.setControlSignals(self.connectionId, {dtr: false, rts: false}, function(ok) {
+        log.log("sent dtr false, done: " + ok);
+        setTimeout(function() {
+          self.serial.setControlSignals(self.connectionId, {dtr: true, rts: true}, function(ok) {
+            log.log("sent dtr true, done: " + ok);
+            setTimeout(function() { self.dtrSent(ok); }, 500);
+          });
+        }, 500);
+      });
+    }, 500);
+  }
+}
+
+STK500Transaction.prototype.inSyncWithBoard = function (ok, data) {
+  if (!ok) {
+    log.error("InSyncWithBoard: NOT OK");
+  }
+  log.log("InSyncWithBoard: " + ok + " / " + data);
+  this.inSync_ = true;
+  this.writeThenRead([this.STK.GET_PARAMETER, this.STK.HW_VER, this.STK.CRC_EOP], 1,
+                     this.transitionCb('readHardwareVersion'));
+};
+
+STK500Transaction.prototype.readHardwareVersion = function (ok, data) {
+  log.log("HardwareVersion: " + ok + " / " + data);
+  this.writeThenRead([this.STK.GET_PARAMETER, this.STK.SW_VER_MAJOR, this.STK.CRC_EOP],
+                     1, this.transitionCb('readSoftwareMajorVersion'));
+};
+
+STK500Transaction.prototype.readSoftwareMajorVersion = function (ok, data) {
+  log.log("Software major version: " + ok + " / " + data);
+  this.writeThenRead([this.STK.GET_PARAMETER, this.STK.SW_VER_MINOR, this.STK.CRC_EOP],
+                     1, this.transitionCb('readSoftwareMinorVersion'));
+};
+
+STK500Transaction.prototype.readSoftwareMinorVersion = function (ok, data) {
+  log.log("Software minor version: " + ok + " / " + data);
+  this.riteThenRead([this.STK.ENTER_PROGMODE, this.STK.CRC_EOP], 0,
+                    this.transitonCb('enteredProgmode'));
+}
+
+STK500Transaction.prototype.enteredProgmode = function (ok, data) {
+  log.log("Entered progmode: " + ok + " / " + data);
+  this.writeThenRead([this.STK.READ_SIGN, this.STK.CRC_EOP], 3,
+                     this.transitionCb('readSignature'));
+}
+
+STK500Transaction.prototype.readSignature = function (ok, data) {
+  log.log("Device signature: " + ok + " / " + data);
+
+  this.transition('programFlash', 0, 128,
+                  this.transitionCb('doneProgramming'));
+}
+
+STK500Transaction.prototype.doneProgramming = function () {
+  this.sketchData_ = null;
+  this.transition('writeThenRead', [this.STK.LEAVE_PROGMODE, this.STK.CRC_EOP],
+                  0, this.transitionCb('stkLeftProgmode'));
+}
+
+STK500Transaction.prototype.isProgramming = function () {
+  return this.sketchData_ == null;
+}
+
+STK500Transaction.prototype.leftProgmode = function (ok, data) {
+  var self = this;
+
+  log.log("Left progmode: " + ok + " / " + data +
+          " Disconnecting " + self.connectionId + "...");
+  self.serial.disconnect(self.connectionId, function (ok) {
+    if (ok) {
+      self.connectionId = null;
+      log.log("Disconnected ok, You may now use your program!");
+    } else
+      log.log("Could not disconnect from " + self.connectionId);
+  });
+}
+
+STK500Transaction.prototype.programFlash = function (data, offset, length, doneCallback) {
+  var payload;
+  log.log("program flash: data.length: " + data.length + ", offset: " + offset + ", length: " + length);
+
+  if (offset >= data.length) {
+    log.log("Done programming flash: " + offset + " vs. " + data.length);
+    doneCallback(this.connectionId);
+    return;
+  }
+
+  if (offset + length > data.length) {
+    log.log("Grabbing " + length + " bytes would go past the end.");
+    log.log("Grabbing bytes " + offset + " to " + data.length + " bytes would go past the end.");
+    payload = data.slice(offset, data.length);
+    var padSize = length - payload.length;
+    log.log("Padding " + padSize + " 0 byte at the end");
+    for (var i = 0; i < padSize; ++i) {
+      payload.push(0);
+    }
+  } else {
+    log.log("Grabbing bytes: " + offset + " until " + (offset + length));
+    payload = data.slice(offset, offset + length);
+  }
+
+  var addressBytes = buffer.storeAsTwoBytes(offset / 2); // Word address, verify this
+  var sizeBytes = buffer.storeAsTwoBytes(length);
+  var kFlashMemoryType = 0x46;
+
+  var loadAddressMessage = [
+    this.STK.LOAD_ADDRESS, addressBytes[1], addressBytes[0], this.STK.CRC_EOP];
+  var programMessage = [
+    this.STK.PROG_PAGE, sizeBytes[0], sizeBytes[1], kFlashMemoryType];
+  programMessage = programMessage.concat(payload);
+  programMessage.push(this.STK.CRC_EOP);
+
+  var self = this;
+  self.writeThenRead(loadAddressMessage, 0, function(ok, reponse) {
+    if (!ok) {
+      log.error("Error programming the flash (load address)");
+      return;
+    }
+    self.writeThenRead(programMessage, 0, function(ok, response) {
+      if (!ok) {
+        log.error("Error programming the flash (send data)");
+        return;
+      }
+      // Program the next section
+      self.transition('programFlash', data, offset + length, length, doneCallback);
+    });
+  });
+};
+
+},{"./../buffer.js":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/buffer.js","./../logging":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/logging.js","./../util":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/util.js","./serialtransaction":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/protocols/serialtransaction.js"}],"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/transaction.js":[function(require,module,exports){
+var utilModule = require("./util"),
+    arraify = utilModule.arraify,
+    deepCopy = utilModule.deepCopy;
+
+// An FSM
+function Transaction () {
+  this.hooks_ = {};
+  this.state = null;
+  this.transitions = [];
+  this.context = {};
+}
+Transaction.prototype = {
+  getHook: function (hookIdArray) {
+    var key = hookIdArray.sort().join('_');
+    return this.hooks_[key];
+  },
+
+  triggerHook: function (hookIdArray, varArgs) {
+    var key = hookIdArray.sort().join('_'), args = arraify(arguments, 1);
+    if (this.hooks_.hasOwnProperty(key))
+      this.hooks_[key].forEach(function (fn) { fn.apply(null, args); });
+  },
+
+  // Will trigger 'leave' and 'enter' hooks and possibly call a
+  // callback when done.
+  transition: function(state, varArgs) {
+    var oldState = this.state;
+
+    this.triggerHook(['leave', oldState], this.context);
+    this.state = state;
+    this.callHook(['enter', this.state], this.context);
+    // this.transitions.push([state, oldState, deepCopy(this.context)]);
+
+    if (this[state])
+      this[state].apply(this, arraify(1, arguments));
+  },
+
+  transitionCb: function (state) {
+    return this.transition.bind(this, state);
+  }
+};
+
+module.exports.Transaction = Transaction;
+
+},{"./util":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/util.js"}],"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/util.js":[function(require,module,exports){
+function arraify(arrayLike, offset, prefixVarArgs) {
+  var ret = Array.prototype.slice.call(arrayLike, offset),
+      prefix = Array.prototype.slice.call(arguments, 2);
+
+  return prefix.concat(ret);
+}
+
+function deepCopy(obj) {
+  switch (typeof obj) {
+  case 'array':
+    return obj.map(deepCopy);
+    break;
+  case 'object':
+    var ret = {};
+    Object.ownPropertyNames(obj).forEach(function (k) {
+      ret[k] = deepCopy(obj[k]);
+    });
+    return ret;
+    break;
+  default:
+    return obj;
+  }
+}
+
+module.exports.arraify = arraify;
+module.exports.deepCopy = deepCopy;
+
+},{}],"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/plugin.js":[function(require,module,exports){
+var protocols = require('./backend/protocols').protocols;
+var create_the_client = require('./../chrome-extension/client/rpc-client');
+
+var dbg = (function  () {
+  var DEBUG = false;
+  if (DEBUG)
+    return function (var_args) {
+      console.log.apply(console, Array.prototype.slice.call(arguments));
+    };
+  else
+    return function () {};
+})();
+
+// XXX: Use lawnchair for this.
+window.plugins_initialized = 0;
+
+if (!chrome.serial) {
+  dbg("Not on chrome");
+  function PluginPropertyDescriptor(pluginElement, prop) {
+    var desc = Object.getOwnPropertyDescriptor(
+      Object.getPrototypeOf(pluginElement), prop);
+
+    // Be careful not to evaluate any pluginproperties. Some may have
+    // side effects
+    if (desc)
+      Object.getOwnPropertyNames(desc).forEach(function (pp) {
+        if (pp != "value" && true) {
+          console.log(prop + '[' + pp + ']');
+          this[pp] = pluginElement[pp];
+        }
+      });
+    else
+      throw Error("Could not determine property descruptor of plugin property '"
+                  + prop);
+
+    this.get = function () {return pluginElement[prop];};
+    this.set = function (val) {pluginElement[prop] = val;};
+  }
+
+  function prototypeProperties(obj) {
+    return Object.getOwnPropertyNames(Object.getPrototypeOf(obj));
+  }
+
+  // Copy the plugin interfacez
+  function Plugin() {
+    // Note that this has typeof 'function' on firefox because it
+    // implements [[Call]]
+    this.element_ = document.createElement("object");
+    this.element_.setAttribute("type", "application/x-codebendercc");
+    this.element_.setAttribute("width", "0");
+    this.element_.setAttribute("height", "0");
+    this.element_.setAttribute("xmlns", "http://www.w3.org/1999/html");
+
+    document.body.appendChild(this.element_);
+    this.element_.setAttribute("id", this.element_.instanceId);
+
+    prototypeProperties(this.element_).forEach( function (attr) {
+      if (typeof this.element_[attr] == 'function') {
+        this[attr] = function () {
+          var args = Array.prototype.slice.call(arguments);
+          return this.element_[attr].apply(this.element_, args);
+        }.bind(this);
+      } else {
+        var descr = new PluginPropertyDescriptor(this.element_, attr);
+        Object.defineProperty(this, attr, descr);
+      }
+    }.bind(this) );
+
+    if (this.init)
+      this.init();
+    else
+      throw Error("Codebendercc plugin not available");
+  }
+} else {
+  dbg("Looks like we are on chrome.");
+
+  // A plugin object implementing the plugin interface.
+  function Plugin() {
+    dbg("Initializing plugin.");
+    this.serial = chrome.serial;
+    this.version = "1.6.0.8";
+    this.instance_id = window.plugins_initialized++;
+
+    this.bufferSize = 100;
+
+    var self = this;
+    self.serial.onReceiveError.addListener(function (info) {
+      console.error("Failed connection: " + info.connectionId +" ( " + info.error + " )");
+      self.serial.getConnections(function (connections) {
+        connections.forEach(function (ci) {
+          if (ci.connectionId == info.connectionId) {
+            self.serial.disconnect(info.connectionId, function (ok) {
+              if (!ok) {
+                console.error("Failed to disconnect serial from", info);
+              }
+            });
+          }
+        });
+      });
+    });
+    this.errorCallback = function () {};
+    this.readingInfo = null;
+  }
+  Plugin.prototype = {
+    errorCallback:  function(from, msg, status) {
+      console.error("["+ from + "] ", msg, "(status: " + status + ")");
+    },
+
+    readingHandlerFactory: function (connectionId, cb) {
+      dbg("Reading Info:",this.readingInfo);
+      if (cb !== this.readingInfo.callbackUsedInHandler) {
+        this.readingInfo.callbackUsedInHandler = cb;
+        this.readingInfo.handler = function (readArg) {
+          if (readArg.connectionId != connectionId)
+            return;
+
+          var bufferView = new Uint8Array(readArg.data),
+              chars = [];
+
+          for (var i = 0; i < bufferView.length; ++i) {
+            chars.push(bufferView[i]);
+          }
+
+          // FIXME: if the last line does not end in a newline it should
+          // be buffered
+          var msgs = String.fromCharCode.apply(null, chars).split("\n");
+          console.log("Bytes received:", readArg.data.length);
+          // return cb("chrome-serial", rcv);
+          // XXX: This is a bit hacky but it should work.
+          // If we have complete messages or if the message so far is too large
+          this.readingInfo.buffer_ = this.readingInfo.buffer_ || "";
+          if (msgs.length > 1 ||
+              (this.readingInfo.buffer_ + msgs[0]).length > this.bufferSize) {
+            msgs[0] = this.readingInfo.buffer_ + msgs[0];
+            this.readingInfo.buffer_ = "";
+            cb("chrome-serial", msgs.join("\n"));
+          } else {
+            this.readingInfo.buffer_ += msgs[0];
+            setTimeout(function () {
+              cb("chrome-serial", this.readingInfo.buffer_);
+              this.readingInfo.buffer_ = "";
+            }.bind(this), 200);
+          }
+        }.bind(this);
+      }
+
+      return this.readingInfo.handler;
+    },
+
+    // Async methods
+    serialRead: function (port, baudrate, cb, valCb) {
+      console.log("SerialRead connecting to port:", port);
+      var self = this;
+      if (typeof baudrate !== "number") baudrate = Number(baudrate);
+
+      this.serial.connect(port, {bitrate: baudrate, name: port}, function (info) {
+        if (info) {
+          console.log("Serial connected to: ", info);
+          self.readingInfo = info;
+          self.serial.onReceive.addListener(
+            self.readingHandlerFactory(self.readingInfo.connectionId, cb));
+        } else {
+          throw Error("Failed to connect serial:", {bitrate: baudrate, name: port});
+        }
+      });
+    },
+
+    // Disconnect all chrome's connections.
+    disconnectAll: function () {
+      this.serial.getConnections(function (cons) {
+        this.serial.disconnect(cons[0].connectionID, this.disconnectAll.bind(this));
+      });
+    },
+
+
+    doflashWithProgrammer: function (device, code, maxsize, string,
+                                     programmerData, mcu, flash_callback) {
+
+    },
+
+    doFlashbootloader: function (device, protocol, speed, force,
+                                 delay, high_fuses, low_fuses,
+                                 extended_fuses, unlock_bits, mcu,
+                                 cb) {
+      // Validate the data
+      // Async run doFlashWithProgrammer
+    },
+
+    flash: function (device,
+                     code,
+                     maxsize,
+                     protocol,
+                     disable_flushing,
+                     speed,
+                     mcu,
+                     cb) {
+      // uploadCompiledSketch by mr john
+      setTimeout(function () {
+        dbg("Code length", code.length, typeof code,
+            "Protocol:", protocol,
+            "Device:", device);
+
+        // STK500v1
+        transaction.flash(code, device, cb);
+      }, 0);
+    },
+
+    // Wrongly sync methods
+
+    // Return a string of the port list
+    availablePorts: function (cb) {
+      this.serial.getDevices(function (devs) {
+        cb(this.pluginDevsFormat_(devs).map(function (d) {return d.port;}).join(','));
+      }.bind(this));
+    },
+
+    // Return json files with the prots
+    getPorts: function (cb) {
+      this.serial.getDevices(function (devs) {
+        cb(this.pluginDevsFormat_(devs));
+      }.bind(this));
+    },
+
+    pluginDevsFormat_: function (devs) {
+      var set_ = {};
+      devs.forEach(function (d) {set_[d.path] = true;});
+
+      return Object.getOwnPropertyNames(set_).map(function (dev) {
+        return {port: dev};
+      });
+    },
+
+    probeUSB: function () {
+      // Not used
+    },
+
+    // Inherently sync or void methods. Force is if we don't know we
+    // will still be there to hear the callback.
+    disconnect: function (force) {
+      if (this.readingInfo) {
+        var self = this;
+
+        function unsafeCleanReadingInfo () {
+          self.serial.onReceive.removeListener(self.readingInfo.handler);
+          self.serial.disconnect(self.readingInfo.connectionId, function (ok) {
+            if (!ok) {
+              throw Error("Failed to disconnect from ", self.readingInfo);
+              // XXX: Maybe try again
+            } else {
+              dbg("Diconnected ok:", self.readingInfo);
+            }
+          });
+
+          // Cleanup syncrhronously
+          self.readingInfo = null;
+        }
+
+        if (force)
+          unsafeCleanReadingInfo();
+        else
+          self.serial.getConnections(function (cnxs) {
+            cnxs.forEach(function (cnx) {
+              if (cnx.connectionId != self.readingInfo.connectionId)
+                return;
+
+              unsafeCleanReadingInfo();
+            });
+          });
+      }
+    },
+
+    init: function () {
+      // Constructor did everything.
+    },
+
+    saveToHex: function (strData) {
+      console.error("Not implemented");
+    },
+
+    serialWrite: function (strData, cb) {
+      var self = this;
+
+      if (this.readingInfo){
+        var data = new ArrayBuffer(strData.length);
+        var bufferView = new Uint8Array(data);
+        for (var i = 0; i < strData.length; i++) {
+          bufferView[i] = strData.charCodeAt(i);
+        }
+
+        console.log("Sending data:", data[0], "from string:", strData);
+        this.serial.send(this.readingInfo.connectionId, data, function (sendInfo){
+          if (sendInfo.error) {
+            throw Error("Failed to send through",
+                        self.readingInfo,":", sendInfo.error);
+          }
+
+          console.log("Sent bytes:", sendInfo.bytesSent, "connid: ");
+          if (cb) cb(sendInfo.bytesSent);
+        });
+      }
+    },
+
+    setCallback: function (cb) {
+      this.callback = cb;
+    },
+
+    setErrorCallback: function (cb) {
+      this.errorCallback = cb;
+    },
+
+    // Dummies for plugin garbage collection.
+    deleteMap: function () {},
+    closeTab: function () {
+      // Tab may close before the callback so do it unsafe.
+      this.disconnect(true);
+    },
+
+    // Internals
+    serialMonitorSetStatus: function () {
+      this.disconnect();
+    }
+  };
+  window.CodebenderPlugin = Plugin;
+}
+
+function ReadHandler () {
+  this.readers = {};
+}
+
+ReadHandler.prototype = {
+  reader: function (dev, cb) {
+  },
+
+  stopAllReaders: function () {}
+};
+
+},{"./../chrome-extension/client/rpc-client":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/chrome-extension/client/rpc-client.js","./backend/protocols":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/protocols.js"}],"/Users/drninjabatman/Projects/Codebendercc/BabelFish/tools/client-util.js":[function(require,module,exports){
 // File: /tools/client-util.js
 
 // Log in a list called id
@@ -480,4 +1545,4 @@ try {
 window.log = log;
 window.str = str;
 
-},{}]},{},[2,3,4,1]);
+},{}]},{},["/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/buffer.js","/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/transaction.js","/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/protocols/butterfly.js","/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/protocols/stk500.js","/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/plugin.js","/Users/drninjabatman/Projects/Codebendercc/BabelFish/chrome-extension/client/rpc-client.js","/Users/drninjabatman/Projects/Codebendercc/BabelFish/chrome-extension/common/config.js","/Users/drninjabatman/Projects/Codebendercc/BabelFish/chrome-extension/common/rpc-args.js","/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/logging.js","/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/protocols/serialtransaction.js","/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/util.js"]);

@@ -234,7 +234,7 @@ PluginHandler.prototype = {
       this.plugin_searched = true;
     } else {
       for (var i = 0; i < navigator.plugins.length; i++)
-	if (navigator.plugins[i].name == "Codebender.cc" || navigator.plugins[i].name == "Codebendercc")
+        if (navigator.plugins[i].name == "Codebender.cc" || navigator.plugins[i].name == "Codebendercc")
           this.plugin_found = true;
       this.plugin_searched = true;
     }
@@ -251,13 +251,13 @@ PluginHandler.prototype = {
       // $("body").append('<object id="plugin0" type="application/x-codebendercc" width="0" height="0" xmlns="http://www.w3.org/1999/html"></object>');
     }
     // XXX: Maybe uninitialize a previous plugin. C++ should be able to handle this case though.
-    this.plugin_ = new Plugin();
+    this.plugin_ = new CodebenderPlugin();
 
     var self = this;
     function waitForPlugin_ () {
       if(typeof self.plugin_.probeUSB !== 'undefined')
       {
-	console.log("Found plugin");
+        console.log("Found plugin");
         self.plugin_initialized = true;
         self.plugin_version = self.plugin_.version;
         window.plugin_version = self.plugin_version;
@@ -269,26 +269,26 @@ PluginHandler.prototype = {
         if (typeof self.plugin_.setErrorCallback !== 'undefined')
           self.plugin_.setErrorCallback(self.plugin_error_logger);
 
-	if (typeof self.plugin_.init !== 'undefined')
-	{
-	  self.plugin_.init();
+        if (typeof self.plugin_.init !== 'undefined')
+        {
+          self.plugin_.init();
           if (self.plugin_.instance_id != 'undefined') {
             self.tabID = parseInt(self.plugin_.instance_id);
           }
-	}
+        }
 
-	if (typeof self.plugin_.closeTab !== 'undefined')
-	{
-	  $( window ).unload(function ()
-		             {
-			       self.plugin_.closeTab();
-			       self.plugin_.deleteMap();
-		             });
-	} else {
-	  self.disconnect();
-	}
+        if (typeof self.plugin_.closeTab !== 'undefined')
+        {
+          $( window ).unload(function ()
+                             {
+                               self.plugin_.closeTab();
+                               self.plugin_.deleteMap();
+                             });
+        } else {
+          self.disconnect();
+        }
       } else {
-	setTimeout(waitForPlugin_, 500);
+        setTimeout(waitForPlugin_, 500);
       }
     }
     waitForPlugin_();
@@ -336,7 +336,7 @@ PluginHandler.prototype = {
 
   validateVersion: function(version) {
     if (this.comparePluginVersions(this.parseVersionString(this.plugin_.version), this.parseVersionString(version)) < 0 &&
-	!(chrome && chrome.serial))
+        !(chrome && chrome.serial))
     {
       var alert = this.browserSpecificPluginInstall("You need to update the Codebender Plugin. ");
       this.owner.setOperationOutput(alert);
@@ -378,18 +378,18 @@ PluginHandler.prototype = {
         {
           url = "{{  url('CodebenderUtilitiesBundle_logdb', {actionid : 34 , meta: 'PLUGIN_META'}) }}";
           url = url.replace("PLUGIN_META", JSON.stringify({ "message" : "Non catchable plugin crash.", "version": (window.plugin_version === 'undefined' || window.plugin_version === null) ? "undefined" : window.plugin_version,
-							    "OS": { "name": (typeof Browsers.os.name === 'undefined') ? 'undefined' : Browsers.os.name,
-								    "url":  window.location.pathname,
-								    "version": (Browsers.os.version == null || typeof Browsers.os.version.original === 'undefined') ? 'undefined' : Browsers.os.version.original }, "Browser": { "name": (typeof Browsers.browser.name === 'undefined') ? 'undefined' : Browsers.browser.name,
-																												 "version": (typeof Browsers.browser.version === 'undefined' || Browsers.browser.version == null) ? 'undefined' : Browsers.browser.version.original} }) );
+                                                            "OS": { "name": (typeof Browsers.os.name === 'undefined') ? 'undefined' : Browsers.os.name,
+                                                                    "url":  window.location.pathname,
+                                                                    "version": (Browsers.os.version == null || typeof Browsers.os.version.original === 'undefined') ? 'undefined' : Browsers.os.version.original }, "Browser": { "name": (typeof Browsers.browser.name === 'undefined') ? 'undefined' : Browsers.browser.name,
+                                                                                                                                                                                                                                 "version": (typeof Browsers.browser.version === 'undefined' || Browsers.browser.version == null) ? 'undefined' : Browsers.browser.version.original} }) );
           $_get(url);
           clearInterval(window.PluginLoggingInterval);
         }
         else
         {
           if ((typeof this.plugin_.availablePorts === 'undefined')
-	      && ((oldPortsAvail.length < portsAvail.length
-		   || (oldPortsAvail.length == 1 && portsAvail.length == 1 && oldPortsAvail[0] == "" && portsAvail[0] != ""))
+              && ((oldPortsAvail.length < portsAvail.length
+                   || (oldPortsAvail.length == 1 && portsAvail.length == 1 && oldPortsAvail[0] == "" && portsAvail[0] != ""))
                   ||(oldPortsAvail.length > portsAvail.length || (oldPortsAvail.length == 1 && portsAvail.length == 1 && oldPortsAvail[0] != "" && portsAvail[0] == ""))))
           {
             var ports = Object();
@@ -406,25 +406,25 @@ PluginHandler.prototype = {
           if (typeof(this.plugin_.getPorts) !== "undefined")
           {
             this.plugin_.getPorts(function (serialPortsAvail) {
-	      if (oldSerialPortsAvail != serialPortsAvail)
-	      {
-	        var parsedList = $.parseJSON(serialPortsAvail);
-	        var ports = "";
-	        $.each(parsedList, function (index, elem){
-		  ports += elem['port'] + ',';
-	        });
+              if (oldSerialPortsAvail != serialPortsAvail)
+              {
+                var parsedList = $.parseJSON(serialPortsAvail);
+                var ports = "";
+                $.each(parsedList, function (index, elem){
+                  ports += elem['port'] + ',';
+                });
 
                 var url = "{{  url('CodebenderUtilitiesBundle_logdb', {actionid : 36, meta: 'PLUGIN_META'}) }}";
                 url = url.replace("PLUGIN_META", JSON.stringify({ "success": true, "plugin" : true, "version": this.plugin_.version, "tabID": pl.tabID, "serialLibPorts" : ports, "probeUSBports" : this.plugin_.probeUSB()}) );
-	        $_get(url);
-	        var url = "{{  url('CodebenderUtilitiesBundle_logdb', {actionid : 74, meta: 'PLUGIN_META'}) }}";
-	        url = url.replace("PLUGIN_META", JSON.stringify({ "success": true, "plugin" : true, "version": this.plugin_.version, "tabID": pl.tabID, "jsonPorts" : parsedList}) );
-	        $_get(url);
-	      }
+                $_get(url);
+                var url = "{{  url('CodebenderUtilitiesBundle_logdb', {actionid : 74, meta: 'PLUGIN_META'}) }}";
+                url = url.replace("PLUGIN_META", JSON.stringify({ "success": true, "plugin" : true, "version": this.plugin_.version, "tabID": pl.tabID, "jsonPorts" : parsedList}) );
+                $_get(url);
+              }
 
-	      oldSerialPortsAvail = serialPortsAvail;
+              oldSerialPortsAvail = serialPortsAvail;
             });
-	  }
+          }
         }
       }
       catch(err)
@@ -460,24 +460,24 @@ PluginHandler.prototype = {
         {
           var disable_flushing = ((typeof board["upload"]["disable_flushing"] === 'undefined') ? "" : board["upload"]["disable_flushing"]);
           this.plugin_.flash(this.portslist. options[this.portslist.selectedIndex].text,
-			     binary,
-			     board["upload"]["maximum_size"],
-			     board["upload"]["protocol"],
-			     disable_flushing,
-			     board["upload"]["speed"],
-			     board["build"]["mcu"],
-			     flash_callback);
+                             binary,
+                             board["upload"]["maximum_size"],
+                             board["upload"]["protocol"],
+                             disable_flushing,
+                             board["upload"]["speed"],
+                             board["build"]["mcu"],
+                             flash_callback);
         }
         else
         {
           this.plugin_.flash(this.portslist.options[this.portslist.selectedIndex].text,
-			     binary,
-			     board["upload"]["maximum_size"],
-			     board["upload"]["protocol"],
-			     disable_flushing,
-			     board["upload"]["speed"],
-			     board["build"]["mcu"],
-			     flash_callback);
+                             binary,
+                             board["upload"]["maximum_size"],
+                             board["upload"]["protocol"],
+                             disable_flushing,
+                             board["upload"]["speed"],
+                             board["build"]["mcu"],
+                             flash_callback);
         }
       }
     }else
@@ -492,7 +492,7 @@ PluginHandler.prototype = {
       {
         var selectedPort = (typeof this.portslist.options[this.portslist.selectedIndex] === 'undefined') ? '' : this.portslist.options[this.portslist.selectedIndex].text;
         this.plugin_.flashWithProgrammer(selectedPort, binary, board["upload"]["maximum_size"], programmer["protocol"], programmer["communication"], programmer["speed"], programmer["force"], programmer["delay"], board["build"]["mcu"],
-					 flash_callback);
+                                         flash_callback);
       }
     }
   },
@@ -532,15 +532,15 @@ PluginHandler.prototype = {
     {
       if(Browsers.isBrowser("Chrome") || Browsers.isBrowser("Chromium"))
       {
-	if(Browsers.isOs('Windows','>=','6.2'))
-	  alert+= "<a onclick=\'compilerflasher.pluginHandler.addTo('Windows', '{{ '//' ~ app.request.host ~ asset('Codebendercc.msi') }}')\' id='msi-download-url' href = 'javascript:void(0);' >Add to Windows.</a>";
-	else
-	  alert += "<a onclick='compilerflasher.pluginHandler.addTo(\"Chrome\")' href='https://chrome.google.com/webstore/detail/codebendercc-extension/fkjidelplakiboijmadcpcbpboihkmee' target='_blank'>Add to Chrome</a>";
+        if(Browsers.isOs('Windows','>=','6.2'))
+          alert+= "<a onclick=\'compilerflasher.pluginHandler.addTo('Windows', '{{ '//' ~ app.request.host ~ asset('Codebendercc.msi') }}')\' id='msi-download-url' href = 'javascript:void(0);' >Add to Windows.</a>";
+        else
+          alert += "<a onclick='compilerflasher.pluginHandler.addTo(\"Chrome\")' href='https://chrome.google.com/webstore/detail/codebendercc-extension/fkjidelplakiboijmadcpcbpboihkmee' target='_blank'>Add to Chrome</a>";
 
       }
       else if(Browsers.isBrowser("Firefox"))
       {
-	alert+= "<a onclick=\'compilerflasher.pluginHandler.addTo('Firefox', '{{ '//' ~ app.request.host ~ asset('codebender.xpi') }}')\' id='xpi-download-url' href = 'javascript:void(0);' >Add to Firefox.</a>";
+        alert+= "<a onclick=\'compilerflasher.pluginHandler.addTo('Firefox', '{{ '//' ~ app.request.host ~ asset('codebender.xpi') }}')\' id='xpi-download-url' href = 'javascript:void(0);' >Add to Firefox.</a>";
       }
     }
 
@@ -575,15 +575,15 @@ PluginHandler.prototype = {
 
     var pl = this;
     setTimeout(function ()
-	       {
+               {
                  pl.scan();
-	       }, 200);
+               }, 200);
 
 
     setTimeout(function ()
-	       {
+               {
                  pl.loadPort();
-	       }, 500);
+               }, 500);
   },
 
   getFire: function() {
@@ -669,35 +669,35 @@ PluginHandler.prototype = {
         if (this.comparePluginVersions(this.parseVersionString(this.plugin_.version), this.parseVersionString('1.6.0.5')) < 0)
         {
           this.plugin_.serialRead(
-	    this.portslist.options[this.portslist.selectedIndex].text,
-	    speed,
-	    function (from, line) {
+            this.portslist.options[this.portslist.selectedIndex].text,
+            speed,
+            function (from, line) {
               pl.serialHudAppend(line);
-	    }
+            }
           );
         }
         else
         {
           var pl = this;
-	  var port = this.portslist.options[this.portslist.selectedIndex].text;
+          var port = this.portslist.options[this.portslist.selectedIndex].text;
           this.plugin_.serialRead(
-	    this.portslist.options[this.portslist.selectedIndex].text,
-	    speed,
-	    function (from, line) {
+            this.portslist.options[this.portslist.selectedIndex].text,
+            speed,
+            function (from, line) {
               pl.serialHudAppendString(line);
-	    },
-	    function (from, line){
+            },
+            function (from, line){
               var url = "{{  url('CodebenderUtilitiesBundle_logdb', {actionid : 69 , meta: 'PLUGIN_SERIAL_MONITOR_RETVAL_META'}) }}";
               url = url.replace("PLUGIN_SERIAL_MONITOR_RETVAL_META", JSON.stringify({ "retVal" : line , "version": (window.plugin_version === 'undefined' || window.plugin_version === null) ? "undefined" : window.plugin_version,
-										      "url":  window.location.pathname,
-										      "OS": { "name": (typeof Browsers.os.name === 'undefined') ? 'undefined' : Browsers.os.name,
-											      "version": (Browsers.os.version == null || typeof Browsers.os.version.original === 'undefined') ? 'undefined' : Browsers.os.version.original }, "Browser": { "name": (typeof Browsers.browser.name === 'undefined') ? 'undefined' : Browsers.browser.name,
-																															   "version": (typeof Browsers.browser.version === 'undefined' || Browsers.browser.version == null) ? 'undefined' : Browsers.browser.version.original}}));
+                                                                                      "url":  window.location.pathname,
+                                                                                      "OS": { "name": (typeof Browsers.os.name === 'undefined') ? 'undefined' : Browsers.os.name,
+                                                                                              "version": (Browsers.os.version == null || typeof Browsers.os.version.original === 'undefined') ? 'undefined' : Browsers.os.version.original }, "Browser": { "name": (typeof Browsers.browser.name === 'undefined') ? 'undefined' : Browsers.browser.name,
+                                                                                                                                                                                                                                                           "version": (typeof Browsers.browser.version === 'undefined' || Browsers.browser.version == null) ? 'undefined' : Browsers.browser.version.original}}));
               $_get(url);
               var msg = this.owner.getFlashFailMessage(line);
               this.owner.setOperationOutput(msg);
               this.owner.eventManager.fire("plugin_notification", msg);
-	    }
+            }
           );
 
           this.serialMonitorToAppend = '';
@@ -706,8 +706,8 @@ PluginHandler.prototype = {
           pl = this;
 
           window.serialMonitorUpdater = setInterval(function(){
-	    if(pl.serialMonitorToAppend != '')
-	    {
+            if(pl.serialMonitorToAppend != '')
+            {
               var total_length =  pl.serialMonitorToAppend.length + pl.serialMonitorVal.length;
               if(total_length > pl.max_monitor_length)
               {
@@ -724,22 +724,22 @@ PluginHandler.prototype = {
 
               if($('#autoscroll_check').is(':checked'))
                 $("#serial_hud").scrollTo(99999999);
-	    }
+            }
           }, 50);
 
-	  if(typeof this.plugin_.availablePorts !== 'undefined')
-	  {
-	    var ph = this;
+          if(typeof this.plugin_.availablePorts !== 'undefined')
+          {
+            var ph = this;
             // XXX: checking for devices interferes with ports.
-	    // window.portValidatorInterval = setInterval(function () {
-	    //   ph.plugin_.availablePorts(function (ports) {
-	    //     if (ports.indexOf(port) == -1){
-	    //       clearInterval(window.portValidatorInterval);
-	    //       ph.disconnect(false);
-	    //     };
-	    //   });
-	    // }, 100);
-	  }
+            // window.portValidatorInterval = setInterval(function () {
+            //   ph.plugin_.availablePorts(function (ports) {
+            //     if (ports.indexOf(port) == -1){
+            //       clearInterval(window.portValidatorInterval);
+            //       ph.disconnect(false);
+            //     };
+            //   });
+            // }, 100);
+          }
         }
 
       }
@@ -760,16 +760,16 @@ PluginHandler.prototype = {
       {
         var url = "{{  url('CodebenderUtilitiesBundle_logdb', {actionid : 59, meta: 'SERIAL_MONITOR_DISC_META'}) }}";
         url = url.replace("SERIAL_MONITOR_DISC_META",
-			  JSON.stringify({
-			    "baudrate" : $("#cb_cf_baud_rates option:selected").val(),
-			    "port": $("#cb_cf_ports").val(),
-			    "tabID": this.tabID
-			  }));
+                          JSON.stringify({
+                            "baudrate" : $("#cb_cf_baud_rates option:selected").val(),
+                            "port": $("#cb_cf_ports").val(),
+                            "tabID": this.tabID
+                          }));
         $_get(url);
       }
 
       if(typeof this.plugin_.availablePorts !== 'undefined')
-	clearInterval(window.portValidatorInterval);
+        clearInterval(window.portValidatorInterval);
 
       var pl = this;
       $("#cb_cf_serial_monitor_connect").html("<i class='icon-list-alt'></i> Open Serial Monitor").unbind('click').click(function(){pl.connect()});
@@ -852,20 +852,20 @@ PluginHandler.prototype = {
     {
       var url = "{{  url('CodebenderUtilitiesBundle_logdb', {actionid : 34 , meta: 'PLUGIN_ERROR_META'}) }}";
       url = url.replace("PLUGIN_ERROR_META", JSON.stringify({ "message" : msg , "version": (window.plugin_version === 'undefined' || window.plugin_version === null) ? "undefined" : window.plugin_version,
-							      "url":  window.location.pathname,
-							      "OS": { "name": (typeof Browsers.os.name === 'undefined') ? 'undefined' : Browsers.os.name,
-								      "version": (Browsers.os.version == null || typeof Browsers.os.version.original === 'undefined') ? 'undefined' : Browsers.os.version.original }, "Browser": { "name": (typeof Browsers.browser.name === 'undefined') ? 'undefined' : Browsers.browser.name,
-																												   "version": (typeof Browsers.browser.version === 'undefined' || Browsers.browser.version == null) ? 'undefined' : Browsers.browser.version.original}}));
+                                                              "url":  window.location.pathname,
+                                                              "OS": { "name": (typeof Browsers.os.name === 'undefined') ? 'undefined' : Browsers.os.name,
+                                                                      "version": (Browsers.os.version == null || typeof Browsers.os.version.original === 'undefined') ? 'undefined' : Browsers.os.version.original }, "Browser": { "name": (typeof Browsers.browser.name === 'undefined') ? 'undefined' : Browsers.browser.name,
+                                                                                                                                                                                                                                   "version": (typeof Browsers.browser.version === 'undefined' || Browsers.browser.version == null) ? 'undefined' : Browsers.browser.version.original}}));
       $_get(url);
     }
     else if(status ==1)
     {
       var url = "{{  url('CodebenderUtilitiesBundle_logdb', {actionid : 55 , meta: 'PLUGIN_WARNING_META'}) }}";
       url = url.replace("PLUGIN_WARNING_META", JSON.stringify({ "message" : msg , "version": (window.plugin_version === 'undefined' || window.plugin_version === null) ? "undefined" : window.plugin_version,
-								"url":  window.location.pathname,
-								"OS": { "name": (typeof Browsers.os.name === 'undefined') ? 'undefined' : Browsers.os.name,
-									"version": (Browsers.os.version == null || typeof Browsers.os.version.original === 'undefined') ? 'undefined' : Browsers.os.version.original }, "Browser": { "name": (typeof Browsers.browser.name === 'undefined') ? 'undefined' : Browsers.browser.name,
-																												     "version": (typeof Browsers.browser.version === 'undefined' || Browsers.browser.version == null) ? 'undefined' : Browsers.browser.version.original}}));
+                                                                "url":  window.location.pathname,
+                                                                "OS": { "name": (typeof Browsers.os.name === 'undefined') ? 'undefined' : Browsers.os.name,
+                                                                        "version": (Browsers.os.version == null || typeof Browsers.os.version.original === 'undefined') ? 'undefined' : Browsers.os.version.original }, "Browser": { "name": (typeof Browsers.browser.name === 'undefined') ? 'undefined' : Browsers.browser.name,
+                                                                                                                                                                                                                                     "version": (typeof Browsers.browser.version === 'undefined' || Browsers.browser.version == null) ? 'undefined' : Browsers.browser.version.original}}));
       $_get(url);
     }
 
@@ -942,9 +942,9 @@ compilerflasher = function(lf) {
       .click(function(){cb.clickedProgrammer()})
       .change(function(){cb.saveProgrammer()});
     $.getJSON("{{ url('CodebenderBoardBundle_listprogrammers') }}", function (data)
-	      {
-		programmersListCallback(data)
-	      });
+              {
+                programmersListCallback(data)
+              });
     this.loaded_elements.push("cb_cf_programmers");
   }
   if($("button#cb_cf_flash_with_prog_btn").length > 0)
@@ -1028,7 +1028,7 @@ compilerflasher = function(lf) {
         cb.exists('board', function (exists) {
           if (exists) {
             cb.get('board', function (config) {
-	      $("#cb_cf_boards").val(config.name)
+              $("#cb_cf_boards").val(config.name)
             })
           }
 
@@ -1077,12 +1077,12 @@ compilerflasher = function(lf) {
         {
           Lawnchair(function () {
             this.exists('programmer', function (exists) {
-	      if (exists) {
+              if (exists) {
                 this.get('programmer', function (config) {
                   $("#cb_cf_programmers").val(config.name)
                 })
-	      }
-	      cb.selectedProgrammer = cb.programmers_list[$("#cb_cf_programmers").prop("selectedIndex")];
+              }
+              cb.selectedProgrammer = cb.programmers_list[$("#cb_cf_programmers").prop("selectedIndex")];
             });
           });
         }
@@ -1247,12 +1247,12 @@ compilerflasher = function(lf) {
           {
             if (cb.pluginHandler.connected == true)
             {
-	      cb.pluginHandler.disconnect(false);
-	      setTimeout(function(){
+              cb.pluginHandler.disconnect(false);
+              setTimeout(function(){
                 cb.pluginHandler.doflash(true, cb.selectedBoard, cb.selectedProgrammer, obj['output'], cb.flash_callback);
-	      }, 200);
+              }, 200);
             } else {
-	      cb.pluginHandler.doflash(true, cb.selectedBoard, cb.selectedProgrammer, obj['output'], cb.flash_callback);
+              cb.pluginHandler.doflash(true, cb.selectedBoard, cb.selectedProgrammer, obj['output'], cb.flash_callback);
             }
           }
         }
@@ -1290,7 +1290,7 @@ compilerflasher = function(lf) {
           {
             cb.pluginHandler.disconnect(false);
             setTimeout(function(){
-	      cb.pluginHandler.doflash(false, cb.selectedBoard, cb.selectedProgrammer, obj['output'], cb.flash_callback);
+              cb.pluginHandler.doflash(false, cb.selectedBoard, cb.selectedProgrammer, obj['output'], cb.flash_callback);
             }, 200);
           } else {
             cb.pluginHandler.doflash(false, cb.selectedBoard, cb.selectedProgrammer, obj['output'], cb.flash_callback);
@@ -1358,8 +1358,8 @@ compilerflasher = function(lf) {
     {
       var url = "{{  url('CodebenderUtilitiesBundle_logdb', {actionid : 25, meta: 'UPLOAD_BOOTLOADER_META'}) }}";
       url = url.replace("UPLOAD_BOOTLOADER_META", JSON.stringify({ "programmer" : $('#programmer option:selected').val(),
-								   "board" : $('#cb_cf_boards option:selected').val(), "port" : $('#cb_cf_ports option:selected').val(),
-								   "bootloader_file" : ((typeof this.selectedBoard['bootloader']['file']) === "undefined") ? "undefined" : this.selectedBoard['bootloader']['file'] }) );
+                                                                   "board" : $('#cb_cf_boards option:selected').val(), "port" : $('#cb_cf_ports option:selected').val(),
+                                                                   "bootloader_file" : ((typeof this.selectedBoard['bootloader']['file']) === "undefined") ? "undefined" : this.selectedBoard['bootloader']['file'] }) );
       $_get(url);
 
       this.setOperationOutput("<i class='icon-spinner icon-spin'></i> Working...")
@@ -1600,11 +1600,11 @@ window.flashing_errors = {
 
   h.max = function(a, b) {
     var c = b == 'x' ? 'Width' : 'Height',
-	scroll = 'scroll' + c;
+        scroll = 'scroll' + c;
     if (!$(a).is('html,body')) return a[scroll] - $(a)[c.toLowerCase()]();
     var d = 'client' + c,
-	thtml = a.ownerDocument.documentElement,
-	body = a.ownerDocument.body;
+        thtml = a.ownerDocument.documentElement,
+        body = a.ownerDocument.body;
     return Math.max(html[scroll], body[scroll]) - Math.min(html[d], body[d]);
   };
 

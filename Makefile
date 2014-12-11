@@ -25,10 +25,18 @@ FIREFOX_TEST =  $(CURDIR)/test/firefox-test.js
 PLUGIN_FILES = $(build_script) $(CPP) $(CURDIR)/plugin/Codebendercc/fake_install.rdf
 CHROME_ZIP = $(CURDIR)/bundles/chrome-extension.zip
 
-CLIENT_FILES = $(CURDIR)/lib/plugin.js			\
-	$(CURDIR)/chrome-extension/client/rpc-client.js \
-	$(CURDIR)/chrome-extension/common/config.js	\
-	$(CURDIR)/chrome-extension/common/rpc-args.js
+CLIENT_FILES = \
+	$(CURDIR)/codebender/backend/buffer.js				\
+	$(CURDIR)/codebender/backend/logging.js				\
+	$(CURDIR)/codebender/backend/transaction.js			\
+	$(CURDIR)/codebender/backend/util.js				\
+	$(CURDIR)/codebender/backend/protocols/butterfly.js		\
+	$(CURDIR)/codebender/backend/protocols/serialtransaction.js	\
+	$(CURDIR)/codebender/backend/protocols/stk500.js		\
+	$(CURDIR)/codebender/plugin.js \
+	$(CURDIR)/chrome-extension/client/rpc-client.js			\
+	$(CURDIR)/chrome-extension/common/config.js			\
+	$(CURDIR)/chrome-extension/common/rpc-args.js			\
 
 HOST_FILES = $(CURDIR)/chrome-extension/manifest.json	\
 	$(CURDIR)/chrome-extension/host/rpc-host.js	\
@@ -48,11 +56,11 @@ chrome-extension:
 $(CURDIR)/bundles:
 	mkdir $@
 
-$(CURDIR)/npm_modules:
+$(CURDIR)/node_modules:
 	npm install
 
-browserify $(CURDIR)/bundles/chrome-client.js $(CURDIR)/bundles/firefox-client.js: $(CLIENT_FILES)| $(CURDIR)/npm_modules $(CURDIR)/bundles
-	npm run browserify
+browserify $(CURDIR)/bundles/chrome-client.js: $(CLIENT_FILES) | $(CURDIR)/node_modules $(CURDIR)/bundles
+	$(CURDIR)/node_modules/.bin/browserify $(CLIENT_FILES) > $(CURDIR)/bundles/chrome-client.js
 
 plugin:
 	git submodule init
@@ -79,7 +87,7 @@ test: $(CURDIR)/bundles/chrome-client.js $(CURDIR)/bundles/firefox-client.js $(X
 	$(MOCHA) $(CHROME_TEST) | sed 's_http://localhost:8080_$(CURDIR)_g' # $(FIREFOX_TEST)
 
 serve: browserify $(CHROME_ZIP)
-	node tools/serve.js
+	($(CURDIR)/node_modules/.bin/watchify $(CLIENT_FILES) -o $(CURDIR)/bundles/chrome-client.js & node tools/serve.js)
 
 async-serve:
 	node $(CURDIR)/tools/serve.js & \
@@ -91,7 +99,7 @@ kill-server:
 
 chrome = ~/Applications/Chromium.app/Contents/MacOS/Chromium
 chrome-args = --user-data-dir=/tmp/chromium-user-data --load-extension=./chrome-extension --no-first-run, --no-default-browser-check --debug-print
-run-chrome:
+run-chrome: $(CURDIR)/bundles/chrome-client.js
 	($(chrome) $(chrome-args) $(URL); rm -rf /tmp/chromium-user-data) &
 
 firefox = /Applications/Firefox.app/Contents/MacOS/firefox # open  -n -a firefox --args

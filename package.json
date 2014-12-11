@@ -22,6 +22,7 @@
 	"browserify": "browserify chrome-extension/common/* chrome-extension/client/* > bundles/chrome-client.js"
     },
     "devDependencies": {
-	"browserify": "^6.3.2"
+	"browserify": "^6.3.2",
+	"watchify": "^2.1.1"
     }
 }

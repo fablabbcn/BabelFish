@@ -3,4 +3,4 @@
 
 ((nil
   (compilation-directory . "/Users/drninjabatman/Projects/Codebendercc/BabelFish/")
-  (compile-command . "make bundle.js ")))
+  (compile-command . "make browserify")))

@@ -1,45 +1,42 @@
-var kDebugError = 0;
-var kDebugNormal = 1;
-var kDebugFine = 2;
+var arraify = require('./util').arraify;
 
-var visibleLevel = kDebugFine;
-var consoleLevel = kDebugFine;
-
-var visibleLoggingDiv_ = "";
-
-function configureVisibleLogging(divName) {
-  visibleLoggingDiv_ = divName;
+function Log (name, verbosity) {
+  this.verbosity = verbosity || 3;
+  this.name = name;
 }
 
-function timestampString() {
-  var now = new Date();
-  var pad = function(n) {
-    if (n < 10) { return "0" + n; }
-    return n;
-  }
-  return pad(now.getHours()) + ":" + pad(now.getMinutes()) + ":" + pad(now.getSeconds()) + "." + now.getMilliseconds();
-}
+Log.prototype = {
+  timestampString: function () {
+    var now = new Date();
+    var pad = function(n) {
+      if (n < 10) { return "0" + n; }
+      return n;
+    };
+    return pad(now.getHours()) + ":" + pad(now.getMinutes())
+      + ":" + pad(now.getSeconds()) + "." + now.getMilliseconds();
+  },
 
-function visibleLog(message) {
-  if (visibleLoggingDiv_ != "") {
-    document.getElementById(visibleLoggingDiv_).innerHTML =
-      "[" + timestampString() + "] " + message + 
-      "<br/>" + document.getElementById(visibleLoggingDiv_).innerHTML;
-  }
-}
+  prefix: function () {
+    return "[" + this.timestampString() +  " : " + this.name + "]";
+  },
 
-function consoleLog(message) {
-  console.log(message);
-  if (chrome.extension.getBackgroundPage()) {
-    chrome.extension.getBackgroundPage().log(message);
-  }
-}
+  console_: function (type, args) {
+    return console[type]
+      .apply(console, args);
+  },
 
-function log(level, message) {
-  if (level <= consoleLevel) {
-    console.log(message);
+  error: function (var_args) {
+    if (this.verbosity > 0)
+      this.console_('error', arraify(arguments, 0, this.prefix()));
+  },
+  warning: function (var_args) {
+    if (this.verbosity > 1)
+      this.console_('warning', arraify(arguments, 0, this.prefix()));
+  },
+  info: function (var_args) {
+    if (this.verbosity > 2)
+      this.console_('log', arraify(arguments), 0, this.prefix());
   }
-  if (level <= visibleLevel) {
-    visibleLog(message);
-  }
-}
+};
+
+module.exports.Log = Log;

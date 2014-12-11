@@ -35,7 +35,7 @@ if (!chrome) {
     var DEBUG=false;
     if (DEBUG) {
       return function (var_args) {
-	console.log.apply(console, ["[Client] "].concat(Array.prototype.slice.call(arguments)));
+        console.log.apply(console, ["[Client] "].concat(Array.prototype.slice.call(arguments)));
       };
     } else {
       return function (msg) {};
@@ -71,32 +71,32 @@ if (!chrome) {
   ClientBus.prototype = {
     default_cb: function (msg) {
       if (!msg)
-	err("Chrome's last error: " + this.runtime_.lastError);
+        err("Chrome's last error: " + this.runtime_.lastError);
 
       if (msg.error)
-	throw err(msg.error);
+        throw err(msg.error);
     },
 
     // cb(msg)
     clientMessage: function (persist, msg, callbackWrap) {
       callbackWrap = callbackWrap;
       if (persist) {
-	dbg("Connecting to channel", msg.object);
-	var port = this.runtime_.connect(this.config.extensionId, {name: msg.object});
-	// cb has access only to msg, not to any other arguments the
-	// API may provides.
-	port.postMessage(msg);
+        dbg("Connecting to channel", msg.object);
+        var port = this.runtime_.connect(this.config.extensionId, {name: msg.object});
+        // cb has access only to msg, not to any other arguments the
+        // API may provides.
+        port.postMessage(msg);
         if (callbackWrap)
-	  port.onMessage.addListener(callbackWrap);
+          port.onMessage.addListener(callbackWrap);
         else
           dbg("Sent cleaner msg",msg);
       } else {
-	dbg("Sending:", msg);
-	this.runtime_.sendMessage (
-	  this.config.extensionId, msg, {}, (function (rsp) {
-	    dbg("BUS received: ", rsp);
-	    callbackWrap(rsp);
-	  }).bind(this));
+        dbg("Sending:", msg);
+        this.runtime_.sendMessage (
+          this.config.extensionId, msg, {}, (function (rsp) {
+            dbg("BUS received: ", rsp);
+            callbackWrap(rsp);
+          }).bind(this));
       }
     },
 
@@ -114,18 +114,18 @@ if (!chrome) {
     console.assert(typeof(config.extensionId) == 'string',
                    "Extension id should be a string");
     console.assert(typeof(obj_name) == 'string',
-		   "object name should be a string, not " + typeof(obj_name));
+                   "object name should be a string, not " + typeof(obj_name));
 
     // do not override an existing object
     if (chrome[obj_name]) {
       var props = Object.getOwnPropertyNames(chrome[obj_name]);
       props.forEach( function (p) {
-	var prop = chrome[obj_name][p];
-	if (prop instanceof Function) {
-	  this[p] = prop.bind(chrome[obj_name]);
-	} else {
-	  this[p] = prop;
-	}
+        var prop = chrome[obj_name][p];
+        if (prop instanceof Function) {
+          this[p] = prop.bind(chrome[obj_name]);
+        } else {
+          this[p] = prop;
+        }
       }.bind(this));
     }
 
@@ -140,7 +140,7 @@ if (!chrome) {
 
     // XXX: The callback is called very very late.
     // bus.clientMessage(false, {method: 'setup', object: obj_name},
-    // 				this.setup_methods.bind(this));
+    //                          this.setup_methods.bind(this));
   }
 
   RPCClient.prototype = {
@@ -149,26 +149,26 @@ if (!chrome) {
       this.availableCleaners = {};
 
       (config.methods || []).forEach(
-	this.registerMethod.bind(this, methodType.METHOD));
+        this.registerMethod.bind(this, methodType.METHOD));
       (config.listeners || []).forEach(
-	this.registerMethod.bind(this, methodType.LISTENER));
+        this.registerMethod.bind(this, methodType.LISTENER));
       (Object.getOwnPropertyNames(this.availableCleaners) || []).forEach(
-	this.registerMethod.bind(this, methodType.CLEANER));
+        this.registerMethod.bind(this, methodType.CLEANER));
 
       this._setup = true;
     },
 
     registerMethod: function (isListener, entry) {
       var name = entry.starter || entry,
-	  names = name.split('.'),
-	  method = names.pop(),
-	  obj = names.reduce(function (ob, m) {
-	    ob[m] = ob[m] || {};
-	    return ob[m];
-	  }, this) || this;
+          names = name.split('.'),
+          method = names.pop(),
+          obj = names.reduce(function (ob, m) {
+            ob[m] = ob[m] || {};
+            return ob[m];
+          }, this) || this;
 
       if (entry.cleaner)
-	this.availableCleaners[entry.cleaner] = entry.starter;
+        this.availableCleaners[entry.cleaner] = entry.starter;
 
       if (isListener)
         this.availableListeners.push(name);
@@ -183,18 +183,18 @@ if (!chrome) {
 
       var ret = function (resp) {
         // Ignore free resoponses
-	if (!resp)
-	  return true;
+        if (!resp)
+          return true;
 
         // Raise an error if the server reports one.
-	if (resp.error) {
-	  err(resp.error);
-	} else {
+        if (resp.error) {
+          err(resp.error);
+        } else {
           // If there is a callback call it.
-	  if (callback) {
-	    return callback.apply(null, argsDecode(resp.args));
-	  }
-	}
+          if (callback) {
+            return callback.apply(null, argsDecode(resp.args));
+          }
+        }
         return true;
       };
 
@@ -217,16 +217,16 @@ if (!chrome) {
 
     _rpc: function (fnname, var_args) {
       var args = Array.prototype.slice.call(arguments, 1),
-	  rich_args = argsEncode(args),
-	  msg = {
-	    timestamp: (new Date).getTime(),
-	    object: this.obj_name,
-	    method: fnname,
-	    args: rich_args,
-	    error: null,
-	    callbackId: this.callbackIdFactory(rich_args.callbackRaw),
+          rich_args = argsEncode(args),
+          msg = {
+            timestamp: (new Date).getTime(),
+            object: this.obj_name,
+            method: fnname,
+            args: rich_args,
+            error: null,
+            callbackId: this.callbackIdFactory(rich_args.callbackRaw),
             sender: window._rpcSender
-	  },
+          },
           // false if it's a cleaner
           clientCallback = !(this.availableCleaners[fnname]) &&
             rich_args.callbackRaw;
@@ -242,10 +242,10 @@ if (!chrome) {
     // _every_ response on the created port thus creating a listener.
     _message: function (msg, callbackRaw) {
       var isListener = (this.availableListeners.indexOf(msg.method) != -1),
-	  callbackWrap = this.msgCallbackFactory(callbackRaw);
+          callbackWrap = this.msgCallbackFactory(callbackRaw);
 
       this.bus.clientMessage(isListener && msg.object + '.' + msg.method,
-			     msg, callbackWrap);
+                             msg, callbackWrap);
     }
   };
 

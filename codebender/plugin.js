@@ -1,3 +1,6 @@
+var protocols = require('./backend/protocols').protocols;
+var create_the_client = require('./../chrome-extension/client/rpc-client');
+
 var dbg = (function  () {
   var DEBUG = false;
   if (DEBUG)
@@ -21,14 +24,14 @@ if (!chrome.serial) {
     // side effects
     if (desc)
       Object.getOwnPropertyNames(desc).forEach(function (pp) {
-	if (pp != "value" && true) {
-	  console.log(prop + '[' + pp + ']');
-	  this[pp] = pluginElement[pp];
-	}
+        if (pp != "value" && true) {
+          console.log(prop + '[' + pp + ']');
+          this[pp] = pluginElement[pp];
+        }
       });
     else
       throw Error("Could not determine property descruptor of plugin property '"
-		  + prop);
+                  + prop);
 
     this.get = function () {return pluginElement[prop];};
     this.set = function (val) {pluginElement[prop] = val;};
@@ -53,13 +56,13 @@ if (!chrome.serial) {
 
     prototypeProperties(this.element_).forEach( function (attr) {
       if (typeof this.element_[attr] == 'function') {
-	this[attr] = function () {
-	  var args = Array.prototype.slice.call(arguments);
-	  return this.element_[attr].apply(this.element_, args);
-	}.bind(this);
+        this[attr] = function () {
+          var args = Array.prototype.slice.call(arguments);
+          return this.element_[attr].apply(this.element_, args);
+        }.bind(this);
       } else {
-	var descr = new PluginPropertyDescriptor(this.element_, attr);
-	Object.defineProperty(this, attr, descr);
+        var descr = new PluginPropertyDescriptor(this.element_, attr);
+        Object.defineProperty(this, attr, descr);
       }
     }.bind(this) );
 
@@ -98,7 +101,6 @@ if (!chrome.serial) {
     this.errorCallback = function () {};
     this.readingInfo = null;
   }
-
   Plugin.prototype = {
     errorCallback:  function(from, msg, status) {
       console.error("["+ from + "] ", msg, "(status: " + status + ")");
@@ -112,28 +114,28 @@ if (!chrome.serial) {
           if (readArg.connectionId != connectionId)
             return;
 
-	  var bufferView = new Uint8Array(readArg.data),
-	      chars = [];
+          var bufferView = new Uint8Array(readArg.data),
+              chars = [];
 
-	  for (var i = 0; i < bufferView.length; ++i) {
-	    chars.push(bufferView[i]);
-	  }
+          for (var i = 0; i < bufferView.length; ++i) {
+            chars.push(bufferView[i]);
+          }
 
-	  // FIXME: if the last line does not end in a newline it should
-	  // be buffered
-	  var msgs = String.fromCharCode.apply(null, chars).split("\n");
-	  console.log("Bytes received:", readArg.data.length);
-	  // return cb("chrome-serial", rcv);
-	  // XXX: This is a bit hacky but it should work.
-	  // If we have complete messages or if the message so far is too large
-	  this.readingInfo.buffer_ = this.readingInfo.buffer_ || "";
-	  if (msgs.length > 1 ||
-	      (this.readingInfo.buffer_ + msgs[0]).length > this.bufferSize) {
-	    msgs[0] = this.readingInfo.buffer_ + msgs[0];
-	    this.readingInfo.buffer_ = "";
-	    cb("chrome-serial", msgs.join("\n"));
-	  } else {
-	    this.readingInfo.buffer_ += msgs[0];
+          // FIXME: if the last line does not end in a newline it should
+          // be buffered
+          var msgs = String.fromCharCode.apply(null, chars).split("\n");
+          console.log("Bytes received:", readArg.data.length);
+          // return cb("chrome-serial", rcv);
+          // XXX: This is a bit hacky but it should work.
+          // If we have complete messages or if the message so far is too large
+          this.readingInfo.buffer_ = this.readingInfo.buffer_ || "";
+          if (msgs.length > 1 ||
+              (this.readingInfo.buffer_ + msgs[0]).length > this.bufferSize) {
+            msgs[0] = this.readingInfo.buffer_ + msgs[0];
+            this.readingInfo.buffer_ = "";
+            cb("chrome-serial", msgs.join("\n"));
+          } else {
+            this.readingInfo.buffer_ += msgs[0];
             setTimeout(function () {
               cb("chrome-serial", this.readingInfo.buffer_);
               this.readingInfo.buffer_ = "";
@@ -177,32 +179,29 @@ if (!chrome.serial) {
     },
 
     doFlashbootloader: function (device, protocol, speed, force,
- 			         delay, high_fuses, low_fuses,
- 			         extended_fuses, unlock_bits, mcu,
- 			         cb) {
+                                 delay, high_fuses, low_fuses,
+                                 extended_fuses, unlock_bits, mcu,
+                                 cb) {
       // Validate the data
       // Async run doFlashWithProgrammer
     },
 
     flash: function (device,
-		     code,
-		     maxsize,
-		     protocol,
-		     disable_flushing,
-		     speed,
-		     mcu,
-		     cb) {
+                     code,
+                     maxsize,
+                     protocol,
+                     disable_flushing,
+                     speed,
+                     mcu,
+                     cb) {
       // uploadCompiledSketch by mr john
       setTimeout(function () {
         dbg("Code length", code.length, typeof code,
-	    "Protocol:", protocol,
-	    "Device:", device);
+            "Protocol:", protocol,
+            "Device:", device);
 
         // STK500v1
-        uploadCompiledSketch(code, device, protocol);
-        // XXX: there is no guarantee that upload is finished, pass cb
-        // to backend
-        cb();
+        transaction.flash(code, device, cb);
       }, 0);
     },
 
@@ -244,16 +243,16 @@ if (!chrome.serial) {
         function unsafeCleanReadingInfo () {
           self.serial.onReceive.removeListener(self.readingInfo.handler);
           self.serial.disconnect(self.readingInfo.connectionId, function (ok) {
-	    if (!ok) {
-	      throw Error("Failed to disconnect from ", self.readingInfo);
-	      // XXX: Maybe try again
-	    } else {
-	      dbg("Diconnected ok:", self.readingInfo);
-	    }
+            if (!ok) {
+              throw Error("Failed to disconnect from ", self.readingInfo);
+              // XXX: Maybe try again
+            } else {
+              dbg("Diconnected ok:", self.readingInfo);
+            }
           });
 
           // Cleanup syncrhronously
-	  self.readingInfo = null;
+          self.readingInfo = null;
         }
 
         if (force)
@@ -321,6 +320,7 @@ if (!chrome.serial) {
       this.disconnect();
     }
   };
+  window.CodebenderPlugin = Plugin;
 }
 
 function ReadHandler () {

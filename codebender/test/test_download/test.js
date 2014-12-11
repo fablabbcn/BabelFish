@@ -10,6 +10,7 @@ var protocol = "avr109";
 // Enable the plugin
 cf.pluginHandler.showPlugin();
 cf.enableCompilerFlasherActions();
+cf.pluginHandler.scan();
 $("#flash").click (function () {
   $.get("/codebender/backend/blink-example.hex", function (blob) {
     // Pretend to send logs
@@ -18,28 +19,28 @@ $("#flash").click (function () {
       blob.split("\n").length;
 
     var flash_args = [
-      true,			//select
+      true,                     //select
       {
-	upload: {
-	  disbale_flushing: undefined,
-	  maximum_size: 4096,
-	  protocol: protocol,
-	  speed: 112500},
-	build: {
-	  mcu: undefined
-	}
+        upload: {
+          disbale_flushing: undefined,
+          maximum_size: 4096,
+          protocol: protocol,
+          speed: 112500},
+        build: {
+          mcu: undefined
+        }
       },                     //device
-      undefined, 		//Flush with programmer
-      ParseHexFile(blob),			//binary
+      undefined,                //Flush with programmer
+      ParseHexFile(blob),                       //binary
       function (from, progress) {
-	console.log("Uploading progress", from, progress);
+        console.log("Uploading progress", from, progress);
       }];
 
     // Mimic the usbflash behavior
     if (cf.pluginHandler.connected == true) {
       cf.pluginHandler.disconnect(false);
       setTimeout(function() {
-	cf.pluginHandler.doflash.apply(cf.pluginHandler, flash_args);
+        cf.pluginHandler.doflash.apply(cf.pluginHandler, flash_args);
       }, 200);
     } else {
       cf.pluginHandler.doflash.apply(cf.pluginHandler, flash_args);
