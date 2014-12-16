@@ -9,7 +9,7 @@ function openUSBTiny(cb) {
       // No need to check for errors at this point.
       // Nothing can be done if an error occurs anyway. You should always try
       // to open the device.
-      chrome.usb.openDevices(device, function (connection) {
+      chrome.usb.openDevice(device, function (connection) {
         console.log(connection);
         if(cb) cb();
       });
