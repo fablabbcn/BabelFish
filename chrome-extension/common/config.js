@@ -8,39 +8,42 @@ var config = {
     serial: {
       methods: ['getDevices', 'send', 'connect', 'disconnect', 'setControlSignals', 'getControlSignals', 'getConnections'],
       listeners: [{starter: 'onReceiveError.addListener',
-		   cleaner: 'onReceiveError.removeListener'},
+                   cleaner: 'onReceiveError.removeListener'},
                   {starter: 'onReceive.addListener',
-		   cleaner: 'onReceive.removeListener'}]
+                   cleaner: 'onReceive.removeListener'}]
+    },
+    usb: {
+      methods: ['getDevices', 'openDevice', 'findDevices', 'closeDevice', 'resetDevice']
+    },
+    app: {
+      methods: ['window.create'],
+      listeners: [{starter: 'runtime.onLaunched.addListener',
+                   cleaner: 'runtime.onLaunched.removeListener'}]
+    },
+    notifications: {
+      methods: ['create', 'clear'],
+      listeners: [{starter: 'onClicked.addListener',
+                   cleaner: 'onClicked.removeListener'}]
+    },
+    storage: {
+      methods: ['local.get', 'local.set'],
+      listeners: [{starter: 'onChanged.addListener',
+                   cleaner: 'onChanged.removeListener'}]
+    },
+    syncFileSystem: {
+      methods: ['requestFileSystem'],
+      listeners: []
+    },
+    alarms: {
+      methods: ['clear', 'create', 'getAll'],
+      listeners: [{starter: 'onAlarm.addListener',
+                   cleaner: 'onAlarm.removeListener'}]
+    },
+    runtime: {
+      methods: ['getPlatformInfo'],
+      listeners: [{starter: 'onLaunched.addListener',
+                   cleaner: 'onLaunched.removeListener'}]
     }
-  },
-  app: {
-    methods: ['window.create'],
-    listeners: [{starter: 'runtime.onLaunched.addListener',
-                 cleaner: 'runtime.onLaunched.removeListener'}]
-  },
-  notifications: {
-    methods: ['create', 'clear'],
-    listeners: [{starter: 'onClicked.addListener',
-                 cleaner: 'onClicked.removeListener'}]
-  },
-  storage: {
-    methods: ['local.get', 'local.set'],
-    listeners: [{starter: 'onChanged.addListener',
-                 cleaner: 'onChanged.removeListener'}]
-  },
-  syncFileSystem: {
-    methods: ['requestFileSystem'],
-    listeners: []
-  },
-  alarms: {
-    methods: ['clear', 'create', 'getAll'],
-    listeners: [{starter: 'onAlarm.addListener',
-                 cleaner: 'onAlarm.removeListener'}]
-  },
-  runtime: {
-    methods: ['getPlatformInfo'],
-    listeners: [{starter: 'onLaunched.addListener',
-                 cleaner: 'onLaunched.removeListener'}]
   }
 }, matchUrls=["http://localhost:8080/*",
               "http://ec2-54-174-134-98.compute-1.amazonaws.com:8080/*"];

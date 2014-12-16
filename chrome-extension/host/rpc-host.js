@@ -14,9 +14,9 @@
 //
 function RPCHost (name, obj) {
   // One time methods.
-  this.supportedMethods = config.methods[name].methods;
+  this.supportedMethods = config.methods[name].methods || [];
   // Connection based methods
-  this.supportedListeners = config.methods[name].listeners;
+  this.supportedListeners = config.methods[name].listeners || [];
   this.listenerCallbacks = {};
   this.methodPaths(this.supportedListeners).forEach(function (p) {
     this.listenerCallbacks[p] = [];
@@ -27,8 +27,8 @@ function RPCHost (name, obj) {
   this.obj = obj || chrome[name];
   if (config.extensionId != chrome.runtime.id) {
     console.error("The clients may think my id is '" + config.extensionId +
-		  "' (!=" + chrome.runtime.id +
-		  ") they wont be able to communicate");
+                  "' (!=" + chrome.runtime.id +
+                  ") they wont be able to communicate");
   }
 
   // Check the object
@@ -88,6 +88,9 @@ RPCHost.prototype = {
     dbg("RPCHost applying: ", request.method,  args);
     try {
       method.apply(this.obj, args);
+      if (chrome.runtime.lastError)
+        throw chrome.runtime.lastError;
+
     } catch (e) {
       this.sendError(e, sendResp);
     } finally {
@@ -120,15 +123,15 @@ RPCHost.prototype = {
           dbg("RPCHost requesting callback", callbackId, " with args:", args);
           try {
             sendResp(msg);
-	  } catch (e) {
-	    console.warn("Tried to send to a closed connection. FIXME.",
+          } catch (e) {
+            console.warn("Tried to send to a closed connection. FIXME.",
                          {
                            msg: msg,
                            error: e,
                            sender: sender}
                         );
-	  }
-	};
+          }
+        };
 
     if (this.methodIsListenerOrCleaner(methodPath)) {
       dbg("Handling listener:", methodPath);
@@ -159,7 +162,7 @@ RPCHost.prototype = {
   getListenerObject: function (listenerMethodName) {
     return this.supportedListeners.filter(function (l) {
       return (l.cleaner == listenerMethodName ||
-	      l.starter == listenerMethodName);
+              l.starter == listenerMethodName);
     })[0];
   },
 
@@ -169,13 +172,13 @@ RPCHost.prototype = {
     // Listeners that match the start or the cleaner
     var listenerObjects = this.supportedListeners.filter(function (l) {
       return (l.cleaner == listenerMethodName ||
-	      l.starter == listenerMethodName);
+              l.starter == listenerMethodName);
     }),
-	// Concat the listeners that match starts, cleaners and the methodname
-	ret = listenerObjects.reduce(function (lst, lo) {
-	  return lst.concat(this.listenerCallbacks[lo.starter]).
-	    concat(this.listenerCallbacks[lo.cleaner]);
-	}.bind(this), []).concat(this.listenerCallbacks[listenerMethodName]);
+        // Concat the listeners that match starts, cleaners and the methodname
+        ret = listenerObjects.reduce(function (lst, lo) {
+          return lst.concat(this.listenerCallbacks[lo.starter]).
+            concat(this.listenerCallbacks[lo.cleaner]);
+        }.bind(this), []).concat(this.listenerCallbacks[listenerMethodName]);
 
     return ret;
   },
@@ -186,15 +189,15 @@ RPCHost.prototype = {
     dbg("Garbage collection");
     function gcListener(ls) {
       if (ls.cleaner) {
-	self.listenerCallbacks[ls.cleaner].forEach(function (cleanCb) {
-	  // Remove the cleaned listeners
+        self.listenerCallbacks[ls.cleaner].forEach(function (cleanCb) {
+          // Remove the cleaned listeners
           dbg("[GC:", ls.cleaner,"] Callbacks cleaned:",
               self.listenerCallbacks[ls.cleaner]);
           dbg("[GC", ls.starter,"] Callbacks started:",
               self.listenerCallbacks[ls.starter]);
-	  self.listenerCallbacks[ls.starter] =
+          self.listenerCallbacks[ls.starter] =
             self.listenerCallbacks[ls.starter].filter(
-	      function (callback) {
+              function (callback) {
                 return callback.callbackId != cleanCb.callbackId;
               });
         });

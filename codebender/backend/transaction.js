@@ -2,7 +2,6 @@ var utilModule = require("./util"),
     arraify = utilModule.arraify,
     deepCopy = utilModule.deepCopy;
 
-// An FSM
 function Transaction () {
   this.hooks_ = {};
   this.state = null;
@@ -21,8 +20,6 @@ Transaction.prototype = {
       this.hooks_[key].forEach(function (fn) { fn.apply(null, args); });
   },
 
-  // Will trigger 'leave' and 'enter' hooks and possibly call a
-  // callback when done.
   transition: function(state, varArgs) {
     var oldState = this.state, args = arraify(arguments, 1);
 

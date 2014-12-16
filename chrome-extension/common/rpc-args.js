@@ -13,16 +13,19 @@ function binToHex(bin) {
 function argsEncode(args) {
   var ret = {callbackRaw: null};
   ret.args = args.map(function (arg) {
-    if (arg instanceof Function) {
-      ret.callbackRaw = arg;
-    } else if (arg instanceof ArrayBuffer) {
-      return {type: 'arraybuffer', val: binToHex(arg)};
-    }
+    // We should be able to pass 'undefined' to host functions
+    if (arg) {
+      if (arg instanceof Function) {
+        ret.callbackRaw = arg;
+      } else if (arg instanceof ArrayBuffer) {
+        return {type: 'arraybuffer', val: binToHex(arg)};
+      }
 
-    // XXX: extremely ad-hoc
-    if (arg.data && arg.data instanceof ArrayBuffer) {
-      arg.data = binToHex(arg.data);
-      return {type: 'data-arraybuffer', val: arg};
+      // XXX: extremely ad-hoc
+      if (arg.data && arg.data instanceof ArrayBuffer) {
+        arg.data = binToHex(arg.data);
+        return {type: 'data-arraybuffer', val: arg};
+      }
     }
 
     return {type: typeof(arg), val: arg};

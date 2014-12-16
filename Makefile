@@ -1,3 +1,4 @@
+export DYLD_LIBRARY_PATH=$(CURDIR)/root/lib:$$DYLD_LIBRARY_PATH
 build_script = $(CURDIR)/plugin/build.sh
 XPI = $(CURDIR)/plugin/codebendercc.xpi
 export CODEBENDER_XPI = $(XPI)
@@ -18,7 +19,8 @@ MOCHA = mocha $(DEBUG)
 # URL = http://localhost:8080/test/testpages/chrome-listener/index.html
 
 ## Codebender tests
-URL = http://localhost:8080/codebender/test/test_download/index.html
+# URL = http://localhost:8080/codebender/test/test_download/index.html
+URL = http://localhost:8080/codebender/test/test_usb/index.html
 
 CHROME_TEST =  $(CURDIR)/test/selenium-test.js
 FIREFOX_TEST =  $(CURDIR)/test/firefox-test.js
@@ -98,7 +100,7 @@ kill-server:
 	rm server_pid
 
 chrome = ~/Applications/Chromium.app/Contents/MacOS/Chromium
-chrome-args = --user-data-dir=/tmp/chromium-user-data --load-extension=./chrome-extension --no-first-run, --no-default-browser-check --debug-print
+chrome-args = --user-data-dir=/tmp/chromium-user-data --load-extension=./chrome-extension --no-first-run, --no-default-browser-check --debug-print --enable-logging=stderr --v=1
 run-chrome: $(CURDIR)/bundles/chrome-client.js
 	($(chrome) $(chrome-args) $(URL); rm -rf /tmp/chromium-user-data) &
 

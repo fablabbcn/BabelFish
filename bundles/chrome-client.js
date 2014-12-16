@@ -252,6 +252,7 @@ if (!chrome) {
 
   // Access to the global scope
   Object.getOwnPropertyNames(config.methods).forEach(function (m) {
+    console.log("Registering client for chrome.", m);
     chrome[m] = new RPCClient(config, m);
   });
 
@@ -272,39 +273,42 @@ var config = {
     serial: {
       methods: ['getDevices', 'send', 'connect', 'disconnect', 'setControlSignals', 'getControlSignals', 'getConnections'],
       listeners: [{starter: 'onReceiveError.addListener',
-		   cleaner: 'onReceiveError.removeListener'},
+                   cleaner: 'onReceiveError.removeListener'},
                   {starter: 'onReceive.addListener',
-		   cleaner: 'onReceive.removeListener'}]
+                   cleaner: 'onReceive.removeListener'}]
+    },
+    usb: {
+      methods: ['getDevices', 'openDevice', 'findDevices', 'closeDevice', 'resetDevice']
+    },
+    app: {
+      methods: ['window.create'],
+      listeners: [{starter: 'runtime.onLaunched.addListener',
+                   cleaner: 'runtime.onLaunched.removeListener'}]
+    },
+    notifications: {
+      methods: ['create', 'clear'],
+      listeners: [{starter: 'onClicked.addListener',
+                   cleaner: 'onClicked.removeListener'}]
+    },
+    storage: {
+      methods: ['local.get', 'local.set'],
+      listeners: [{starter: 'onChanged.addListener',
+                   cleaner: 'onChanged.removeListener'}]
+    },
+    syncFileSystem: {
+      methods: ['requestFileSystem'],
+      listeners: []
+    },
+    alarms: {
+      methods: ['clear', 'create', 'getAll'],
+      listeners: [{starter: 'onAlarm.addListener',
+                   cleaner: 'onAlarm.removeListener'}]
+    },
+    runtime: {
+      methods: ['getPlatformInfo'],
+      listeners: [{starter: 'onLaunched.addListener',
+                   cleaner: 'onLaunched.removeListener'}]
     }
-  },
-  app: {
-    methods: ['window.create'],
-    listeners: [{starter: 'runtime.onLaunched.addListener',
-                 cleaner: 'runtime.onLaunched.removeListener'}]
-  },
-  notifications: {
-    methods: ['create', 'clear'],
-    listeners: [{starter: 'onClicked.addListener',
-                 cleaner: 'onClicked.removeListener'}]
-  },
-  storage: {
-    methods: ['local.get', 'local.set'],
-    listeners: [{starter: 'onChanged.addListener',
-                 cleaner: 'onChanged.removeListener'}]
-  },
-  syncFileSystem: {
-    methods: ['requestFileSystem'],
-    listeners: []
-  },
-  alarms: {
-    methods: ['clear', 'create', 'getAll'],
-    listeners: [{starter: 'onAlarm.addListener',
-                 cleaner: 'onAlarm.removeListener'}]
-  },
-  runtime: {
-    methods: ['getPlatformInfo'],
-    listeners: [{starter: 'onLaunched.addListener',
-                 cleaner: 'onLaunched.removeListener'}]
   }
 }, matchUrls=["http://localhost:8080/*",
               "http://ec2-54-174-134-98.compute-1.amazonaws.com:8080/*"];
@@ -368,16 +372,19 @@ function binToHex(bin) {
 function argsEncode(args) {
   var ret = {callbackRaw: null};
   ret.args = args.map(function (arg) {
-    if (arg instanceof Function) {
-      ret.callbackRaw = arg;
-    } else if (arg instanceof ArrayBuffer) {
-      return {type: 'arraybuffer', val: binToHex(arg)};
-    }
+    // We should be able to pass 'undefined' to host functions
+    if (arg) {
+      if (arg instanceof Function) {
+        ret.callbackRaw = arg;
+      } else if (arg instanceof ArrayBuffer) {
+        return {type: 'arraybuffer', val: binToHex(arg)};
+      }
 
-    // XXX: extremely ad-hoc
-    if (arg.data && arg.data instanceof ArrayBuffer) {
-      arg.data = binToHex(arg.data);
-      return {type: 'data-arraybuffer', val: arg};
+      // XXX: extremely ad-hoc
+      if (arg.data && arg.data instanceof ArrayBuffer) {
+        arg.data = binToHex(arg.data);
+        return {type: 'data-arraybuffer', val: arg};
+      }
     }
 
     return {type: typeof(arg), val: arg};
@@ -1361,7 +1368,6 @@ var utilModule = require("./util"),
     arraify = utilModule.arraify,
     deepCopy = utilModule.deepCopy;
 
-// An FSM
 function Transaction () {
   this.hooks_ = {};
   this.state = null;
@@ -1380,8 +1386,6 @@ Transaction.prototype = {
       this.hooks_[key].forEach(function (fn) { fn.apply(null, args); });
   },
 
-  // Will trigger 'leave' and 'enter' hooks and possibly call a
-  // callback when done.
   transition: function(state, varArgs) {
     var oldState = this.state, args = arraify(arguments, 1);
 
@@ -1801,4 +1805,4 @@ try {
 window.log = log;
 window.str = str;
 
-},{}]},{},["/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/buffer.js","/Users/drninjabatman/Projects/Codebendercc/BabelFish/chrome-extension/common/config.js","/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/transaction.js","/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/logging.js","/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/protocols/butterfly.js","/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/protocols/serialtransaction.js","/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/protocols/stk500.js","/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/plugin.js"]);
+},{}]},{},["/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/buffer.js","/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/logging.js","/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/transaction.js","/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/util.js","/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/protocols/butterfly.js","/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/protocols/serialtransaction.js","/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/protocols/stk500.js","/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/plugin.js","/Users/drninjabatman/Projects/Codebendercc/BabelFish/chrome-extension/client/rpc-client.js","/Users/drninjabatman/Projects/Codebendercc/BabelFish/chrome-extension/common/config.js","/Users/drninjabatman/Projects/Codebendercc/BabelFish/chrome-extension/common/rpc-args.js"]);

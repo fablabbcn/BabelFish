@@ -251,6 +251,7 @@ if (!chrome) {
 
   // Access to the global scope
   Object.getOwnPropertyNames(config.methods).forEach(function (m) {
+    console.log("Registering client for chrome.", m);
     chrome[m] = new RPCClient(config, m);
   });
 

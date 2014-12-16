@@ -16,12 +16,25 @@
 	"accepts_tls_channel_id": false
     },
     "permissions": [
-	"storage",
+        {"usbDevices": [
+            {
+                "vendorId": 2652,
+                "productId": 17664
+            }, {
+                "vendorId": 33417,
+                "productId": 17664
+            }, {
+                "vendorId": 6017,
+                "productId": 3231
+            }
+        ]},
+        "storage",
 	"alarms",
 	"notifications",
         { "fileSystem": ["write"]},
 	"syncFileSystem",
 	"serial",
+        "usb",
         "http://localhost:8080/*",
 	"http://ec2-54-174-134-98.compute-1.amazonaws.com:8080/*"
     ]
