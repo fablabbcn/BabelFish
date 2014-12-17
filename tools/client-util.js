@@ -29,3 +29,15 @@ try {
 
 window.log = log;
 window.str = str;
+
+var dbg = (function () {
+  var DEBUG=false;
+  if (DEBUG) {
+    return function (var_args) {
+      console.log.apply(console, ["[Client] "].concat(Array.prototype.slice.call(arguments)));
+    };
+  } else {
+    return function (msg) {};
+  }
+})();
+window.dbg = dbg;

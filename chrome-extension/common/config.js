@@ -3,7 +3,7 @@
 var config = {
   //  extensionId: "adkkcgijolkkeldfhjcabekomonffhck", // windows remote
   // extensionId: "iihpjpedfemglflaabiadnnjanplblia", // mac local
-  extensionId: "a-fake-id",
+  extensionId: "emkdlimhllpafhceedllklcaogghkadf",
   methods: {
     serial: {
       methods: ['getDevices', 'send', 'connect', 'disconnect', 'setControlSignals', 'getControlSignals', 'getConnections'],
@@ -46,10 +46,11 @@ var config = {
     }
   }
 }, matchUrls=["http://localhost:8080/*",
+              "http://localhost/*",
               "http://ec2-54-174-134-98.compute-1.amazonaws.com:8080/*"];
 
 
-if (chrome.runtime.id)
+if (window.chrome && window.chrome.runtime && window.chrome.runtime.id)
   config.extensionId = chrome.runtime.id;
 
 // Send the extension id to the server to send correct config to the
@@ -60,7 +61,7 @@ function updateExtensionId (url, id) {
       ext = "extensionid";
 
   // Define it if you are an extension
-  if (chrome.runtime.id)
+  if (window.chrome && window.chrome.runtime && chrome.runtime.id)
     ext += "?extensionid="+ chrome.runtime.id;
 
   xhr.onreadystatechange = function () {

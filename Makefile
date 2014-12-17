@@ -62,7 +62,7 @@ $(CURDIR)/node_modules:
 	npm install
 
 browserify $(CURDIR)/bundles/chrome-client.js: $(CLIENT_FILES) | $(CURDIR)/node_modules $(CURDIR)/bundles
-	$(CURDIR)/node_modules/.bin/browserify $(CLIENT_FILES) > $(CURDIR)/bundles/chrome-client.js
+	$(CURDIR)/node_modules/.bin/browserify -e $(CURDIR)/codebender/plugin.js > $(CURDIR)/bundles/chrome-client.js
 
 plugin:
 	git submodule init
