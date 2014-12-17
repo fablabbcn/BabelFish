@@ -2,7 +2,7 @@
 
 // XXX: move cleaner/listener management code to common.
 
-if (!chrome) {
+if (!window.chrome) {
   throw Error("This doesn't seem to be chrome. No chorme obj.");
 }
 
@@ -31,16 +31,6 @@ if (!chrome) {
   // - args: callback arguments
   // - ret: return value (not implemented)
   //
-  var dbg = (function () {
-    var DEBUG=false;
-    if (DEBUG) {
-      return function (var_args) {
-        console.log.apply(console, ["[Client] "].concat(Array.prototype.slice.call(arguments)));
-      };
-    } else {
-      return function (msg) {};
-    }
-  })();
 
   function err(msg) {
     throw new Error("[Client:error] " + msg);
@@ -59,6 +49,9 @@ if (!chrome) {
 
     // Keep a clean reference of the real chrome.runtime to be able to
     // send messages.
+    if (!chrome.runtime) {
+      throw err('No extention to provide permissions');
+    }
     this.runtime_ = window.runtime_ || chrome.runtime;
     window.runtime_ = this.runtime_;
 
@@ -250,10 +243,18 @@ if (!chrome) {
   };
 
   // Access to the global scope
-  Object.getOwnPropertyNames(config.methods).forEach(function (m) {
-    console.log("Registering client for chrome.", m);
-    chrome[m] = new RPCClient(config, m);
-  });
+  window.extentionAvailable = true;
+  try {
+    Object.getOwnPropertyNames(config.methods).forEach(function (m) {
+        console.log("Registering client for chrome.", m);
+        chrome[m] = new RPCClient(config, m);
+      }
+    );
+  }
+  catch (err) {
+    console.error(err.message);
+    window.extentionAvailable = false;
+  }
 
   if (window){
     window.ClientBus = ClientBus;
