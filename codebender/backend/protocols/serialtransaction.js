@@ -14,6 +14,10 @@ function SerialTransaction () {
   this.listenerHandler = this.readToBuffer.bind(this);
   this.log.log("Listening on buffer");
   this.serial.onReceive.addListener(this.listenerHandler);
+
+  this.memOps = {
+    CHIP_ERASE_ARR: [0xAC, 0x80, 0x00, 0x00]
+  };
 }
 SerialTransaction.prototype = new Transaction();
 
@@ -34,7 +38,8 @@ SerialTransaction.prototype.writeThenRead_ = function (outgoingMsg, responsePayl
         } else
           self.log.error("Could not disconnect from " + this.connectionId);
       });
-    });
+    else
+      if (callback) callback();
   });
 };
 
@@ -55,6 +60,23 @@ SerialTransaction.prototype.readToBuffer = function (readArg) {
   // Note that in BabelFish this does not ensure that the listener
   // stops.
   return false;
+};
+
+SerialTransaction.prototype.readByte = function (addr, byte, cb) {
+  var readop;
+  if (this.memOps.READ_LO)
+    if (addr % 2)
+      readop = this.memoryOps.readLow(addr);
+    else
+      readop = this.memoryOps.readHigh(addr/2);
+  else {
+    readop = this.memoryOps.read(addr);
+  }
+
+  if (this.memOps.loadExtAddr)
+    this.writeThenRead_(this.memOps.loadExtAddr(addr));
+
+  this.writeThenRead_(readop, 1, cb);
 };
 
 
