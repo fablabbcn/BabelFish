@@ -27,6 +27,8 @@ function STK500Transaction () {
 
 STK500Transaction.prototype = new SerialTransaction();
 
+
+
 STK500Transaction.prototype.flash = function (deviceName, sketchData) {
   this.sketchData = sketchData;
   var self = this;
@@ -34,6 +36,14 @@ STK500Transaction.prototype.flash = function (deviceName, sketchData) {
                       function (connectArg) {
                         self.transition('connectDone', sketchData, connectArg);
                       });
+};
+
+STK500Transaction.prototype.eraseThenFlash  = function (deviceName, sketchData) {
+  log.log("Erasing chip");
+  self.writeThenRead_(this.memOps.CHIP_ERASE_ARR, function  () {
+    // XXX: Maybe we should care what comes back.
+    this.transition('flash', deviceName, sketchData);
+  });
 };
 
 STK500Transaction.prototype.connectDone = function (hexCode, connectArg) {
@@ -47,6 +57,7 @@ STK500Transaction.prototype.connectDone = function (hexCode, connectArg) {
   this.connectionId = connectArg.connectionId;
   log.log("Connected to board. ID: " + connectArg.connectionId);
   this.buffer.read(1024, this.transitionCb('drainedBytes'));
+
 };
 
 STK500Transaction.prototype.dtrSent = function (ok) {
@@ -82,9 +93,7 @@ STK500Transaction.prototype.drainedBytes = function (readArg) {
   log.log("DRAINED " + readArg.bytesRead + " BYTES");
   if (readArg.bytesRead == 1024) {
     // keep draining
-    self.buffer.read(1024, function(readArg) {
-      this.drainedBytes(readArg);
-    });
+    self.buffer.read(1024, self.transtionCb('drainedBytes'));
   } else {
     log.log("About to set DTR low");
 
@@ -94,7 +103,7 @@ STK500Transaction.prototype.drainedBytes = function (readArg) {
         setTimeout(function() {
           self.serial.setControlSignals(self.connectionId, {dtr: true, rts: true}, function(ok) {
             log.log("sent dtr true, done: " + ok);
-            setTimeout(function() { self.dtrSent(ok); }, 500);
+            setTimeout(function () {self.transition('dtrSent', ok);}, 500);
           });
         }, 500);
       });
@@ -198,7 +207,8 @@ STK500Transaction.prototype.programFlash = function (data, offset, length, doneC
   var loadAddressMessage = [
     this.STK.LOAD_ADDRESS, addressBytes[1], addressBytes[0], this.STK.CRC_EOP];
   var programMessage = [
-    this.STK.PROG_PAGE, sizeBytes[0], sizeBytes[1], kFlashMemoryType];
+    this.STK.PROG_PAGE, sizeBytes[0], sizeBytes[1], kFlashMemoryType]
+        .concat(payload);
   programMessage = programMessage.concat(payload);
   programMessage.push(this.STK.CRC_EOP);
 
