@@ -59,8 +59,38 @@ function Plugin() {
 
 function CodebenderPlugin () {
   Plugin.apply(this, Array.prototype.slice(arguments));
+  this.getPorts = this.getPortsCb;
 };
 
-CodebenderPlugin.prototype = new Plugin();
+if (typeof Object.create !== 'function') {
+  Object.create = function(o) {
+    var F = function() {};
+    F.prototype = o;
+    return new F();
+  };
+}
+
+CodebenderPlugin.prototype = Object.create(Plugin);
+
+CodebenderPlugin.prototype.getPortsCb = function (cb) {
+  var ports = this.element_.getPorts();
+  setTimeout(function () {
+    cb(ports);
+  }, 50);
+};
+
+CodebenderPlugin.prototype.availablePortsCb  = function (cb) {
+  var ports = this.element_.availablePorts();
+  setTimeout(function () {
+    cb(ports);
+  }, 50);
+};
+
+CodebenderPlugin.prototype.getFlashResultCb  = function (cb) {
+  var result = this.element_.getFlashResult();
+  setTimeout(function () {
+    cb(result);
+  }, 50);
+};
 
 module.exports = CodebenderPlugin;
