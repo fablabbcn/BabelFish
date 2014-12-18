@@ -51,16 +51,24 @@ function Plugin() {
     }
   }.bind(this) );
 
-  if (this.init)
-    this.init();
-  else
-    throw Error("Codebendercc plugin not available");
+  // if (this.init)
+  //   this.init();
+  // else
+  //   throw Error("Codebendercc plugin not available");
 }
 
 function CodebenderPlugin () {
   Plugin.apply(this, Array.prototype.slice(arguments));
 };
 
-CodebenderPlugin.prototype = new Plugin();
+if (typeof Object.create !== 'function') {
+    Object.create = function(o) {
+        var F = function() {};
+        F.prototype = o;
+        return new F();
+    };
+}
+
+CodebenderPlugin.prototype = Object.create(Plugin);
 
 module.exports = CodebenderPlugin;

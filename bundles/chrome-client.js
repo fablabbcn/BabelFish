@@ -1,4 +1,4 @@
-(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({"/home/tsiknas/repos/codebender/BabelFish/chrome-extension/client/rpc-client.js":[function(require,module,exports){
 // File: /chrome-extension/client/rpc-client.js
 
 // XXX: move cleaner/listener management code to common.
@@ -263,7 +263,7 @@ if (!window.chrome) {
   }
 })();
 
-},{"./../../tools/client-util":16,"./../common/config":2,"./../common/rpc-args":3}],2:[function(require,module,exports){
+},{"./../../tools/client-util":"/home/tsiknas/repos/codebender/BabelFish/tools/client-util.js","./../common/config":"/home/tsiknas/repos/codebender/BabelFish/chrome-extension/common/config.js","./../common/rpc-args":"/home/tsiknas/repos/codebender/BabelFish/chrome-extension/common/rpc-args.js"}],"/home/tsiknas/repos/codebender/BabelFish/chrome-extension/common/config.js":[function(require,module,exports){
 // File: /chrome-extension/common/config.js
 
 var config = {
@@ -358,7 +358,7 @@ try {
   ;
 }
 
-},{}],3:[function(require,module,exports){
+},{}],"/home/tsiknas/repos/codebender/BabelFish/chrome-extension/common/rpc-args.js":[function(require,module,exports){
 // File: /chrome-extension/common/rpc-args.js
 
 function binToHex(bin) {
@@ -433,7 +433,7 @@ try {
   window.binToHex = binToHex;
 } catch (e) {;}
 
-},{}],4:[function(require,module,exports){
+},{}],"/home/tsiknas/repos/codebender/BabelFish/codebender/backend/buffer.js":[function(require,module,exports){
 var arraify = require('./util').arraify,
     Log = require('./logging').Log,
     log = new Log('Buffer');
@@ -518,7 +518,7 @@ module.exports.bufToBin = bufToBin;
 module.exports.storeAsTwoBytes = storeAsTwoBytes;
 module.exports.binToBuf = binToBuf;
 
-},{"./logging":6,"./util":12}],5:[function(require,module,exports){
+},{"./logging":"/home/tsiknas/repos/codebender/BabelFish/codebender/backend/logging.js","./util":"/home/tsiknas/repos/codebender/BabelFish/codebender/backend/util.js"}],"/home/tsiknas/repos/codebender/BabelFish/codebender/backend/hexparser.js":[function(require,module,exports){
 // Parse an Intel hex file (http://en.wikipedia.org/wiki/Intel_HEX).
 //
 // For simplicity: Requires that the hex file specifies a single, contiguous
@@ -677,7 +677,7 @@ function hexCharsToByteArray(hc) {
 window.ParseHexFile = ParseHexFile;
 module.exports.ParseHexFile = ParseHexFile;
 
-},{}],6:[function(require,module,exports){
+},{}],"/home/tsiknas/repos/codebender/BabelFish/codebender/backend/logging.js":[function(require,module,exports){
 var arraify = require('./util').arraify;
 
 function Log (name, verbosity) {
@@ -725,13 +725,13 @@ Log.prototype = {
 
 module.exports.Log = Log;
 
-},{"./util":12}],7:[function(require,module,exports){
+},{"./util":"/home/tsiknas/repos/codebender/BabelFish/codebender/backend/util.js"}],"/home/tsiknas/repos/codebender/BabelFish/codebender/backend/protocols.js":[function(require,module,exports){
 module.exports.protocols = {
   stk: require('./protocols/stk500').STK500Transaction,
   avr109: require('./protocols/butterfly').AVR109Transaction
 };
 
-},{"./protocols/butterfly":8,"./protocols/stk500":10}],8:[function(require,module,exports){
+},{"./protocols/butterfly":"/home/tsiknas/repos/codebender/BabelFish/codebender/backend/protocols/butterfly.js","./protocols/stk500":"/home/tsiknas/repos/codebender/BabelFish/codebender/backend/protocols/stk500.js"}],"/home/tsiknas/repos/codebender/BabelFish/codebender/backend/protocols/butterfly.js":[function(require,module,exports){
 var SerialTransaction = require('./serialtransaction'),
     Log = require('./../logging').Log,
     log = new Log('avr109'),
@@ -969,7 +969,7 @@ AVR109Transaction.prototype.waitForBytes = function (n, accum, deadline, callbac
 
 module.exports.AVR109Transaction = AVR109Transaction;
 
-},{"./../buffer":4,"./../logging":6,"./../util":12,"./serialtransaction":9}],9:[function(require,module,exports){
+},{"./../buffer":"/home/tsiknas/repos/codebender/BabelFish/codebender/backend/buffer.js","./../logging":"/home/tsiknas/repos/codebender/BabelFish/codebender/backend/logging.js","./../util":"/home/tsiknas/repos/codebender/BabelFish/codebender/backend/util.js","./serialtransaction":"/home/tsiknas/repos/codebender/BabelFish/codebender/backend/protocols/serialtransaction.js"}],"/home/tsiknas/repos/codebender/BabelFish/codebender/backend/protocols/serialtransaction.js":[function(require,module,exports){
 var _create_chrome_client = require('./../../../chrome-extension/client/rpc-client'),
     Transaction = require('./../transaction').Transaction,
     arraify = require('./../util').arraify,
@@ -1032,7 +1032,7 @@ SerialTransaction.prototype.readToBuffer = function (readArg) {
 
 module.exports = SerialTransaction;
 
-},{"./../../../chrome-extension/client/rpc-client":1,"./../buffer.js":4,"./../transaction":11,"./../util":12}],10:[function(require,module,exports){
+},{"./../../../chrome-extension/client/rpc-client":"/home/tsiknas/repos/codebender/BabelFish/chrome-extension/client/rpc-client.js","./../buffer.js":"/home/tsiknas/repos/codebender/BabelFish/codebender/backend/buffer.js","./../transaction":"/home/tsiknas/repos/codebender/BabelFish/codebender/backend/transaction.js","./../util":"/home/tsiknas/repos/codebender/BabelFish/codebender/backend/util.js"}],"/home/tsiknas/repos/codebender/BabelFish/codebender/backend/protocols/stk500.js":[function(require,module,exports){
 var SerialTransaction = require('./serialtransaction'),
     Log = require('./../logging').Log,
     log = new Log('STK500'),
@@ -1365,7 +1365,7 @@ STK500Transaction.prototype.consumeMessage = function (payloadSize, callback, er
 
 module.exports.STK500Transaction = STK500Transaction;
 
-},{"./../buffer.js":4,"./../logging":6,"./../util":12,"./serialtransaction":9}],11:[function(require,module,exports){
+},{"./../buffer.js":"/home/tsiknas/repos/codebender/BabelFish/codebender/backend/buffer.js","./../logging":"/home/tsiknas/repos/codebender/BabelFish/codebender/backend/logging.js","./../util":"/home/tsiknas/repos/codebender/BabelFish/codebender/backend/util.js","./serialtransaction":"/home/tsiknas/repos/codebender/BabelFish/codebender/backend/protocols/serialtransaction.js"}],"/home/tsiknas/repos/codebender/BabelFish/codebender/backend/transaction.js":[function(require,module,exports){
 var utilModule = require("./util"),
     arraify = utilModule.arraify,
     deepCopy = utilModule.deepCopy;
@@ -1407,7 +1407,7 @@ Transaction.prototype = {
 
 module.exports.Transaction = Transaction;
 
-},{"./util":12}],12:[function(require,module,exports){
+},{"./util":"/home/tsiknas/repos/codebender/BabelFish/codebender/backend/util.js"}],"/home/tsiknas/repos/codebender/BabelFish/codebender/backend/util.js":[function(require,module,exports){
 function arraify(arrayLike, offset, prefixVarArgs) {
   var ret = Array.prototype.slice.call(arrayLike, offset),
       prefix = Array.prototype.slice.call(arguments, 2);
@@ -1435,9 +1435,8 @@ function deepCopy(obj) {
 module.exports.arraify = arraify;
 module.exports.deepCopy = deepCopy;
 
-},{}],13:[function(require,module,exports){
+},{}],"/home/tsiknas/repos/codebender/BabelFish/codebender/chrome-plugin.js":[function(require,module,exports){
 // file: chrome-plugin.js
-require('./../tools/client-util');
 
 var protocols = require('./backend/protocols').protocols,
 _create_hex_parser = require('./backend/hexparser');
@@ -1470,6 +1469,7 @@ function Plugin() {
   this.errorCallback = function () {};
   this.readingInfo = null;
 }
+
 Plugin.prototype = {
   errorCallback:  function(from, msg, status) {
     console.error("["+ from + "] ", msg, "(status: " + status + ")");
@@ -1691,9 +1691,15 @@ Plugin.prototype = {
   }
 };
 
-module.exports = Plugin;
+function CodebenderPlugin () {
+  Plugin.apply(this, Array.prototype.slice(arguments));
+};
 
-},{"./../tools/client-util":16,"./backend/hexparser":5,"./backend/protocols":7}],14:[function(require,module,exports){
+CodebenderPlugin.prototype = new Plugin();
+
+module.exports = CodebenderPlugin;
+
+},{"./backend/hexparser":"/home/tsiknas/repos/codebender/BabelFish/codebender/backend/hexparser.js","./backend/protocols":"/home/tsiknas/repos/codebender/BabelFish/codebender/backend/protocols.js"}],"/home/tsiknas/repos/codebender/BabelFish/codebender/firefox-plugin.js":[function(require,module,exports){
 // file: firefox-plugin.js
 
 dbg("Not on chrome");
@@ -1747,10 +1753,10 @@ function Plugin() {
     }
   }.bind(this) );
 
-  if (this.init)
-    this.init();
-  else
-    throw Error("Codebendercc plugin not available");
+  // if (this.init)
+  //   this.init();
+  // else
+  //   throw Error("Codebendercc plugin not available");
 }
 
 function CodebenderPlugin () {
@@ -1761,7 +1767,7 @@ CodebenderPlugin.prototype = new Plugin();
 
 module.exports = CodebenderPlugin;
 
-},{}],15:[function(require,module,exports){
+},{}],"/home/tsiknas/repos/codebender/BabelFish/codebender/plugin.js":[function(require,module,exports){
 // file: plugin.js
 require('./../tools/client-util');
 
@@ -1777,7 +1783,7 @@ if (!window.chrome) {
   }
 }
 
-},{"./../chrome-extension/client/rpc-client":1,"./../tools/client-util":16,"./chrome-plugin":13,"./firefox-plugin":14}],16:[function(require,module,exports){
+},{"./../chrome-extension/client/rpc-client":"/home/tsiknas/repos/codebender/BabelFish/chrome-extension/client/rpc-client.js","./../tools/client-util":"/home/tsiknas/repos/codebender/BabelFish/tools/client-util.js","./chrome-plugin":"/home/tsiknas/repos/codebender/BabelFish/codebender/chrome-plugin.js","./firefox-plugin":"/home/tsiknas/repos/codebender/BabelFish/codebender/firefox-plugin.js"}],"/home/tsiknas/repos/codebender/BabelFish/tools/client-util.js":[function(require,module,exports){
 // File: /tools/client-util.js
 
 // Log in a list called id
@@ -1822,4 +1828,4 @@ var dbg = (function () {
 })();
 window.dbg = dbg;
 
-},{}]},{},[15]);
+},{}]},{},["/home/tsiknas/repos/codebender/BabelFish/codebender/backend/buffer.js","/home/tsiknas/repos/codebender/BabelFish/chrome-extension/common/config.js","/home/tsiknas/repos/codebender/BabelFish/codebender/backend/transaction.js","/home/tsiknas/repos/codebender/BabelFish/codebender/backend/logging.js","/home/tsiknas/repos/codebender/BabelFish/codebender/backend/protocols/butterfly.js","/home/tsiknas/repos/codebender/BabelFish/codebender/backend/protocols/serialtransaction.js","/home/tsiknas/repos/codebender/BabelFish/codebender/backend/protocols/stk500.js","/home/tsiknas/repos/codebender/BabelFish/codebender/plugin.js"]);
