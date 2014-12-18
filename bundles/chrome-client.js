@@ -1,4 +1,4 @@
-(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({"/Users/drninjabatman/Projects/Codebendercc/BabelFish/chrome-extension/client/rpc-client.js":[function(require,module,exports){
 // File: /chrome-extension/client/rpc-client.js
 
 // XXX: move cleaner/listener management code to common.
@@ -263,7 +263,7 @@ if (!window.chrome) {
   }
 })();
 
-},{"./../../tools/client-util":16,"./../common/config":2,"./../common/rpc-args":3}],2:[function(require,module,exports){
+},{"./../../tools/client-util":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/tools/client-util.js","./../common/config":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/chrome-extension/common/config.js","./../common/rpc-args":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/chrome-extension/common/rpc-args.js"}],"/Users/drninjabatman/Projects/Codebendercc/BabelFish/chrome-extension/common/config.js":[function(require,module,exports){
 // File: /chrome-extension/common/config.js
 
 var config = {
@@ -358,7 +358,7 @@ try {
   ;
 }
 
-},{}],3:[function(require,module,exports){
+},{}],"/Users/drninjabatman/Projects/Codebendercc/BabelFish/chrome-extension/common/rpc-args.js":[function(require,module,exports){
 // File: /chrome-extension/common/rpc-args.js
 
 function binToHex(bin) {
@@ -433,7 +433,7 @@ try {
   window.binToHex = binToHex;
 } catch (e) {;}
 
-},{}],4:[function(require,module,exports){
+},{}],"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/buffer.js":[function(require,module,exports){
 var arraify = require('./util').arraify,
     Log = require('./logging').Log,
     log = new Log('Buffer');
@@ -518,7 +518,7 @@ module.exports.bufToBin = bufToBin;
 module.exports.storeAsTwoBytes = storeAsTwoBytes;
 module.exports.binToBuf = binToBuf;
 
-},{"./logging":6,"./util":12}],5:[function(require,module,exports){
+},{"./logging":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/logging.js","./util":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/util.js"}],"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/hexparser.js":[function(require,module,exports){
 // Parse an Intel hex file (http://en.wikipedia.org/wiki/Intel_HEX).
 //
 // For simplicity: Requires that the hex file specifies a single, contiguous
@@ -677,7 +677,7 @@ function hexCharsToByteArray(hc) {
 window.ParseHexFile = ParseHexFile;
 module.exports.ParseHexFile = ParseHexFile;
 
-},{}],6:[function(require,module,exports){
+},{}],"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/logging.js":[function(require,module,exports){
 var arraify = require('./util').arraify;
 
 function Log (name, verbosity) {
@@ -725,13 +725,13 @@ Log.prototype = {
 
 module.exports.Log = Log;
 
-},{"./util":12}],7:[function(require,module,exports){
+},{"./util":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/util.js"}],"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/protocols.js":[function(require,module,exports){
 module.exports.protocols = {
-  stk: require('./protocols/stk500').STK500Transaction,
+  stk500: require('./protocols/stk500').STK500Transaction,
   avr109: require('./protocols/butterfly').AVR109Transaction
 };
 
-},{"./protocols/butterfly":8,"./protocols/stk500":10}],8:[function(require,module,exports){
+},{"./protocols/butterfly":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/protocols/butterfly.js","./protocols/stk500":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/protocols/stk500.js"}],"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/protocols/butterfly.js":[function(require,module,exports){
 var SerialTransaction = require('./serialtransaction'),
     Log = require('./../logging').Log,
     log = new Log('avr109'),
@@ -969,7 +969,7 @@ AVR109Transaction.prototype.waitForBytes = function (n, accum, deadline, callbac
 
 module.exports.AVR109Transaction = AVR109Transaction;
 
-},{"./../buffer":4,"./../logging":6,"./../util":12,"./serialtransaction":9}],9:[function(require,module,exports){
+},{"./../buffer":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/buffer.js","./../logging":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/logging.js","./../util":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/util.js","./serialtransaction":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/protocols/serialtransaction.js"}],"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/protocols/serialtransaction.js":[function(require,module,exports){
 var _create_chrome_client = require('./../../../chrome-extension/client/rpc-client'),
     Transaction = require('./../transaction').Transaction,
     arraify = require('./../util').arraify,
@@ -997,14 +997,14 @@ SerialTransaction.prototype.writeThenRead_ = function (outgoingMsg, responsePayl
   // schedule a read in 100ms
   this.serial.send(this.connectionId, outgoingBinary, function(writeArg) {
     self.consumeMessage(responsePayloadSize, callback, function (connId) {
-      this.log.log("Disconnecting from", connId);
+      self.log.log("Disconnecting from", connId);
 
       self.serial.disconnect(connId, function (ok) {
         if (ok) {
           self.connectionId = null;
-          this.log.log("Disconnected ok, You may now use your program!");
+          self.log.log("Disconnected ok, You may now use your program!");
         } else
-          this.log.error("Could not disconnect from " + this.connectionId);
+          self.log.error("Could not disconnect from " + this.connectionId);
       });
     });
   });
@@ -1032,7 +1032,7 @@ SerialTransaction.prototype.readToBuffer = function (readArg) {
 
 module.exports = SerialTransaction;
 
-},{"./../../../chrome-extension/client/rpc-client":1,"./../buffer.js":4,"./../transaction":11,"./../util":12}],10:[function(require,module,exports){
+},{"./../../../chrome-extension/client/rpc-client":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/chrome-extension/client/rpc-client.js","./../buffer.js":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/buffer.js","./../transaction":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/transaction.js","./../util":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/util.js"}],"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/protocols/stk500.js":[function(require,module,exports){
 var SerialTransaction = require('./serialtransaction'),
     Log = require('./../logging').Log,
     log = new Log('STK500'),
@@ -1064,9 +1064,10 @@ STK500Transaction.prototype = new SerialTransaction();
 
 STK500Transaction.prototype.flash = function (deviceName, sketchData) {
   this.sketchData = sketchData;
+  var self = this;
   this.serial.connect(deviceName, {bitrate: 115200, name: deviceName},
                       function (connectArg) {
-                        this.transition('connectDone', sketchData, connectArg);
+                        self.transition('connectDone', sketchData, connectArg);
                       });
 };
 
@@ -1080,9 +1081,7 @@ STK500Transaction.prototype.connectDone = function (hexCode, connectArg) {
 
   this.connectionId = connectArg.connectionId;
   log.log("Connected to board. ID: " + connectArg.connectionId);
-  this.buffer.read(this.connectionId, 1024, function(readArg) {
-    this.transition('drainedBytes', readArg);
-  });
+  this.buffer.read(1024, this.transitionCb('drainedBytes'));
 };
 
 STK500Transaction.prototype.dtrSent = function (ok) {
@@ -1092,9 +1091,7 @@ STK500Transaction.prototype.dtrSent = function (ok) {
   }
   log.log("DTR sent (low) real good");
 
-  this.buffer.read(1024, function(readArg) {
-    self.transition('drainedAgain', readArg);
-  });
+  this.buffer.read(1024, this.transitionCb('drainedAgain'));
 
 }
 
@@ -1107,7 +1104,7 @@ STK500Transaction.prototype.drainedAgain = function (readArg) {
   } else {
     // Start the protocol
     setTimeout(function() {
-      self.writeThenRead([self.STK.GET_SYNC, self.STK.CRC_EOP],
+      self.writeThenRead_([self.STK.GET_SYNC, self.STK.CRC_EOP],
                          0, self.transitionCb('inSyncWithBoard'));
     }, 50);
   }
@@ -1146,19 +1143,19 @@ STK500Transaction.prototype.inSyncWithBoard = function (ok, data) {
   }
   log.log("InSyncWithBoard: " + ok + " / " + data);
   this.inSync_ = true;
-  this.writeThenRead([this.STK.GET_PARAMETER, this.STK.HW_VER, this.STK.CRC_EOP], 1,
+  this.writeThenRead_([this.STK.GET_PARAMETER, this.STK.HW_VER, this.STK.CRC_EOP], 1,
                      this.transitionCb('readHardwareVersion'));
 };
 
 STK500Transaction.prototype.readHardwareVersion = function (ok, data) {
   log.log("HardwareVersion: " + ok + " / " + data);
-  this.writeThenRead([this.STK.GET_PARAMETER, this.STK.SW_VER_MAJOR, this.STK.CRC_EOP],
+  this.writeThenRead_([this.STK.GET_PARAMETER, this.STK.SW_VER_MAJOR, this.STK.CRC_EOP],
                      1, this.transitionCb('readSoftwareMajorVersion'));
 };
 
 STK500Transaction.prototype.readSoftwareMajorVersion = function (ok, data) {
   log.log("Software major version: " + ok + " / " + data);
-  this.writeThenRead([this.STK.GET_PARAMETER, this.STK.SW_VER_MINOR, this.STK.CRC_EOP],
+  this.writeThenRead_([this.STK.GET_PARAMETER, this.STK.SW_VER_MINOR, this.STK.CRC_EOP],
                      1, this.transitionCb('readSoftwareMinorVersion'));
 };
 
@@ -1170,7 +1167,7 @@ STK500Transaction.prototype.readSoftwareMinorVersion = function (ok, data) {
 
 STK500Transaction.prototype.enteredProgmode = function (ok, data) {
   log.log("Entered progmode: " + ok + " / " + data);
-  this.writeThenRead([this.STK.READ_SIGN, this.STK.CRC_EOP], 3,
+  this.writeThenRead_([this.STK.READ_SIGN, this.STK.CRC_EOP], 3,
                      this.transitionCb('readSignature'));
 }
 
@@ -1183,7 +1180,7 @@ STK500Transaction.prototype.readSignature = function (ok, data) {
 
 STK500Transaction.prototype.doneProgramming = function () {
   this.sketchData_ = null;
-  this.transition('writeThenRead', [this.STK.LEAVE_PROGMODE, this.STK.CRC_EOP],
+  this.writeThenRead_([this.STK.LEAVE_PROGMODE, this.STK.CRC_EOP],
                   0, this.transitionCb('stkLeftProgmode'));
 }
 
@@ -1241,12 +1238,12 @@ STK500Transaction.prototype.programFlash = function (data, offset, length, doneC
   programMessage.push(this.STK.CRC_EOP);
 
   var self = this;
-  self.writeThenRead(loadAddressMessage, 0, function(ok, reponse) {
+  self.writeThenRead_(loadAddressMessage, 0, function(ok, reponse) {
     if (!ok) {
       log.error("Error programming the flash (load address)");
       return;
     }
-    self.writeThenRead(programMessage, 0, function(ok, response) {
+    self.writeThenRead_(programMessage, 0, function(ok, response) {
       if (!ok) {
         log.error("Error programming the flash (send data)");
         return;
@@ -1345,7 +1342,7 @@ STK500Transaction.prototype.consumeMessage = function (payloadSize, callback, er
       if (!self.inSync_ && (reads % 3) == 0) {
         // Mega hack (temporary)
         log.log("Mega Hack: Writing: " + buffer.hexRep([self.STK.GET_SYNC, self.STK.CRC_EOP]));
-        self.serial.send(self.connectionId, buffer.hexToBin([self.STK.GET_SYNC, self.STK.CRC_EOP]), function() {
+        self.serial.send(self.connectionId, buffer.binToBuf([self.STK.GET_SYNC, self.STK.CRC_EOP]), function() {
           self.buffer.read(1024, handleRead);
         });
       } else {
@@ -1365,7 +1362,7 @@ STK500Transaction.prototype.consumeMessage = function (payloadSize, callback, er
 
 module.exports.STK500Transaction = STK500Transaction;
 
-},{"./../buffer.js":4,"./../logging":6,"./../util":12,"./serialtransaction":9}],11:[function(require,module,exports){
+},{"./../buffer.js":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/buffer.js","./../logging":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/logging.js","./../util":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/util.js","./serialtransaction":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/protocols/serialtransaction.js"}],"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/transaction.js":[function(require,module,exports){
 var utilModule = require("./util"),
     arraify = utilModule.arraify,
     deepCopy = utilModule.deepCopy;
@@ -1407,7 +1404,7 @@ Transaction.prototype = {
 
 module.exports.Transaction = Transaction;
 
-},{"./util":12}],12:[function(require,module,exports){
+},{"./util":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/util.js"}],"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/util.js":[function(require,module,exports){
 function arraify(arrayLike, offset, prefixVarArgs) {
   var ret = Array.prototype.slice.call(arrayLike, offset),
       prefix = Array.prototype.slice.call(arguments, 2);
@@ -1435,7 +1432,7 @@ function deepCopy(obj) {
 module.exports.arraify = arraify;
 module.exports.deepCopy = deepCopy;
 
-},{}],13:[function(require,module,exports){
+},{}],"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/chrome-plugin.js":[function(require,module,exports){
 // file: chrome-plugin.js
 require('./../tools/client-util');
 
@@ -1693,7 +1690,7 @@ Plugin.prototype = {
 
 module.exports = Plugin;
 
-},{"./../tools/client-util":16,"./backend/hexparser":5,"./backend/protocols":7}],14:[function(require,module,exports){
+},{"./../tools/client-util":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/tools/client-util.js","./backend/hexparser":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/hexparser.js","./backend/protocols":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/protocols.js"}],"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/firefox-plugin.js":[function(require,module,exports){
 // file: firefox-plugin.js
 
 dbg("Not on chrome");
@@ -1761,7 +1758,7 @@ CodebenderPlugin.prototype = new Plugin();
 
 module.exports = CodebenderPlugin;
 
-},{}],15:[function(require,module,exports){
+},{}],"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/plugin.js":[function(require,module,exports){
 // file: plugin.js
 require('./../tools/client-util');
 
@@ -1777,7 +1774,7 @@ if (!window.chrome) {
   }
 }
 
-},{"./../chrome-extension/client/rpc-client":1,"./../tools/client-util":16,"./chrome-plugin":13,"./firefox-plugin":14}],16:[function(require,module,exports){
+},{"./../chrome-extension/client/rpc-client":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/chrome-extension/client/rpc-client.js","./../tools/client-util":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/tools/client-util.js","./chrome-plugin":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/chrome-plugin.js","./firefox-plugin":"/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/firefox-plugin.js"}],"/Users/drninjabatman/Projects/Codebendercc/BabelFish/tools/client-util.js":[function(require,module,exports){
 // File: /tools/client-util.js
 
 // Log in a list called id
@@ -1822,4 +1819,4 @@ var dbg = (function () {
 })();
 window.dbg = dbg;
 
-},{}]},{},[15]);
+},{}]},{},["/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/buffer.js","/Users/drninjabatman/Projects/Codebendercc/BabelFish/chrome-extension/common/config.js","/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/transaction.js","/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/logging.js","/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/protocols/butterfly.js","/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/protocols/serialtransaction.js","/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/backend/protocols/stk500.js","/Users/drninjabatman/Projects/Codebendercc/BabelFish/codebender/plugin.js"]);
