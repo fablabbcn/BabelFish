@@ -79,6 +79,13 @@ CodebenderPlugin.prototype.getPortsCb = function (cb) {
   }, 50);
 };
 
+CodebenderPlugin.prototype.availablePortsCb  = function (cb) {
+  var ports = this.element_.availablePorts();
+  setTimeout(function () {
+    cb(ports);
+  }, 50);
+};
+
 CodebenderPlugin.prototype.getFlashResultCb  = function (cb) {
   var result = this.element_.getFlashResult();
   setTimeout(function () {
