@@ -33,3 +33,5 @@ MemoryOperations.prototype = {
   readHigh: function(addr) {},
   read: function(addr) {}
 };
+
+module.exports = MemoryOperations;

@@ -253,18 +253,4 @@ Plugin.prototype = {
   }
 };
 
-function CodebenderPlugin () {
-  Plugin.apply(this, Array.prototype.slice(arguments));
-};
-
-if (typeof Object.create !== 'function') {
-    Object.create = function(o) {
-        var F = function() {};
-        F.prototype = o;
-        return new F();
-    };
-}
-
-CodebenderPlugin.prototype = Object.create(Plugin);
-
-module.exports = CodebenderPlugin;
+module.exports = Plugin;

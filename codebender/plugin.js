@@ -8,7 +8,11 @@ if (!window.chrome) {
   window.CodebenderPlugin = require('./firefox-plugin');
 } else {
   var _create_chrome_client = require('./../chrome-extension/client/rpc-client');
-  if (window.extentionAvailable) {
+  if (_create_chrome_client.extentionAvailable) {
     window.CodebenderPlugin = require('./chrome-plugin');
   }
+}
+
+if (!window.CodebenderPlugin) {
+  throw Error("No extension or plugin.");
 }
