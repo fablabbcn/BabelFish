@@ -60,6 +60,8 @@ function Plugin() {
 function CodebenderPlugin () {
   Plugin.apply(this, Array.prototype.slice(arguments));
   this.getPorts = this.getPortsCb;
+  this.availablePorts = this.availablePortsCb;
+  this.getFlashResult = this.getFlashResultCb;
 };
 
 if (typeof Object.create !== 'function') {

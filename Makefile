@@ -100,7 +100,7 @@ kill-server:
 	rm server_pid
 
 chrome = ~/Applications/Chromium.app/Contents/MacOS/Chromium
-chrome-args = --user-data-dir=/tmp/chromium-user-data --load-extension=./chrome-extension --no-first-run, --no-default-browser-check --debug-print --enable-logging=stderr --v=1
+chrome-args = --user-data-dir=/tmp/chromium-user-data --load-extension=./chrome-extension --no-first-run, --no-default-browser-check --debug-print
 run-chrome: $(CURDIR)/bundles/chrome-client.js
 	($(chrome) $(chrome-args) $(URL); rm -rf /tmp/chromium-user-data) &
 

@@ -2,4 +2,4 @@ node_modules/
 bundles/
 npm-debug.log
 TAGS
-bundles/chrome-client.js
+bundles/
