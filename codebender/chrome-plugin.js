@@ -148,9 +148,10 @@ Plugin.prototype = {
 
   // Return json files with the prots
   getPorts: function (cb) {
+    var self = this;
     this.serial.getDevices(function (devs) {
-      cb(this.pluginDevsFormat_(devs));
-    }.bind(this));
+      cb(JSON.stringify(self.pluginDevsFormat_(devs)));
+    });
   },
 
   pluginDevsFormat_: function (devs) {

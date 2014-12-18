@@ -93,4 +93,11 @@ CodebenderPlugin.prototype.getFlashResultCb  = function (cb) {
   }, 50);
 };
 
+CodebenderPlugin.prototype.probeUSB  = function (cb) {
+  var result = this.element_.probeUSB();
+  setTimeout(function () {
+    cb(result);
+  }, 50);
+};
+
 module.exports = CodebenderPlugin;
