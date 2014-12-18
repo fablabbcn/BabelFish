@@ -30,14 +30,8 @@ STK500Transaction.prototype = new SerialTransaction();
 
 // Cb should have the 'state' format, ie function (ok, data)
 STK500Transaction.prototype.cmd = function (cmd, cb) {
-  var outgoingBinary = buffer.binToBuf(outgoingMsg),
-      self = this;
-
-  // schedule a read in 100ms
-  this.serial.send(this.connectionId, outgoingBinary, function(writeArg) {
-    self.consumeMessage(1, function ()
-                        , errorCb);
-  });
+  // Always get a 4byte answer
+  this.writeThenRead_(cmd, 4, cb);
 };
 
 STK500Transaction.prototype.flash = function (deviceName, sketchData) {
@@ -261,6 +255,8 @@ STK500Transaction.prototype.consumeMessage = function (payloadSize, callback, er
   var reads = 0;
   var payloadBytesConsumed = 0;
 
+  // The gist of this is: expect arg.data to be [INSYNC, <data>, OK]
+  // If not, fail gracefully.
   var handleRead = function(arg) {
     if (reads++ >= kMaxReads) {
       errorCb("Too many reads. Bailing.");
@@ -286,8 +282,9 @@ STK500Transaction.prototype.consumeMessage = function (payloadSize, callback, er
             state = ReadState.READY_FOR_PAYLOAD;
           }
         } else {
-          log.log("Expected self.STK.INSYNC (" + self.STK.INSYNC + "). Got: " + hexData[i] + ". Ignoring.");
-          //          state = ReadState.ERROR;
+          log.log("Expected self.STK.INSYNC (", self.STK.INSYNC,
+                  "). Got: " + hexData[i] + ". Ignoring.");
+          // state = ReadState.ERROR;
         }
       } else if (state == ReadState.READY_FOR_PAYLOAD) {
         accum.push(hexData[i]);
