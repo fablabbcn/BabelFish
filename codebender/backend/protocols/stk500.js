@@ -16,6 +16,7 @@ function STK500Transaction () {
     ENTER_PROGMODE: 0x50,
     LEAVE_PROGMODE: 0x51,
     LOAD_ADDRESS: 0x55,
+    UNIVERSAL: 0x56,
     PROG_PAGE: 0x64,
     READ_SIGN: 0x75,
     HW_VER: 0x80,
@@ -27,7 +28,17 @@ function STK500Transaction () {
 
 STK500Transaction.prototype = new SerialTransaction();
 
+// Cb should have the 'state' format, ie function (ok, data)
+STK500Transaction.prototype.cmd = function (cmd, cb) {
+  var outgoingBinary = buffer.binToBuf(outgoingMsg),
+      self = this;
 
+  // schedule a read in 100ms
+  this.serial.send(this.connectionId, outgoingBinary, function(writeArg) {
+    self.consumeMessage(1, function ()
+                        , errorCb);
+  });
+};
 
 STK500Transaction.prototype.flash = function (deviceName, sketchData) {
   this.sketchData = sketchData;
@@ -38,11 +49,13 @@ STK500Transaction.prototype.flash = function (deviceName, sketchData) {
                       });
 };
 
-STK500Transaction.prototype.eraseThenFlash  = function (deviceName, sketchData) {
+STK500Transaction.prototype.eraseThenFlash  = function (deviceName, sketchData, dontFlash) {
   log.log("Erasing chip");
   self.writeThenRead_(this.memOps.CHIP_ERASE_ARR, function  () {
-    // XXX: Maybe we should care what comes back.
-    this.transition('flash', deviceName, sketchData);
+    // XXX: Maybe we should care about the response when asking to
+    // erase
+    if (!dontFlash)
+      this.transition('flash', deviceName, sketchData);
   });
 };
 
@@ -232,7 +245,7 @@ STK500Transaction.prototype.programFlash = function (data, offset, length, doneC
 
 STK500Transaction.prototype.consumeMessage = function (payloadSize, callback, errorCb) {
   var self = this;
-  self.log.log("stkConsumeMessage(conn=", self.connectionId,
+  self.log.log("consumeMessage (conn=", self.connectionId,
                ", payload_size=", payloadSize, " ...)");
   var ReadState = {
     READY_FOR_IN_SYNC: 0,
@@ -250,8 +263,7 @@ STK500Transaction.prototype.consumeMessage = function (payloadSize, callback, er
 
   var handleRead = function(arg) {
     if (reads++ >= kMaxReads) {
-      log.error("Too many reads. Bailing.");
-      errorCb(self.connectionId);
+      errorCb("Too many reads. Bailing.");
       return;
     }
 
@@ -310,7 +322,7 @@ STK500Transaction.prototype.consumeMessage = function (payloadSize, callback, er
 
     if (state == ReadState.ERROR || state == ReadState.DONE) {
       log.log("Finished in state: " + state);
-      callback(self.connectionId, state == ReadState.DONE, accum);
+      callback(state == ReadState.DONE, accum);
     } else {
       log.log("Paused in state: " + state + ". Reading again.");
 
