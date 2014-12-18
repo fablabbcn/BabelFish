@@ -260,4 +260,5 @@ if (!window.chrome) {
     window.ClientBus = ClientBus;
     window.RPCClient = RPCClient;
   }
+  module.exports.extentionAvailable = window.extentionAvailable;
 })();

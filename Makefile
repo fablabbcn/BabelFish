@@ -1,3 +1,5 @@
+firefox = /Applications/Firefox.app/Contents/MacOS/firefox # open  -n -a firefox --args
+chrome = ~/Applications/Chromium.app/Contents/MacOS/Chromium
 export DYLD_LIBRARY_PATH=$(CURDIR)/root/lib:$$DYLD_LIBRARY_PATH
 build_script = $(CURDIR)/plugin/build.sh
 XPI = $(CURDIR)/plugin/codebendercc.xpi
@@ -99,12 +101,11 @@ kill-server:
 	kill $(shell cat server_pid)
 	rm server_pid
 
-chrome = ~/Applications/Chromium.app/Contents/MacOS/Chromium
-chrome-args = --user-data-dir=/tmp/chromium-user-data --load-extension=./chrome-extension --no-first-run, --no-default-browser-check --debug-print
+chrome-args = --user-data-dir=/tmp/chromium-user-data --load-extension=./chrome-extension --no-first-run, --no-default-browser-check --debug-print --enable-logging=stderr --v=1
+
 run-chrome: $(CURDIR)/bundles/chrome-client.js
 	($(chrome) $(chrome-args) $(URL); rm -rf /tmp/chromium-user-data) &
 
-firefox = /Applications/Firefox.app/Contents/MacOS/firefox # open  -n -a firefox --args
 firefox-arch = $(CURDIR)/test/firefox-arch
 GET_FF_PROFILES = (find /var/folders -ls | grep  'tmp-[0-9a-zA-Z]*$$') 2> /dev/null | sort -r | awk '{print $$11}'
 FF_PROFILE=$(shell $(GET_FF_PROFILES) | head -1)

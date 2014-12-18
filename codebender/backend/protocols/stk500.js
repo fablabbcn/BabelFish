@@ -16,6 +16,7 @@ function STK500Transaction () {
     ENTER_PROGMODE: 0x50,
     LEAVE_PROGMODE: 0x51,
     LOAD_ADDRESS: 0x55,
+    UNIVERSAL: 0x56,
     PROG_PAGE: 0x64,
     READ_SIGN: 0x75,
     HW_VER: 0x80,
@@ -27,6 +28,12 @@ function STK500Transaction () {
 
 STK500Transaction.prototype = new SerialTransaction();
 
+// Cb should have the 'state' format, ie function (ok, data)
+STK500Transaction.prototype.cmd = function (cmd, cb) {
+  // Always get a 4byte answer
+  this.writeThenRead_(cmd, 4, cb);
+};
+
 STK500Transaction.prototype.flash = function (deviceName, sketchData) {
   this.sketchData = sketchData;
   var self = this;
@@ -34,6 +41,16 @@ STK500Transaction.prototype.flash = function (deviceName, sketchData) {
                       function (connectArg) {
                         self.transition('connectDone', sketchData, connectArg);
                       });
+};
+
+STK500Transaction.prototype.eraseThenFlash  = function (deviceName, sketchData, dontFlash) {
+  log.log("Erasing chip");
+  self.writeThenRead_(this.memOps.CHIP_ERASE_ARR, function  () {
+    // XXX: Maybe we should care about the response when asking to
+    // erase
+    if (!dontFlash)
+      this.transition('flash', deviceName, sketchData);
+  });
 };
 
 STK500Transaction.prototype.connectDone = function (hexCode, connectArg) {
@@ -47,6 +64,7 @@ STK500Transaction.prototype.connectDone = function (hexCode, connectArg) {
   this.connectionId = connectArg.connectionId;
   log.log("Connected to board. ID: " + connectArg.connectionId);
   this.buffer.read(1024, this.transitionCb('drainedBytes'));
+
 };
 
 STK500Transaction.prototype.dtrSent = function (ok) {
@@ -82,9 +100,7 @@ STK500Transaction.prototype.drainedBytes = function (readArg) {
   log.log("DRAINED " + readArg.bytesRead + " BYTES");
   if (readArg.bytesRead == 1024) {
     // keep draining
-    self.buffer.read(1024, function(readArg) {
-      this.drainedBytes(readArg);
-    });
+    self.buffer.read(1024, self.transtionCb('drainedBytes'));
   } else {
     log.log("About to set DTR low");
 
@@ -94,7 +110,7 @@ STK500Transaction.prototype.drainedBytes = function (readArg) {
         setTimeout(function() {
           self.serial.setControlSignals(self.connectionId, {dtr: true, rts: true}, function(ok) {
             log.log("sent dtr true, done: " + ok);
-            setTimeout(function() { self.dtrSent(ok); }, 500);
+            setTimeout(function () {self.transition('dtrSent', ok);}, 500);
           });
         }, 500);
       });
@@ -198,7 +214,8 @@ STK500Transaction.prototype.programFlash = function (data, offset, length, doneC
   var loadAddressMessage = [
     this.STK.LOAD_ADDRESS, addressBytes[1], addressBytes[0], this.STK.CRC_EOP];
   var programMessage = [
-    this.STK.PROG_PAGE, sizeBytes[0], sizeBytes[1], kFlashMemoryType];
+    this.STK.PROG_PAGE, sizeBytes[0], sizeBytes[1], kFlashMemoryType]
+        .concat(payload);
   programMessage = programMessage.concat(payload);
   programMessage.push(this.STK.CRC_EOP);
 
@@ -222,7 +239,7 @@ STK500Transaction.prototype.programFlash = function (data, offset, length, doneC
 
 STK500Transaction.prototype.consumeMessage = function (payloadSize, callback, errorCb) {
   var self = this;
-  self.log.log("stkConsumeMessage(conn=", self.connectionId,
+  self.log.log("consumeMessage (conn=", self.connectionId,
                ", payload_size=", payloadSize, " ...)");
   var ReadState = {
     READY_FOR_IN_SYNC: 0,
@@ -238,10 +255,11 @@ STK500Transaction.prototype.consumeMessage = function (payloadSize, callback, er
   var reads = 0;
   var payloadBytesConsumed = 0;
 
+  // The gist of this is: expect arg.data to be [INSYNC, <data>, OK]
+  // If not, fail gracefully.
   var handleRead = function(arg) {
     if (reads++ >= kMaxReads) {
-      log.error("Too many reads. Bailing.");
-      errorCb(self.connectionId);
+      errorCb("Too many reads. Bailing.");
       return;
     }
 
@@ -264,8 +282,9 @@ STK500Transaction.prototype.consumeMessage = function (payloadSize, callback, er
             state = ReadState.READY_FOR_PAYLOAD;
           }
         } else {
-          log.log("Expected self.STK.INSYNC (" + self.STK.INSYNC + "). Got: " + hexData[i] + ". Ignoring.");
-          //          state = ReadState.ERROR;
+          log.log("Expected self.STK.INSYNC (", self.STK.INSYNC,
+                  "). Got: " + hexData[i] + ". Ignoring.");
+          // state = ReadState.ERROR;
         }
       } else if (state == ReadState.READY_FOR_PAYLOAD) {
         accum.push(hexData[i]);
@@ -300,7 +319,7 @@ STK500Transaction.prototype.consumeMessage = function (payloadSize, callback, er
 
     if (state == ReadState.ERROR || state == ReadState.DONE) {
       log.log("Finished in state: " + state);
-      callback(self.connectionId, state == ReadState.DONE, accum);
+      callback(state == ReadState.DONE, accum);
     } else {
       log.log("Paused in state: " + state + ". Reading again.");
 

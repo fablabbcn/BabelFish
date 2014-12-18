@@ -242,6 +242,7 @@ Plugin.prototype = {
 
   // Dummies for plugin garbage collection.
   deleteMap: function () {},
+
   closeTab: function () {
     // Tab may close before the callback so do it unsafe.
     this.disconnect(true);

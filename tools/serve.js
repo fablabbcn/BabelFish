@@ -41,10 +41,10 @@ function StaticServer(webroot, port) {
         console.log("not exists (or is directory): " + filename);
         res.write("404: not exists (or is directory): " + filename);
         res.end();
-	return;
+        return;
       }
       var path = filename.split("."),
-	  mimeType = mimeTypes[path[path.length - 1]];
+          mimeType = mimeTypes[path[path.length - 1]];
       res.writeHead(200, {'Content-Type': mimeType});
 
       var fileStream = fs.createReadStream(filename);
