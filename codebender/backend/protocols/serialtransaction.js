@@ -25,14 +25,14 @@ SerialTransaction.prototype.writeThenRead_ = function (outgoingMsg, responsePayl
   // schedule a read in 100ms
   this.serial.send(this.connectionId, outgoingBinary, function(writeArg) {
     self.consumeMessage(responsePayloadSize, callback, function (connId) {
-      this.log.log("Disconnecting from", connId);
+      self.log.log("Disconnecting from", connId);
 
       self.serial.disconnect(connId, function (ok) {
         if (ok) {
           self.connectionId = null;
-          this.log.log("Disconnected ok, You may now use your program!");
+          self.log.log("Disconnected ok, You may now use your program!");
         } else
-          this.log.error("Could not disconnect from " + this.connectionId);
+          self.log.error("Could not disconnect from " + this.connectionId);
       });
     });
   });
