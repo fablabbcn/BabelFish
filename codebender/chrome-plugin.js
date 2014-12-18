@@ -1,5 +1,4 @@
 // file: chrome-plugin.js
-require('./../tools/client-util');
 
 var protocols = require('./backend/protocols').protocols,
 _create_hex_parser = require('./backend/hexparser');
@@ -32,6 +31,7 @@ function Plugin() {
   this.errorCallback = function () {};
   this.readingInfo = null;
 }
+
 Plugin.prototype = {
   errorCallback:  function(from, msg, status) {
     console.error("["+ from + "] ", msg, "(status: " + status + ")");
@@ -253,4 +253,18 @@ Plugin.prototype = {
   }
 };
 
-module.exports = Plugin;
+function CodebenderPlugin () {
+  Plugin.apply(this, Array.prototype.slice(arguments));
+};
+
+if (typeof Object.create !== 'function') {
+    Object.create = function(o) {
+        var F = function() {};
+        F.prototype = o;
+        return new F();
+    };
+}
+
+CodebenderPlugin.prototype = Object.create(Plugin);
+
+module.exports = CodebenderPlugin;
