@@ -1,5 +1,4 @@
 // file: chrome-plugin.js
-require('./../tools/client-util');
 
 var protocols = require('./backend/protocols').protocols,
 _create_hex_parser = require('./backend/hexparser');
@@ -32,6 +31,7 @@ function Plugin() {
   this.errorCallback = function () {};
   this.readingInfo = null;
 }
+
 Plugin.prototype = {
   errorCallback:  function(from, msg, status) {
     console.error("["+ from + "] ", msg, "(status: " + status + ")");
@@ -149,7 +149,7 @@ Plugin.prototype = {
   // Return json files with the prots
   getPorts: function (cb) {
     this.serial.getDevices(function (devs) {
-      cb(this.pluginDevsFormat_(devs));
+      cb(JSON.stringify(this.pluginDevsFormat_(devs)));
     }.bind(this));
   },
 
@@ -253,4 +253,6 @@ Plugin.prototype = {
   }
 };
 
-module.exports = Plugin;
+CodebenderPlugin = Plugin;
+
+module.exports = CodebenderPlugin;
