@@ -328,6 +328,9 @@ STK500Transaction.prototype.consumeMessage = function (payloadSize, callback, er
 
       if (!self.inSync_ && (reads % 3) == 0) {
         // Mega hack (temporary)
+        // In case we are expecting an empty packet, and we did not get it
+        // force Arduino to send an empty packet
+        // FIX: read bytes from buffer 1 by 1
         log.log("Mega Hack: Writing: " + buffer.hexRep([self.STK.GET_SYNC, self.STK.CRC_EOP]));
         self.serial.send(self.connectionId, buffer.binToBuf([self.STK.GET_SYNC, self.STK.CRC_EOP]), function() {
           self.buffer.read(1024, handleRead);
