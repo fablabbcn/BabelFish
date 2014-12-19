@@ -255,6 +255,8 @@ STK500Transaction.prototype.consumeMessage = function (payloadSize, callback, er
   var kMaxReads = 100;
   var reads = 0;
   var payloadBytesConsumed = 0;
+  var totalConsumed = 0;
+  var totalSize = payloadSize + 2;
 
   // The gist of this is: expect arg.data to be [INSYNC, <data>, OK]
   // If not, fail gracefully.
@@ -320,9 +322,13 @@ STK500Transaction.prototype.consumeMessage = function (payloadSize, callback, er
       }
     }
 
+    totalConsumed += hexData.length;
+
     if (state == ReadState.ERROR || state == ReadState.DONE) {
       log.log("Finished in state: " + state);
       callback(state == ReadState.DONE, accum);
+    } else if (totalConsumed > totalSize) {
+      console.error('Not reached: got more bytes than requested: ', totalConsumed, '>', totalSize);
     } else {
       log.log("Paused in state: " + state + ". Reading again.");
 
@@ -333,20 +339,19 @@ STK500Transaction.prototype.consumeMessage = function (payloadSize, callback, er
         // FIX: read bytes from buffer 1 by 1
         log.log("Mega Hack: Writing: " + buffer.hexRep([self.STK.GET_SYNC, self.STK.CRC_EOP]));
         self.serial.send(self.connectionId, buffer.binToBuf([self.STK.GET_SYNC, self.STK.CRC_EOP]), function() {
-          self.buffer.read(1024, handleRead);
+          self.buffer.read(totalSize - totalConsumed, handleRead);
         });
       } else {
         // Don't tight-loop waiting for the message.
         setTimeout(function() {
-          self.buffer.read(1024, handleRead);
-        }, 50);
+          self.buffer.read(totalSize - totalConsumed, handleRead);
+        }, 500);
       }
-
     }
   };
 
   log.log("Scheduling a read in .1s");
-  setTimeout(function() { self.buffer.read(1024, handleRead); }, 10);
+  setTimeout(function() { self.buffer.read(totalSize - totalConsumed, handleRead); }, 10);
 };
 
 
