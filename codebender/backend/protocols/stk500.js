@@ -23,6 +23,7 @@ function STK500Transaction () {
     SW_VER_MINOR: 0x82,
     SW_VER_MAJOR: 0x81
   };
+  this.pageSize = 128;
   this.log = log;
 }
 
@@ -142,8 +143,8 @@ STK500Transaction.prototype.readSoftwareMajorVersion = function (ok, data) {
 
 STK500Transaction.prototype.readSoftwareMinorVersion = function (ok, data) {
   log.log("Software minor version: " + ok + " / " + data);
-  this.riteThenRead([this.STK.ENTER_PROGMODE, this.STK.CRC_EOP], 0,
-                    this.transitonCb('enteredProgmode'));
+  this.writeThenRead_([this.STK.ENTER_PROGMODE, this.STK.CRC_EOP], 0,
+                    this.transitionCb('enteredProgmode'));
 }
 
 STK500Transaction.prototype.enteredProgmode = function (ok, data) {
@@ -155,18 +156,18 @@ STK500Transaction.prototype.enteredProgmode = function (ok, data) {
 STK500Transaction.prototype.readSignature = function (ok, data) {
   log.log("Device signature: " + ok + " / " + data);
 
-  this.transition('programFlash', 0, 128,
+  this.transition('programFlash', 0, this.pageSize,
                   this.transitionCb('doneProgramming'));
 }
 
 STK500Transaction.prototype.doneProgramming = function () {
-  this.sketchData_ = null;
+  this.sketchData = null;
   this.writeThenRead_([this.STK.LEAVE_PROGMODE, this.STK.CRC_EOP],
-                  0, this.transitionCb('stkLeftProgmode'));
+                  0, this.transitionCb('leftProgmode'));
 }
 
 STK500Transaction.prototype.isProgramming = function () {
-  return this.sketchData_ == null;
+  return this.sketchData == null;
 }
 
 STK500Transaction.prototype.leftProgmode = function (ok, data) {
@@ -183,8 +184,9 @@ STK500Transaction.prototype.leftProgmode = function (ok, data) {
   });
 }
 
-STK500Transaction.prototype.programFlash = function (data, offset, length, doneCallback) {
-  var payload;
+STK500Transaction.prototype.programFlash = function (offset, length, doneCallback) {
+  var payload,
+      data = this.sketchData;
   log.log("program flash: data.length: " + data.length + ", offset: " + offset + ", length: " + length);
 
   if (offset >= data.length) {
@@ -216,7 +218,6 @@ STK500Transaction.prototype.programFlash = function (data, offset, length, doneC
   var programMessage = [
     this.STK.PROG_PAGE, sizeBytes[0], sizeBytes[1], kFlashMemoryType]
         .concat(payload);
-  programMessage = programMessage.concat(payload);
   programMessage.push(this.STK.CRC_EOP);
 
   var self = this;
@@ -231,7 +232,7 @@ STK500Transaction.prototype.programFlash = function (data, offset, length, doneC
         return;
       }
       // Program the next section
-      self.transition('programFlash', data, offset + length, length, doneCallback);
+      self.transition('programFlash', offset + length, length, doneCallback);
     });
   });
 };
@@ -264,6 +265,7 @@ STK500Transaction.prototype.consumeMessage = function (payloadSize, callback, er
     }
 
     var hexData = buffer.bufToBin(arg.data);
+    log.log('Ready to receive: ', payloadSize, ' bytes, Already read:', payloadBytesConsumed, 'state:', state);
     if (arg.bytesRead > 0) {
       log.log("Read:" + hexData);
     } else {
@@ -289,6 +291,7 @@ STK500Transaction.prototype.consumeMessage = function (payloadSize, callback, er
       } else if (state == ReadState.READY_FOR_PAYLOAD) {
         accum.push(hexData[i]);
         payloadBytesConsumed++;
+        log.log('Got payload byte: [', payloadBytesConsumed, '/', payloadSize, ']', hexData[i]);
         if (payloadBytesConsumed == payloadSize) {
           log.log("Got full payload, now READY_FOR_OK");
           state = ReadState.READY_FOR_OK;
@@ -333,7 +336,7 @@ STK500Transaction.prototype.consumeMessage = function (payloadSize, callback, er
         // Don't tight-loop waiting for the message.
         setTimeout(function() {
           self.buffer.read(1024, handleRead);
-        }, 10);
+        }, 50);
       }
 
     }
