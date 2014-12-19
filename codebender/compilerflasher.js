@@ -590,6 +590,7 @@ PluginHandler.prototype = {
     this.plugin_.getPorts(function (ports) {
       // Just in case it is not initialized
       this.portslist = $('#cb_cf_ports')[0];
+      ports = JSON.parse(ports);
 
       // To keep track of wether we need to update the ports
       var portsStr = ports.map(function (p) {return p.port;}).sort().join(',');

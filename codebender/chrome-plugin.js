@@ -149,7 +149,7 @@ Plugin.prototype = {
   // Return json files with the prots
   getPorts: function (cb) {
     this.serial.getDevices(function (devs) {
-      cb(this.pluginDevsFormat_(devs));
+      cb(JSON.stringify(this.pluginDevsFormat_(devs)));
     }.bind(this));
   },
 
@@ -254,4 +254,6 @@ Plugin.prototype = {
   }
 };
 
-module.exports = Plugin;
+CodebenderPlugin = Plugin;
+
+module.exports = CodebenderPlugin;
