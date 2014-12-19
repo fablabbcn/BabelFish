@@ -32,6 +32,7 @@ OpcodeFactory.prototype = {
 
   // XXX: Get the executable opcodes
   getCmd: function () {
+    throw Error("Not implemented");
   }
 };
 

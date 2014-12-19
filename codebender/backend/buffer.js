@@ -40,6 +40,28 @@ function Buffer () {
 }
 
 Buffer.prototype = {
+  mergeReadArgs: function (ra1, ra2) {
+    return {bytesRead: ra1.bytesRead + ra1.bytesRead,
+            data: ra1.data.concat(ra2.data)};
+  },
+
+  // Execute callback when you get enough data
+  registerReader: function (maxBytes, readArg, callback) {
+
+  },
+
+  readPersist: function (maxBytes, callback) {
+    this.read(maxBytes, function (readArg) {
+      console.assert(readArg.byterRead > maxBytes,
+                     "Buffer.read read more bytes than requested.");
+      if (readArg.byterRead < maxBytes) {
+        this.reagisterReader(maxBytes, readArg, callback);
+      } else {
+        callback(readArg);
+      }
+    });
+  },
+
   read: function (maxBytes, callback) {
     if (typeof(this.databuffer) == "undefined") {
       log.log("Creating buffer...");
