@@ -21,7 +21,6 @@ function hexRep(intArray) {
   return buf;
 }
 
-
 // Async reading to and from buffer
 function binToBuf(hex) {
   if (hex instanceof ArrayBuffer)
@@ -55,19 +54,53 @@ function Buffer () {
 }
 
 Buffer.prototype = {
+  lastReader: function () {
+    return this.readers[this.readers.length - 1];
+  },
+
+  removeReader: function (reader) {
+    for (var i = 0; i < this.readers.length; i++) {
+      if (this.readers[i] === reader) {
+        if (reader.timeout)
+          clearTimeout(reader.timeout);
+
+        return (delete this.readers[i]);
+      }
+    }
+
+    return false;
+  },
+
   // Event based read
-  readAsync: function (maxBytes, callback) {
-    this.readers.push({expectBytes: maxBytes, callback: callback});
+  readAsync: function (maxBytes, callback, timeout, timeoutCb) {
+    var reader = {expectBytes: maxBytes, callback: callback},
+        self = this;
+    this.readers.push(reader);
     this.runAsyncReaders();
+    if (timeout && this.lastReader() === reader) {
+      reader.timeout = setTimeout(function () {
+        self.removeReader(reader);
+        if (timeoutCb) {
+          timeoutCb();
+        } else {
+          throw Error("Unhandled async buffer read timeout.");
+        }
+      }, timeout);
+    }
   },
 
   runAsyncReaders: function () {
+    var ret = false;
     while (this.readers[0] &&
            this.readers[0].expectBytes <= this.databuffer.length){
       var reader = this.readers.shift();
-      this.read(reader.expectBytes, reader.callback);
+      if (reader.timeout)
+        clearTimeout(reader.timeout);
 
+      this.read(reader.expectBytes, reader.callback);
+      ret = true;
     }
+    return ret;
   },
 
   // Read as much as possible until maxBytes and send it to callback

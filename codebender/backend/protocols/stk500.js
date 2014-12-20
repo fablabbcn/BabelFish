@@ -312,7 +312,9 @@ STK500Transaction.prototype.consumeMessage = function (payloadSize, callback, er
     } else if (totalConsumed > totalSize) {
       console.error('Not reached: got more bytes than requested: ', totalConsumed, '>', totalSize);
     } else {
-      log.log("Paused in state: " + state + ". Reading again.");
+      // It should never come to this with async buffer reads. This is
+      // for polling
+      log.error("Paused in state: " + state + ". Reading again.");
 
       if (!self.inSync_ && (reads % 3) == 0) {
         // Mega hack (temporary)
@@ -326,7 +328,7 @@ STK500Transaction.prototype.consumeMessage = function (payloadSize, callback, er
       } else {
         // Don't tight-loop waiting for the message.
         setTimeout(function() {
-          self.buffer.readAsync(totalSize - totalConsumed, handleRead);
+          self.buffer.readAsync(totalSize - totalConsumed, handleRead, 2000);
         }, 500);
       }
     }
