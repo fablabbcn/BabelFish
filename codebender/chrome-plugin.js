@@ -106,7 +106,7 @@ Plugin.prototype = {
 
   doflashWithProgrammer: function (device, code, maxsize, string,
                                    programmerData, mcu, flash_callback) {
-
+    throw Error("Not implemented");
   },
 
   doFlashbootloader: function (device, protocol, speed, force,
@@ -115,6 +115,7 @@ Plugin.prototype = {
                                cb) {
     // Validate the data
     // Async run doFlashWithProgrammer
+    throw Error("Not implemeted");
   },
 
   flash: function (device,
