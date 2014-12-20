@@ -134,7 +134,7 @@ Plugin.prototype = {
                   "Device:", device);
 
       // STK500v1
-      transaction.flash(device, code);
+      transaction.flash(device, code, cb);
     }, 0);
   },
 

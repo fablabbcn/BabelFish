@@ -58,7 +58,7 @@ STK500Transaction.prototype.connectDone = function (hexCode, connectArg) {
   if (typeof(connectArg) == "undefined" ||
       typeof(connectArg.connectionId) == "undefined" ||
       connectArg.connectionId == -1) {
-    log.error("Bad connectionId / Couldn't connect to board");
+    this.errCb("Bad connectionId / Couldn't connect to board");
     return;
   }
 
@@ -70,7 +70,7 @@ STK500Transaction.prototype.connectDone = function (hexCode, connectArg) {
 
 STK500Transaction.prototype.dtrSent = function (ok) {
   if (!ok) {
-    throw Error("Couldn't send DTR");
+    this.errCb("Couldn't send DTR");
   }
   log.log("DTR sent (low) real good");
 
@@ -111,7 +111,7 @@ STK500Transaction.prototype.drainedBytes = function (readArg) {
 
 STK500Transaction.prototype.inSyncWithBoard = function (ok, data) {
   if (!ok) {
-    log.error("InSyncWithBoard: NOT OK");
+    this.errCb("InSyncWithBoard: NOT OK");
   }
   this.inSync_ = true;
   this.writeThenRead_([this.STK.GET_PARAMETER, this.STK.HW_VER, this.STK.CRC_EOP], 1,
@@ -157,13 +157,7 @@ STK500Transaction.prototype.leftProgmode = function (ok, data) {
   var self = this;
 
   log.log(" Disconnecting ", self.connectionId, "...");
-  self.serial.disconnect(self.connectionId, function (ok) {
-    if (ok) {
-      self.connectionId = null;
-      log.log("Disconnected ok, You may now use your program!");
-    } else
-      log.log("Could not disconnect from ", self.connectionId);
-  });
+  this.cleanup(this.finishCallback);
 }
 
 STK500Transaction.prototype.programFlash = function (offset, length, doneCallback) {
@@ -205,12 +199,12 @@ STK500Transaction.prototype.programFlash = function (offset, length, doneCallbac
   var self = this;
   self.writeThenRead_(loadAddressMessage, 0, function(ok, reponse) {
     if (!ok) {
-      log.error("Error programming the flash (load address)");
+      this.errCb("Error programming the flash (load address)");
       return;
     }
     self.writeThenRead_(programMessage, 0, function(ok, response) {
       if (!ok) {
-        log.error("Error programming the flash (send data)");
+        this.errCb("Error programming the flash (send data)");
         return;
       }
       // Program the next section
@@ -282,7 +276,7 @@ STK500Transaction.prototype.consumeMessage = function (payloadSize, callback, er
         } else if (payloadBytesConsumed > payloadSize) {
           log.log("Got too many payload bytes, now ERROR");
           state = ReadState.ERROR;
-          log.error("Read too many payload bytes!");
+          this.errCb("Read too many payload bytes!");
         }
       } else if (state == ReadState.READY_FOR_OK) {
         if (hexData[i] == self.STK.OK) {
@@ -323,7 +317,7 @@ STK500Transaction.prototype.consumeMessage = function (payloadSize, callback, er
         // FIX: read bytes from buffer 1 by 1
         log.log("Mega Hack: Writing: " + buffer.hexRep([self.STK.GET_SYNC, self.STK.CRC_EOP]));
         self.serial.send(self.connectionId, buffer.binToBuf([self.STK.GET_SYNC, self.STK.CRC_EOP]), function() {
-          self.buffer.readAsync(totalSize - totalConsumed, handleRead);
+          self.buffer.read(totalSize - totalConsumed, handleRead);
         });
       } else {
         // Don't tight-loop waiting for the message.
@@ -335,7 +329,11 @@ STK500Transaction.prototype.consumeMessage = function (payloadSize, callback, er
   };
 
   log.log("Scheduling a read in .1s");
-  setTimeout(function() { self.buffer.readAsync(totalSize - totalConsumed, handleRead); }, 10);
+  setTimeout(function() {
+    self.buffer.readAsync(totalSize - totalConsumed,
+                          handleRead, 500, function () {
+                            self.errCb("Connection timed out.");
+                          }); }, 10);
 };
 
 

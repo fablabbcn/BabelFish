@@ -73,11 +73,15 @@ Buffer.prototype = {
 
   // Event based read
   readAsync: function (maxBytes, callback, timeout, timeoutCb) {
-    var reader = {expectBytes: maxBytes, callback: callback},
+    var reader = {timestamp: (new Date).getTime(),
+                  expectBytes: maxBytes,
+                  callback: callback},
         self = this;
+
+    log.log("Registering reader:", reader);
     this.readers.push(reader);
-    this.runAsyncReaders();
-    if (timeout && this.lastReader() === reader) {
+    if (timeout) {
+      log.log("Setting reader timeout at", timeout);
       reader.timeout = setTimeout(function () {
         self.removeReader(reader);
         if (timeoutCb) {
@@ -87,6 +91,8 @@ Buffer.prototype = {
         }
       }, timeout);
     }
+
+    this.runAsyncReaders();
   },
 
   runAsyncReaders: function () {
@@ -97,6 +103,7 @@ Buffer.prototype = {
       if (reader.timeout)
         clearTimeout(reader.timeout);
 
+      log.log("Released reader:", reader);
       this.read(reader.expectBytes, reader.callback);
       ret = true;
     }
@@ -126,6 +133,17 @@ Buffer.prototype = {
     var ret = this.databuffer;
     this.databuffer = [];
     callback({bytesRead: ret.length, data: ret});
+  },
+
+  cleanup: function (callback) {
+    this.readers.slice().forEach(this.removeReader.bind(this));
+    this.databuffer = [];
+
+    if (this.readers.length > 0) {
+      throw Error("Buffer readers survived the cleanup");
+    } else {
+      callback();
+    }
   }
 };
 

@@ -1,8 +1,8 @@
 var _create_chrome_client = require('./../../../chrome-extension/client/rpc-client'),
     Transaction = require('./../transaction').Transaction,
     arraify = require('./../util').arraify,
-    MemoryOperations = require('./memops');
-buffer = require("./../buffer.js");
+    MemoryOperations = require('./memops'),
+    buffer = require("./../buffer.js");
 
 // Callback gets the next iteration as first
 function poll (maxRetries, timeout, cb) {
@@ -11,13 +11,24 @@ function poll (maxRetries, timeout, cb) {
 
   cb(function () {
     setTimeout(function () {
-      poll(cb, maxRetries-1, timeout)
+      poll(cb, maxRetries-1, timeout);
     }, timeout || 50);
   });
 }
 
-function SerialTransaction () {
-  Transaction.apply(this, arraify(arguments));
+function SerialTransaction (finishCallback, errorCallback) {
+  Transaction.apply(this, arraify(arguments, 2));
+
+  this.init(finishCallback, errorCallback);
+}
+SerialTransaction.prototype = new Transaction();
+
+SerialTransaction.prototype.init = function (finishCallback, errorCallback) {
+  if (Transaction.prototype.init)
+    Transaction.prototype.init.apply(this, arraify(arguments, 2));
+
+  this.finishCallback = finishCallback;
+  this.errorCallback = errorCallback;
 
   this.buffer = new buffer.Buffer();
   this.serial = chrome.serial;
@@ -31,7 +42,29 @@ function SerialTransaction () {
   this.memOps = new MemoryOperations();
   this.memOps.CHIP_ERASE_ARR = [0xAC, 0x80, 0x00, 0x00];
 }
-SerialTransaction.prototype = new Transaction();
+
+SerialTransaction.prototype.errCb = function (message, id) {
+  this.cleanup();
+  this.log.error("message");
+  if (this.errorCallback)
+    this.errorCallback(message, id);
+};
+
+SerialTransaction.prototype.cleanup = function (callback) {
+  var self = this;
+  this.serial.onReceive.removeListener(this.listenerHandler);
+
+  if (this.connectionId) {
+    this.serial.disconnect(this.connectionId, function (ok) {
+      if (!ok) {
+        throw Error("Failed to disconnect (id:", self.connectionId,
+                    ") during cleanup");
+      }
+
+      self.buffer.cleanup(callback);
+    });
+  }
+};
 
 SerialTransaction.prototype.writeThenRead_ = function (outgoingMsg, responsePayloadSize, callback) {
   this.log.log("Writing: " + buffer.hexRep(outgoingMsg));
@@ -41,7 +74,7 @@ SerialTransaction.prototype.writeThenRead_ = function (outgoingMsg, responsePayl
   // schedule a read in 100ms
   this.serial.send(this.connectionId, outgoingBinary, function(writeArg) {
     self.consumeMessage(responsePayloadSize, callback, function (error) {
-      self.log.error(error);
+      self.errCb(error);
       self.serial.disconnect(self.connectionId, function (ok) {
         if (ok) {
           self.connectionId = null;
@@ -55,7 +88,7 @@ SerialTransaction.prototype.writeThenRead_ = function (outgoingMsg, responsePayl
 
 // Simply wayt for byte
 SerialTransaction.prototype.consumeMessage = function (payloadSize, callback, errorCb) {
-  throw Error("Not implemented");
+  throw new Error("Not implemented");
 };
 
 
@@ -65,7 +98,7 @@ SerialTransaction.prototype.readToBuffer = function (readArg) {
   }
 
   this.buffer.write(readArg);
-  this.log.log("Received", readArg, "buffer is now", this.buffer);
+  this.log.log("Received:", readArg);
 
   // Note that in BabelFish this does not ensure that the listener
   // stops.
