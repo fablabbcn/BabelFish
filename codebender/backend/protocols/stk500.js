@@ -155,8 +155,6 @@ STK500Transaction.prototype.isProgramming = function () {
 
 STK500Transaction.prototype.leftProgmode = function (ok, data) {
   var self = this;
-
-  log.log(" Disconnecting ", self.connectionId, "...");
   this.cleanup(this.finishCallback);
 }
 

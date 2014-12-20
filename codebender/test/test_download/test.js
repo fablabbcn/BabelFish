@@ -11,7 +11,7 @@ var protocol = "avr109";
 cf.pluginHandler.showPlugin();
 cf.enableCompilerFlasherActions();
 cf.pluginHandler.scan();
-$("#flash").click (function () {
+function customFlashSelectedPort () {
   var protocol = document.getElementById("protocols").value;
   $.get("/codebender/sketches/blink-" + protocol + ".hex", function (blob) {
     // Pretend to send logs
@@ -20,15 +20,15 @@ $("#flash").click (function () {
       blob.split("\n").length;
 
     var board = {
-          upload: {
-            disbale_flushing: undefined,
-            maximum_size: 4096,
-            protocol: protocol,
-            speed: 112500},
-          build: {
-            mcu: undefined
-          }
-        },
+      upload: {
+        disbale_flushing: undefined,
+        maximum_size: 4096,
+        protocol: protocol,
+        speed: 112500},
+      build: {
+        mcu: undefined
+      }
+    },
         flash_args = [
           true,                     //select
           board,                     //device
@@ -48,7 +48,9 @@ $("#flash").click (function () {
       cf.pluginHandler.doflash.apply(cf.pluginHandler, flash_args);
     };
   });
-});
+}
+
+$("#flash").click (customFlashSelectedPort);
 
 var send = document.getElementById("send");
 send.onclick = function () {
@@ -116,4 +118,24 @@ function cleanLogs() {
   var lglst = document.getElementsByClassName("loglist");
   Array.prototype.forEach.call(lglst, function (el) {el.innerHTML = "";});
 }
+
 document.getElementById("cleanlogs").onclick = cleanLogs;
+
+function quickFlash() {
+
+  var i = -1,
+      select = document.getElementById('cb_cf_ports'),
+      devs = Array.prototype.forEach.call(select.childNodes, function (n) {
+        i++;
+        console.log("Checking port:", n.value);
+        if (/\/dev\/cu\.usbmodem.*/.test(n.value)) {
+          console.log("Selecting port:", n.value, "(", i,")");
+          select.selectedIndex = i;
+        }
+      });
+
+  if (i != -1)
+    customFlashSelectedPort();
+  else
+    throw Error("No suitable port found.");
+}

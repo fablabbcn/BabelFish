@@ -45,7 +45,7 @@ SerialTransaction.prototype.init = function (finishCallback, errorCallback) {
 
 SerialTransaction.prototype.errCb = function (message, id) {
   this.cleanup();
-  this.log.error("message");
+  this.log.error(message);
   if (this.errorCallback)
     this.errorCallback(message, id);
 };
@@ -61,6 +61,8 @@ SerialTransaction.prototype.cleanup = function (callback) {
                     ") during cleanup");
       }
 
+      self.log.log("Disconnected ", self.connectionId);
+      self.conenctionId = null;
       self.buffer.cleanup(callback);
     });
   }

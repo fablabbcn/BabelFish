@@ -136,12 +136,13 @@ Buffer.prototype = {
   },
 
   cleanup: function (callback) {
+    log.log("Cleaning everything of buffer.");
     this.readers.slice().forEach(this.removeReader.bind(this));
     this.databuffer = [];
 
     if (this.readers.length > 0) {
-      throw Error("Buffer readers survived the cleanup");
-    } else {
+      throw Error("Buffer readers survived the cleanup", this.readers);
+    } else if (callback) {
       callback();
     }
   }
