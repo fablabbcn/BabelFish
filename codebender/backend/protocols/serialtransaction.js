@@ -45,7 +45,7 @@ SerialTransaction.prototype.init = function (finishCallback, errorCallback) {
 
 SerialTransaction.prototype.errCb = function (message, id) {
   this.cleanup();
-  this.log.error(message);
+  this.log.error("state: ", this.state, " - ", message);
   if (this.errorCallback)
     this.errorCallback(message, id);
 };

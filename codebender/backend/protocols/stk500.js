@@ -329,7 +329,7 @@ STK500Transaction.prototype.consumeMessage = function (payloadSize, callback, er
   log.log("Scheduling a read in .1s");
   setTimeout(function() {
     self.buffer.readAsync(totalSize - totalConsumed,
-                          handleRead, 500, function () {
+                          handleRead, 1000, function () {
                             self.errCb("Connection timed out.");
                           }); }, 10);
 };

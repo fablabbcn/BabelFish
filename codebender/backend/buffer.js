@@ -138,13 +138,19 @@ Buffer.prototype = {
   cleanup: function (callback) {
     log.log("Cleaning everything of buffer.");
     this.readers.slice().forEach(this.removeReader.bind(this));
-    this.databuffer = [];
 
-    if (this.readers.length > 0) {
-      throw Error("Buffer readers survived the cleanup", this.readers);
-    } else if (callback) {
-      callback();
+    // Because the above is nasty, `undefined` tokens may survive in
+    // this.readers. However we dont free the whole array to be sure
+    // no real readers survived.
+    for (var i=0; i<this.readers.length; i++) {
+      if (!this.readers[i]) {
+        delete this.readers[i];
+      } else {
+        throw Error("Buffer reader survived the cleanup" + this.readers[i]);
+      }
     }
+    this.databuffer = [];
+    if (callback) callback();
   }
 };
 
