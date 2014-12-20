@@ -9,6 +9,19 @@ function storeAsTwoBytes(n) {
 }
 
 
+// Hex representation of an integer array.
+function hexRep(intArray) {
+  var buf = "[";
+  var sep = "";
+  for (var i = 0; i < intArray.length; ++i) {
+    buf += (sep + "0x" + intArray[i].toString(16));
+    sep = ",";
+  }
+  buf += "]";
+  return buf;
+}
+
+
 // Async reading to and from buffer
 function binToBuf(hex) {
   if (hex instanceof ArrayBuffer)
@@ -37,66 +50,51 @@ function bufToBin(buf) {
 }
 
 function Buffer () {
+  this.databuffer = [];
+  this.readers = [];
 }
 
 Buffer.prototype = {
-  mergeReadArgs: function (ra1, ra2) {
-    return {bytesRead: ra1.bytesRead + ra1.bytesRead,
-            data: ra1.data.concat(ra2.data)};
+  // Event based read
+  readAsync: function (maxBytes, callback) {
+    this.readers.push({expectBytes: maxBytes, callback: callback});
+    this.runAsyncReaders();
   },
 
-  // Execute callback when you get enough data
-  registerReader: function (maxBytes, readArg, callback) {
+  runAsyncReaders: function () {
+    while (this.readers[0] &&
+           this.readers[0].expectBytes <= this.databuffer.length){
+      var reader = this.readers.shift();
+      this.read(reader.expectBytes, reader.callback);
 
-  },
-
-  readPersist: function (maxBytes, callback) {
-    this.read(maxBytes, function (readArg) {
-      console.assert(readArg.byterRead > maxBytes,
-                     "Buffer.read read more bytes than requested.");
-      if (readArg.byterRead < maxBytes) {
-        this.reagisterReader(maxBytes, readArg, callback);
-      } else {
-        callback(readArg);
-      }
-    });
-  },
-
-  read: function (maxBytes, callback) {
-    if (typeof(this.databuffer) == "undefined") {
-      log.log("Creating buffer...");
-      this.databuffer = [];
-      callback({bytesRead: 0, data: []});
-      return;
     }
-
-    var bytes = Math.min(maxBytes, this.databuffer.length);
-    log.log("Reading", bytes, " from buffer");
-
-    var accum = this.databuffer.slice(0, bytes);
-    this.databuffer = this.databuffer.slice(bytes);
-    log.log("readFromBuffer -> " + bufToBin(accum));
-    callback({bytesRead: bytes, data: accum});
   },
+
+  // Read as much as possible until maxBytes and send it to callback
+  // in the form of {bytesRead: <>, data: <>}
+  read: function (maxBytes, callback) {
+    var len =this.databuffer.length,
+        accum = this.databuffer.splice(0, maxBytes);
+    log.log("Reading from byffer [", maxBytes, "/", len,"]",  accum);
+    callback({bytesRead: accum.length, data: accum});
+  },
+
 
   write: function (readArg) {
     var hexData = bufToBin(readArg.data);
-    log.log("Pushing to buffer:", hexData);
     this.databuffer = this.databuffer.concat(hexData);
-    log.log("Buffer now of size ", this.databuffer.length);
+    log.log("Pushing to buffer [", hexData.length, "]: ", hexData);
+    this.runAsyncReaders();
+  },
+
+  // Dump the entire databuffer
+  drain: function(callback) {
+    log.log("Draining bytes: ", this.databuffer);
+    var ret = this.databuffer;
+    this.databuffer = [];
+    callback({bytesRead: ret.length, data: ret});
   }
 };
-
-function hexRep(intArray) {
-  var buf = "[";
-  var sep = "";
-  for (var i = 0; i < intArray.length; ++i) {
-    buf += (sep + "0x" + intArray[i].toString(16));
-    sep = ",";
-  }
-  buf += "]";
-  return buf;
-}
 
 module.exports.Buffer = Buffer;
 module.exports.hexRep = hexRep;

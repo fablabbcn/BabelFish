@@ -64,19 +64,17 @@ STK500Transaction.prototype.connectDone = function (hexCode, connectArg) {
 
   this.connectionId = connectArg.connectionId;
   log.log("Connected to board. ID: " + connectArg.connectionId);
-  this.buffer.read(1024, this.transitionCb('drainedBytes'));
+  this.buffer.drain(this.transitionCb('drainedBytes'));
 
 };
 
 STK500Transaction.prototype.dtrSent = function (ok) {
   if (!ok) {
-    log.log("Couldn't send DTR");
-    return;
+    throw Error("Couldn't send DTR");
   }
   log.log("DTR sent (low) real good");
 
-  this.buffer.read(1024, this.transitionCb('drainedAgain'));
-
+  this.buffer.drain(this.transitionCb('drainedAgain'));
 }
 
 STK500Transaction.prototype.drainedAgain = function (readArg) {
@@ -84,12 +82,12 @@ STK500Transaction.prototype.drainedAgain = function (readArg) {
   log.log("DRAINED " + readArg.bytesRead + " BYTES");
   if (readArg.bytesRead == 1024) {
     // keep draining
-    self.buffer.read(1024, this.trasitioncb('drainedBytes'));
+    self.buffer.drain(this.trasitioncb('drainedBytes'));
   } else {
     // Start the protocol
     setTimeout(function() {
       self.writeThenRead_([self.STK.GET_SYNC, self.STK.CRC_EOP],
-                         0, self.transitionCb('inSyncWithBoard'));
+                          0, self.transitionCb('inSyncWithBoard'));
     }, 50);
   }
 
@@ -97,65 +95,50 @@ STK500Transaction.prototype.drainedAgain = function (readArg) {
 
 STK500Transaction.prototype.drainedBytes = function (readArg) {
   var self = this;
-
-  log.log("DRAINED " + readArg.bytesRead + " BYTES");
-  if (readArg.bytesRead == 1024) {
-    // keep draining
-    self.buffer.read(1024, self.transtionCb('drainedBytes'));
-  } else {
-    log.log("About to set DTR low");
-
-    setTimeout(function() {
-      self.serial.setControlSignals(self.connectionId, {dtr: false, rts: false}, function(ok) {
-        log.log("sent dtr false, done: " + ok);
-        setTimeout(function() {
-          self.serial.setControlSignals(self.connectionId, {dtr: true, rts: true}, function(ok) {
-            log.log("sent dtr true, done: " + ok);
-            setTimeout(function () {self.transition('dtrSent', ok);}, 500);
-          });
-        }, 500);
-      });
-    }, 500);
-  }
-}
+  log.log("DRAINED ", readArg.bytesRead, " BYTES, setting DTR/RTS to low");
+  setTimeout(function() {
+    self.serial.setControlSignals(self.connectionId, {dtr: false, rts: false}, function(ok) {
+      log.log("Lowered DTR/RTS, done: ", ok);
+      setTimeout(function() {
+        self.serial.setControlSignals(self.connectionId, {dtr: true, rts: true}, function(ok) {
+          log.log("Raised DTR/RTS, done: " + ok);
+          setTimeout(self.transitionCb('dtrSent', ok), 500);
+        });
+      }, 500);
+    });
+  }, 500);
+};
 
 STK500Transaction.prototype.inSyncWithBoard = function (ok, data) {
   if (!ok) {
     log.error("InSyncWithBoard: NOT OK");
   }
-  log.log("InSyncWithBoard: " + ok + " / " + data);
   this.inSync_ = true;
   this.writeThenRead_([this.STK.GET_PARAMETER, this.STK.HW_VER, this.STK.CRC_EOP], 1,
-                     this.transitionCb('readHardwareVersion'));
+                      this.transitionCb('readHardwareVersion'));
 };
 
 STK500Transaction.prototype.readHardwareVersion = function (ok, data) {
-  log.log("HardwareVersion: " + ok + " / " + data);
   this.writeThenRead_([this.STK.GET_PARAMETER, this.STK.SW_VER_MAJOR, this.STK.CRC_EOP],
-                     1, this.transitionCb('readSoftwareMajorVersion'));
+                      1, this.transitionCb('readSoftwareMajorVersion'));
 };
 
 STK500Transaction.prototype.readSoftwareMajorVersion = function (ok, data) {
-  log.log("Software major version: " + ok + " / " + data);
   this.writeThenRead_([this.STK.GET_PARAMETER, this.STK.SW_VER_MINOR, this.STK.CRC_EOP],
-                     1, this.transitionCb('readSoftwareMinorVersion'));
+                      1, this.transitionCb('readSoftwareMinorVersion'));
 };
 
 STK500Transaction.prototype.readSoftwareMinorVersion = function (ok, data) {
-  log.log("Software minor version: " + ok + " / " + data);
   this.writeThenRead_([this.STK.ENTER_PROGMODE, this.STK.CRC_EOP], 0,
-                    this.transitionCb('enteredProgmode'));
+                      this.transitionCb('enteredProgmode'));
 }
 
 STK500Transaction.prototype.enteredProgmode = function (ok, data) {
-  log.log("Entered progmode: " + ok + " / " + data);
   this.writeThenRead_([this.STK.READ_SIGN, this.STK.CRC_EOP], 3,
-                     this.transitionCb('readSignature'));
+                      this.transitionCb('readSignature'));
 }
 
 STK500Transaction.prototype.readSignature = function (ok, data) {
-  log.log("Device signature: " + ok + " / " + data);
-
   this.transition('programFlash', 0, this.pageSize,
                   this.transitionCb('doneProgramming'));
 }
@@ -163,7 +146,7 @@ STK500Transaction.prototype.readSignature = function (ok, data) {
 STK500Transaction.prototype.doneProgramming = function () {
   this.sketchData = null;
   this.writeThenRead_([this.STK.LEAVE_PROGMODE, this.STK.CRC_EOP],
-                  0, this.transitionCb('leftProgmode'));
+                      0, this.transitionCb('leftProgmode'));
 }
 
 STK500Transaction.prototype.isProgramming = function () {
@@ -173,24 +156,23 @@ STK500Transaction.prototype.isProgramming = function () {
 STK500Transaction.prototype.leftProgmode = function (ok, data) {
   var self = this;
 
-  log.log("Left progmode: " + ok + " / " + data +
-          " Disconnecting " + self.connectionId + "...");
+  log.log(" Disconnecting ", self.connectionId, "...");
   self.serial.disconnect(self.connectionId, function (ok) {
     if (ok) {
       self.connectionId = null;
       log.log("Disconnected ok, You may now use your program!");
     } else
-      log.log("Could not disconnect from " + self.connectionId);
+      log.log("Could not disconnect from ", self.connectionId);
   });
 }
 
 STK500Transaction.prototype.programFlash = function (offset, length, doneCallback) {
   var payload,
       data = this.sketchData;
-  log.log("program flash: data.length: " + data.length + ", offset: " + offset + ", length: " + length);
+  log.log("program flash: data.length: ", data.length, ", offset: ", offset, ", length: ", length);
 
   if (offset >= data.length) {
-    log.log("Done programming flash: " + offset + " vs. " + data.length);
+    log.log("Done programming flash: ", offset, " vs. " + data.length);
     doneCallback(this.connectionId);
     return;
   }
@@ -339,19 +321,19 @@ STK500Transaction.prototype.consumeMessage = function (payloadSize, callback, er
         // FIX: read bytes from buffer 1 by 1
         log.log("Mega Hack: Writing: " + buffer.hexRep([self.STK.GET_SYNC, self.STK.CRC_EOP]));
         self.serial.send(self.connectionId, buffer.binToBuf([self.STK.GET_SYNC, self.STK.CRC_EOP]), function() {
-          self.buffer.read(totalSize - totalConsumed, handleRead);
+          self.buffer.readAsync(totalSize - totalConsumed, handleRead);
         });
       } else {
         // Don't tight-loop waiting for the message.
         setTimeout(function() {
-          self.buffer.read(totalSize - totalConsumed, handleRead);
+          self.buffer.readAsync(totalSize - totalConsumed, handleRead);
         }, 500);
       }
     }
   };
 
   log.log("Scheduling a read in .1s");
-  setTimeout(function() { self.buffer.read(totalSize - totalConsumed, handleRead); }, 10);
+  setTimeout(function() { self.buffer.readAsync(totalSize - totalConsumed, handleRead); }, 10);
 };
 
 

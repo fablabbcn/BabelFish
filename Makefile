@@ -21,8 +21,8 @@ MOCHA = mocha $(DEBUG)
 # URL = http://localhost:8080/test/testpages/chrome-listener/index.html
 
 ## Codebender tests
-# URL = http://localhost:8080/codebender/test/test_download/index.html
-URL = http://localhost:8080/codebender/test/test_usb/index.html
+URL = http://localhost:8080/codebender/test/test_download/index.html
+# URL = http://localhost:8080/codebender/test/test_usb/index.html
 
 CHROME_TEST =  $(CURDIR)/test/selenium-test.js
 FIREFOX_TEST =  $(CURDIR)/test/firefox-test.js
