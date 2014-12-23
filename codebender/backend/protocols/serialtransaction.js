@@ -64,7 +64,7 @@ SerialTransaction.prototype.writeThenRead_ = function (outgoingMsg, responsePayl
       self = this;
 
   this.serial.send(this.connectionId, outgoingBinary, function(writeArg) {
-    self.consumeMessage(responsePayloadSize, callback, self.errCb);
+    self.consumeMessage(responsePayloadSize, callback, self.errCb.bind(self));
   });
 }
 
@@ -74,7 +74,7 @@ SerialTransaction.prototype.consumeMessage = function (payloadSize, callback, er
   var self = this;
   setTimeout(function () {
     // Hide the strange arguments.
-    self.buffer.readAsync(payloadSize, callback, 500, self.errCb);
+    self.buffer.readAsync(payloadSize, callback, 500, errorCb);
   }, 100);
 };
 
@@ -174,7 +174,7 @@ SerialTransaction.prototype.destroyOtherConnections = function (name, cb) {
         self.log.log("Closing connection ", c.connectionId);
         self.serial.disconnect(c.connectionId, function (ok) {
           if (!ok) {
-            this.errCb("Failed to close connection ", c.connectionId);
+            self.errCb("Failed to close connection ", c.connectionId);
           }
         });
       }

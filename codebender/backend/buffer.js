@@ -77,7 +77,8 @@ Buffer.prototype = {
                   expectBytes: maxBytes,
                   callback: callback,
                   ttl: timeout},
-        self = this;
+        self = this,
+        helper = (new Error()).stack;
 
     log.log("Registering reader:", reader);
     this.readers.push(reader);

@@ -33,8 +33,9 @@ Transaction.prototype = {
   },
 
   transitionCb: function (state, varArgs) {
+    var self = this;
     return arraify(arguments).reduce(function (cb, a) {
-      return cb.bind(null, a);
+      return cb.bind(self, a);
     }, this.transition.bind(this));
   },
 

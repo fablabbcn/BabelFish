@@ -52,7 +52,9 @@ AVR109Transaction.prototype.magicBaudReset = function (devName, hexData) {
 };
 
 AVR109Transaction.prototype.flash = function (devName, hexData) {
-  this.destroyOtherConnections(devName, this.transitionCb('magicBaudReset', devName, hexData));
+  this.sketchData = hexData;
+  this.destroyOtherConnections(devName,
+                               this.transitionCb('magicBaudReset', devName, hexData));
 };
 
 // Poll for the device to reconnect.
@@ -112,10 +114,10 @@ AVR109Transaction.prototype.programmingDone = function () {
 };
 
 AVR109Transaction.prototype.drainBytes = function (readArg) {
+  var self = this;
   this.buffer.drain(function () {
-
     // Start the protocol
-    this.writeThenRead_([this.AVR.SOFTWARE_VERSION], 2, this.transitionCb('prepareToProgramFlash'));
+    self.writeThenRead_([self.AVR.SOFTWARE_VERSION], 2, self.transitionCb('prepareToProgramFlash'));
   });
 };
 
@@ -151,7 +153,7 @@ AVR109Transaction.prototype.programFlash = function (offset, length) {
 
   this.writeThenRead_(programMessage, 1, function(resp) {
     // XXX: check respeonse.
-    self.transition('programFlash', data, offset + length, length);
+    self.transition('programFlash', offset + length, length);
   });
 };
 
