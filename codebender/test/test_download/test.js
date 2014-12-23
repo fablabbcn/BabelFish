@@ -11,6 +11,9 @@ var protocol = "avr109";
 cf.pluginHandler.showPlugin();
 cf.enableCompilerFlasherActions();
 cf.pluginHandler.scan();
+
+// We provide parsed hex
+cf.pluginHandler.plugin_.binaryMode = false;
 function customFlashSelectedPort () {
   var protocol = document.getElementById("protocols").value;
   $.get("/codebender/sketches/blink-" + protocol + ".hex", function (blob) {

@@ -30,6 +30,9 @@ function Plugin() {
   });
   this.errorCallback = function () {};
   this.readingInfo = null;
+
+  // Change to false to provide byte arrays for flashing.
+  this.binaryMode = true;
 }
 
 Plugin.prototype = {
@@ -134,6 +137,13 @@ Plugin.prototype = {
                   "Device:", device);
 
       // STK500v1
+
+      // Binary string to byte array
+      if (self.binaryMode)
+        code = Array.prototype.slice.call(code).map(function (x) {
+          return String.prototype.charCodeAt.call(x, 0);
+        });
+
       transaction.flash(device, code, cb);
     }, 0);
   },
