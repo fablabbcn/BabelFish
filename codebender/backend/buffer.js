@@ -139,7 +139,7 @@ Buffer.prototype = {
   },
 
   cleanup: function (callback) {
-    log.log("Cleaning everything of buffer.");
+    log.log("Cleaning everything of buffer.", this.databuffer);
     this.readers.slice().forEach(this.removeReader.bind(this));
 
     // Because the above is nasty, `undefined` tokens may survive in

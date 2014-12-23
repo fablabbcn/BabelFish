@@ -163,6 +163,7 @@ STK500Transaction.prototype.programFlash = function (offset, length) {
 
   var self = this;
   self.writeThenRead_(loadAddressMessage, 0, function(ok, reponse) {
+    console.log('Finished with block');
     if (!ok) {
       self.errCb("Error programming the flash (load address)");
       return;

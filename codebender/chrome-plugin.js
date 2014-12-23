@@ -130,19 +130,18 @@ Plugin.prototype = {
                    mcu,
                    cb) {
 
-    var transaction = new protocols[protocol]();
+    var transaction = new protocols[protocol](), self = this;
     setTimeout(function () {
       console.log("Code length", code.length, typeof code,
                   "Protocol:", protocols,
                   "Device:", device);
 
       // STK500v1
-
       // Binary string to byte array
-      if (self.binaryMode)
-        code = Array.prototype.slice.call(code).map(function (x) {
-          return String.prototype.charCodeAt.call(x, 0);
-        });
+      if (self.binaryMode) {
+        code = Base64Binary.decode(code);
+        code = Array.prototype.slice.call(code);
+      }
 
       transaction.flash(device, code, cb);
     }, 0);

@@ -62,6 +62,7 @@ function CodebenderPlugin () {
   this.getPorts = this.getPortsCb;
   this.availablePorts = this.availablePortsCb;
   this.getFlashResult = this.getFlashResultCb;
+  this.probeUSB = this.probeUSBCb;
 };
 
 if (typeof Object.create !== 'function') {
@@ -95,7 +96,7 @@ CodebenderPlugin.prototype.getFlashResultCb  = function (cb) {
   }, 50);
 };
 
-CodebenderPlugin.prototype.probeUSB  = function (cb) {
+CodebenderPlugin.prototype.probeUSBCb  = function (cb) {
   var result = this.element_.probeUSB();
   setTimeout(function () {
     cb(result);
