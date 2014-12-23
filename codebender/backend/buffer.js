@@ -95,14 +95,14 @@ Buffer.prototype = {
       }, timeout);
     }
 
-    this.runAsyncReaders(this.readers);
+    this.runAsyncReaders();
   },
 
   runAsyncReaders: function (readers) {
     var ret = false;
     log.log("Running reader:", readers, "databauffer:", this.databuffer);
-    while (readers[0] &&
-           readers[0].expectBytes <= this.databuffer.length) {
+    while (this.readers[0] &&
+           this.readers[0].expectBytes <= this.databuffer.length) {
 
       log.log("Reader found");
       var reader = this.readers[0];
@@ -128,7 +128,7 @@ Buffer.prototype = {
     this.databuffer = this.databuffer.concat(hexData);
     log.log("Pushing to buffer [", hexData.length, "]: ", hexData);
     if (this.readers.length > 0)
-      this.runAsyncReaders(this.readers);
+      this.runAsyncReaders();
   },
 
   // Dump the entire databuffer
