@@ -126,40 +126,26 @@ STK500Transaction.prototype.readSoftwareMajorVersion = function (ok, data) {
 STK500Transaction.prototype.readSoftwareMinorVersion = function (ok, data) {
   this.writeThenRead_([this.STK.ENTER_PROGMODE, this.STK.CRC_EOP], 0,
                       this.transitionCb('enteredProgmode'));
-}
+};
 
 STK500Transaction.prototype.enteredProgmode = function (ok, data) {
   this.writeThenRead_([this.STK.READ_SIGN, this.STK.CRC_EOP], 3,
                       this.transitionCb('readSignature'));
-}
+};
 
 STK500Transaction.prototype.readSignature = function (ok, data) {
+  log.log("Signature:", buffer.hexRep(data));
   this.transition('programFlash', 0, this.pageSize,
                   this.transitionCb('doneProgramming'));
-}
-
-STK500Transaction.prototype.doneProgramming = function () {
-  this.sketchData = null;
-  this.writeThenRead_([this.STK.LEAVE_PROGMODE, this.STK.CRC_EOP],
-                      0, this.transitionCb('leftProgmode'));
-}
-
-STK500Transaction.prototype.isProgramming = function () {
-  return this.sketchData == null;
 };
 
-STK500Transaction.prototype.leftProgmode = function (ok, data) {
-  var self = this;
-  this.cleanup(this.finishCallback);
-};
-
-STK500Transaction.prototype.programFlash = function (offset, length, doneCallback) {
+STK500Transaction.prototype.programFlash = function (offset, length) {
   var data = this.sketchData;
   log.log("program flash: data.length: ", data.length, ", offset: ", offset, ", length: ", length);
 
   if (offset >= data.length) {
     log.log("Done programming flash: ", offset, " vs. " + data.length);
-    doneCallback(this.connectionId);
+    this.transition('doneProgramming', this.connectionId);
     return;
   }
 
@@ -178,16 +164,16 @@ STK500Transaction.prototype.programFlash = function (offset, length, doneCallbac
   var self = this;
   self.writeThenRead_(loadAddressMessage, 0, function(ok, reponse) {
     if (!ok) {
-      this.errCb("Error programming the flash (load address)");
+      self.errCb("Error programming the flash (load address)");
       return;
     }
     self.writeThenRead_(programMessage, 0, function(ok, response) {
       if (!ok) {
-        this.errCb("Error programming the flash (send data)");
+        self.errCb("Error programming the flash (send data)");
         return;
       }
       // Program the next section
-      self.transition('programFlash', offset + length, length, doneCallback);
+      self.transition('programFlash', offset + length, length);
     });
   });
 };
@@ -214,126 +200,15 @@ STK500Transaction.prototype.consumeMessage = function (payloadSize, callback, er
   }, 2000, this.errCb.bind(this, "STK failed timeout"));
 };
 
-STK500Transaction.prototype.oldConsumeMessage = function (payloadSize, callback, errorCb) {
+STK500Transaction.prototype.doneProgramming = function () {
+  this.sketchData = null;
+  this.writeThenRead_([this.STK.LEAVE_PROGMODE, this.STK.CRC_EOP],
+                      0, this.transitionCb('leftProgmode'));
+};
+
+STK500Transaction.prototype.leftProgmode = function (ok, data) {
   var self = this;
-  self.log.log("consumeMessage (conn=", self.connectionId,
-               ", payload_size=", payloadSize, " ...)");
-  var ReadState = {
-    READY_IN_SYNC: 0,
-    READY_FOR_PAYLOAD: 1,
-    READY_FOR_OK: 2,
-    DONE: 3,
-    ERROR: 4
-  };
-
-  var accum = [];
-  var state = ReadState.READY_FOR_IN_SYNC;
-  var kMaxReads = 100;
-  var reads = 0;
-  var payloadBytesConsumed = 0;
-  var totalConsumed = 0;
-  var totalSize = payloadSize + 2;
-
-  // The gist of this is: expect arg.data to be [INSYNC, <data>, OK]
-  // If not, fail gracefully.
-  var handleRead = function(arg) {
-    if (reads++ >= kMaxReads) {
-      errorCb("Too many reads. Bailing.");
-      return;
-    }
-
-    var hexData = buffer.bufToBin(arg.data);
-    log.log('Ready to receive: ', payloadSize, ' bytes, Already read:', payloadBytesConsumed, 'state:', state);
-    if (arg.bytesRead > 0) {
-      log.log("Read:" + hexData);
-    } else {
-      log.log("No data read.");
-    }
-
-    for (var i = 0; i < hexData.length; ++i) {
-      log.log("Byte " + i + " of " + hexData.length + ": " + hexData[i]);
-      if (state == ReadState.READY_FOR_IN_SYNC) {
-        if (hexData[i] == self.STK.INSYNC) {
-          if (payloadSize == 0) {
-            log.log("Got IN_SYNC, no payload, now READY_FOR_OK");
-            state = ReadState.READY_FOR_OK;
-          } else {
-            log.log("Got IN_SYNC, now READY_FOR_PAYLOAD");
-            state = ReadState.READY_FOR_PAYLOAD;
-          }
-        } else {
-          log.log("Expected self.STK.INSYNC (", self.STK.INSYNC,
-                  "). Got: " + hexData[i] + ". Ignoring.");
-          // state = ReadState.ERROR;
-        }
-      } else if (state == ReadState.READY_FOR_PAYLOAD) {
-        accum.push(hexData[i]);
-        payloadBytesConsumed++;
-        log.log('Got payload byte: [', payloadBytesConsumed, '/', payloadSize, ']', hexData[i]);
-        if (payloadBytesConsumed == payloadSize) {
-          log.log("Got full payload, now READY_FOR_OK");
-          state = ReadState.READY_FOR_OK;
-        } else if (payloadBytesConsumed > payloadSize) {
-          log.log("Got too many payload bytes, now ERROR");
-          state = ReadState.ERROR;
-          this.errCb("Read too many payload bytes!");
-        }
-      } else if (state == ReadState.READY_FOR_OK) {
-        if (hexData[i] == self.STK.OK) {
-          log.log("Got OK now DONE");
-          state = ReadState.DONE;
-        } else {
-          log.error("Expected STK_OK. Got: " + hexData[i]);
-          state = ReadState.ERROR;
-        }
-      } else if (state == ReadState.DONE) {
-        log.error("Out of sync (ignoring data)");
-        state = ReadState.ERROR;
-      } else if (state == ReadState.ERROR) {
-        log.error("In error state. Draining byte: " + hexData[i]);
-        // Remains in state ERROR
-      } else {
-        log.error("Unknown state: " + state);
-        state = ReadState.ERROR;
-      }
-    }
-
-    totalConsumed += hexData.length;
-
-    if (state == ReadState.ERROR || state == ReadState.DONE) {
-      log.log("Finished in state: " + state);
-      callback(state == ReadState.DONE, accum);
-    } else if (totalConsumed > totalSize) {
-      console.error('Not reached: got more bytes than requested: ', totalConsumed, '>', totalSize);
-    } else {
-      // It should never come to this with async buffer reads. This is
-      // for polling
-      log.error("Paused in state: " + state + ". Reading again.");
-
-      if (!self.inSync_ && (reads % 3) == 0) {
-        // Mega hack (temporary)
-        // In case we are expecting an empty packet, and we did not get it
-        // force Arduino to send an empty packet
-        // FIX: read bytes from buffer 1 by 1
-        log.log("Mega Hack: Writing: " + buffer.hexRep([self.STK.GET_SYNC, self.STK.CRC_EOP]));
-        self.serial.send(self.connectionId, buffer.binToBuf([self.STK.GET_SYNC, self.STK.CRC_EOP]), function() {
-          self.buffer.read(totalSize - totalConsumed, handleRead);
-        });
-      } else {
-        // Don't tight-loop waiting for the message.
-        setTimeout(function() {
-          self.buffer.readAsync(totalSize - totalConsumed, handleRead, 2000);
-        }, 500);
-      }
-    }
-  };
-
-  log.log("Scheduling a read in .1s");
-  setTimeout(function() {
-    self.buffer.readAsync(totalSize - totalConsumed,
-                          handleRead, 1000, function () {
-                            self.errCb("Connection timed out.");
-                          }); }, 10);
+  this.cleanup(this.finishCallback);
 };
 
 module.exports.STK500Transaction = STK500Transaction;

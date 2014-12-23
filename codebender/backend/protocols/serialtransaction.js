@@ -46,7 +46,7 @@ SerialTransaction.prototype.cleanup = function (callback) {
   if (this.connectionId) {
     this.serial.disconnect(this.connectionId, function (ok) {
       if (!ok) {
-        throw Error("Failed to disconnect (id:", self.connectionId,
+        self.log.warn("Failed to disconnect (id:", self.connectionId,
                     ") during cleanup");
       }
 

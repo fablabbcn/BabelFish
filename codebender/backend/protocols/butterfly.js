@@ -23,7 +23,7 @@ function AVR109Transaction () {
 
 AVR109Transaction.prototype = new SerialTransaction();
 
-AVR109Transaction.prototype.flash = function (devName, hexData) {
+AVR109Transaction.prototype.magicBaudReset = function (devName, hexData) {
   var kMagicBaudRate = 1200,
       oldDevices = [],
       self = this;
@@ -49,6 +49,10 @@ AVR109Transaction.prototype.flash = function (devName, hexData) {
       }, 2000);
     });
   });
+};
+
+AVR109Transaction.prototype.flash = function (devName, hexData) {
+  this.destroyOtherConnections(devName, this.transitionCb('magicBaudReset', devName, hexData));
 };
 
 // Poll for the device to reconnect.
