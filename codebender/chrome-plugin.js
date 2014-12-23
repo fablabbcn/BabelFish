@@ -130,7 +130,15 @@ Plugin.prototype = {
                    mcu,
                    cb) {
 
-    var transaction = new protocols[protocol](cb), self = this;
+    var from = null,
+    finishCallback = function () {
+      var pluginReturnValue = 0;
+      cb(from, pluginReturnValue);
+    },
+    errorCallback = function (msg, id) {
+      cb(from, id);
+    },
+    transaction = new protocols[protocol](finishCallback, errorCallback), self = this;
     setTimeout(function () {
       console.log("Code length", code.length, typeof code,
                   "Protocol:", protocols,
@@ -174,6 +182,10 @@ Plugin.prototype = {
 
   probeUSB: function () {
     // Not used
+  },
+
+  getFlashResult: function (cb) {
+    cb(this.flashResult);
   },
 
   // Inherently sync or void methods. Force is if we don't know we

@@ -61,7 +61,7 @@ STK500Transaction.prototype.connectDone = function (hexCode, connectArg) {
   if (typeof(connectArg) == "undefined" ||
       typeof(connectArg.connectionId) == "undefined" ||
       connectArg.connectionId == -1) {
-    this.errCb("Bad connectionId / Couldn't connect to board");
+    this.errCb(1, "Bad connectionId / Couldn't connect to board");
     return;
   }
 
@@ -77,7 +77,7 @@ STK500Transaction.prototype.drainedBytes = function (readArg) {
   setTimeout(function() {
     self.serial.setControlSignals(self.connectionId, {dtr: false, rts: false}, function(ok) {
       if (!ok) {
-        self.errCb("Couldn't send DTR");
+        self.errCb(1, "Couldn't send DTR");
         return;
       }
       setTimeout(function() {
@@ -93,7 +93,7 @@ STK500Transaction.prototype.drainedBytes = function (readArg) {
 STK500Transaction.prototype.dtrSent = function (ok) {
   var self = this;
   if (!ok) {
-    this.errCb("Couldn't send DTR");
+    this.errCb(1, "Couldn't send DTR");
     return;
   }
   log.log("DTR sent (low) real good");
@@ -106,7 +106,7 @@ STK500Transaction.prototype.dtrSent = function (ok) {
 
 STK500Transaction.prototype.inSyncWithBoard = function (ok, data) {
   if (!ok) {
-    this.errCb("InSyncWithBoard: NOT OK");
+    this.errCb(1, "InSyncWithBoard: NOT OK");
   }
   this.inSync_ = true;
   this.writeThenRead_([this.STK.GET_PARAMETER, this.STK.HW_VER, this.STK.CRC_EOP], 1,
@@ -165,12 +165,12 @@ STK500Transaction.prototype.programFlash = function (offset, length) {
   self.writeThenRead_(loadAddressMessage, 0, function(ok, reponse) {
     console.log('Finished with block');
     if (!ok) {
-      self.errCb("Error programming the flash (load address)");
+      self.errCb(1, "Error programming the flash (load address)");
       return;
     }
     self.writeThenRead_(programMessage, 0, function(ok, response) {
       if (!ok) {
-        self.errCb("Error programming the flash (send data)");
+        self.errCb(1, "Error programming the flash (send data)");
         return;
       }
       // Program the next section
@@ -198,7 +198,7 @@ STK500Transaction.prototype.consumeMessage = function (payloadSize, callback, er
 
     callback(true, arg);
 
-  }, 2000, this.errCb.bind(this, "STK failed timeout"));
+  }, 2000, this.errCb.bind(this, 1, "STK failed timeout"));
 };
 
 STK500Transaction.prototype.doneProgramming = function () {

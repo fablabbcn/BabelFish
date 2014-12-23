@@ -32,11 +32,12 @@ SerialTransaction.prototype.init = function (finishCallback, errorCallback) {
   this.memOps.CHIP_ERASE_ARR = [0xAC, 0x80, 0x00, 0x00];
 };
 
-SerialTransaction.prototype.errCb = function (message, id) {
+SerialTransaction.prototype.errCb = function (id, var_message) {
+  var logargs = arraify(arguments, 1, "state: ", this.state, " - ");
   this.cleanup();
-  this.log.error("state: ", this.state, " - ", message);
+  this.log.error.apply(this.log.error, logargs);
   if (this.errorCallback)
-    this.errorCallback(message, id);
+    this.errorCallback(id, logargs.join(''));
 };
 
 SerialTransaction.prototype.cleanup = function (callback) {
