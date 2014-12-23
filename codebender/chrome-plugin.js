@@ -1,6 +1,7 @@
 // file: chrome-plugin.js
 
 var protocols = require('./backend/protocols').protocols,
+util = require('./backend/util'),
 _create_hex_parser = require('./backend/hexparser');
 dbg("Looks like we are on chrome.");
 
@@ -91,6 +92,17 @@ Plugin.prototype = {
       if (info) {
         console.log("Serial connected to: ", info);
         self.readingInfo = info;
+        self.readingInfo.stopPoll = util.infinitePoll(500, function (next) {
+          self.serial.getConnections(function (cnx) {
+            var isConnected = cnx.some(function (c) {
+              return c.connectionId == self.readingInfo.connectionId;
+            });
+            if (isConnected)
+              next();
+            else
+              self.disconnect(true);
+          });
+        });
         self.serial.onReceive.addListener(
           self.readingHandlerFactory(self.readingInfo.connectionId, cb));
       } else {
@@ -198,7 +210,8 @@ Plugin.prototype = {
         self.serial.onReceive.removeListener(self.readingInfo.handler);
         self.serial.disconnect(self.readingInfo.connectionId, function (ok) {
           if (!ok) {
-            throw Error("Failed to disconnect from ", self.readingInfo);
+            console.log("Reading info:", self.readingInfo);
+            throw Error("Failed to disconnect");
             // XXX: Maybe try again
           } else {
             dbg("Diconnected ok:", self.readingInfo);
@@ -206,6 +219,7 @@ Plugin.prototype = {
         });
 
         // Cleanup syncrhronously
+        console.log('Clearing readingInfo');
         self.readingInfo = null;
       }
 
@@ -243,7 +257,9 @@ Plugin.prototype = {
 
       console.log("Sending data:", data[0], "from string:", strData);
       this.serial.send(this.readingInfo.connectionId, data, function (sendInfo){
-        if (sendInfo.error) {
+        if (!sendInfo) {
+          throw Error("No connection to serial monitor");
+        } else if(sendInfo.error) {
           throw Error("Failed to send through",
                       self.readingInfo,":", sendInfo.error);
         }

@@ -71,6 +71,7 @@ SerialTransaction.prototype.writeThenRead_ = function (outgoingMsg, responsePayl
 
 // Simply wayt for bytes
 SerialTransaction.prototype.consumeMessage = function (payloadSize, callback, errorCb) {
+  var self = this;
   setTimeout(function () {
     // Hide the strange arguments.
     self.buffer.readAsync(payloadSize, callback, 500, self.errCb);
@@ -145,7 +146,7 @@ SerialTransaction.prototype.writeByte = function (data, addr, cb) {
 
     cb(function () {
       setTimeout(function () {
-        poll(cb, maxRetries-1, timeout);
+        poll(maxRetries-1, timeout, cb);
       }, timeout);
     });
   }

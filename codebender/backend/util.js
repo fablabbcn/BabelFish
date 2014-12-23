@@ -22,5 +22,23 @@ function deepCopy(obj) {
   }
 }
 
+// Callback gets the next iteration as first
+function infinitePoll (timeout, cb) {
+  var finished = false;
+  function stopPoll() {
+    finished = true;
+  }
+  if (finished) {
+    return;
+  }
+  cb(function () {
+    setTimeout(function () {
+      infinitePoll(timeout, cb);
+    }, timeout);
+  });
+  return stopPoll;
+}
+
 module.exports.arraify = arraify;
 module.exports.deepCopy = deepCopy;
+module.exports.infinitePoll = infinitePoll;
