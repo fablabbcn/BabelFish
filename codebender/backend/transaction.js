@@ -36,6 +36,22 @@ Transaction.prototype = {
     return arraify(arguments).reduce(function (cb, a) {
       return cb.bind(null, a);
     }, this.transition.bind(this));
+  },
+
+  padOrSlice: function (data, offset, length) {
+    var payload;
+
+    if (offset + length > data.length) {
+      payload = data.slice(offset, data.length);
+      var padSize = length - payload.length;
+      for (var i = 0; i < padSize; ++i) {
+        payload.push(0);
+      }
+    } else {
+      payload = data.slice(offset, offset + length);
+    }
+
+    return payload;
   }
 };
 

@@ -1,5 +1,30 @@
 // XXX: have the methods generate from avrdude.conf
 
+// Reverse the bits in data
+function bitReverse (data, bits) {
+  var res = [];
+  bits = bits || 8;
+
+  for (var i=0; i < bits; i++)
+    res.push((data >> i) & 1);
+
+  return res.reverse()
+    .reduce(function (bit, ret) {return (ret << 1) | bit;}, 0);
+}
+
+// Split integer {data} into {bytes} bytes.
+function splitBytes (data, bytes, bigEndian) {
+  var ret = [];
+
+  for (var i = 0; i < bytes; i++) {
+    ret.push(data & 0xff);
+    data >>= 8;
+  }
+
+  return ret;
+}
+
+
 function OpcodeBit (id) {
   this.id = id.slice(0,1);
   this.index = Number(id.slice(1));
@@ -15,24 +40,27 @@ function OpcodeFactory(bitString) {
 
 OpcodeFactory.prototype = {
   setBits: function (id, data) {
-    var array = [];
+    var bitArray = [];
     while (data) {
-      array.push(data & 1);
+      bitArray.push(data & 1);
       data >>= 1;
     }
 
+    // Set each bit object to a value.
     this.bits.
       filter(function (b) {return b.id == id;})
       .forEach(function (b) {
-        for (var i = 0 ; i < array.length; i++)
+        for (var i = 0 ; i < bitArray.length; i++)
           if (b.index == i)
             b.value = data[i];
-    });
+      });
   },
 
-  // XXX: Get the executable opcodes
+  // Byte list of opcoes
   getCmd: function () {
-    throw Error("Not implemented");
+    splitBytes(this.bits.reduce(function (val, bit) {
+      return (val << 1 | bit.value);
+    }));
   }
 };
 
@@ -40,31 +68,6 @@ function MemoryOperations() {
 }
 
 MemoryOperations.prototype = {
-
-  // Reverse the bits in data
-  bitReverse: function (data, bits) {
-    var res = [];
-    bits = bits || 8;
-
-    for (var i=0; i < bits; i++)
-      res.push((data >> i) & 1);
-
-    return res.reverse()
-      .reduce(function (bit, ret) {return (ret << 1) | bit;}, 0);
-  },
-
-  // Split integer {data} into {bytes} bytes.
-  splitBytes: function (data, bytes, bigEndian) {
-    var ret = [];
-
-    for (var i = 0; i < bytes; i++) {
-      ret.push(data & 0xff);
-      data >>= 8;
-    }
-
-    return ret;
-  },
-
   readLow: function(addr) {},
   readHigh: function(addr) {},
   read: function(addr) {}

@@ -29,9 +29,9 @@ Log.prototype = {
     if (this.verbosity > 0)
       this.console_('error', arraify(arguments, 0, this.prefix()));
   },
-  warning: function (var_args) {
+  warn: function (var_args) {
     if (this.verbosity > 1)
-      this.console_('warning', arraify(arguments, 0, this.prefix()));
+      this.console_('warn', arraify(arguments, 0, this.prefix()));
   },
   info: function (var_args) {
     if (this.verbosity > 2)

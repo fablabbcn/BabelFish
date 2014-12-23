@@ -4,23 +4,12 @@ var _create_chrome_client = require('./../../../chrome-extension/client/rpc-clie
     MemoryOperations = require('./memops'),
     buffer = require("./../buffer.js");
 
-// Callback gets the next iteration as first
-function poll (maxRetries, timeout, cb) {
-  if (maxRetries < 0)
-    throw Error("Retry limit exceeded");
-
-  cb(function () {
-    setTimeout(function () {
-      poll(cb, maxRetries-1, timeout);
-    }, timeout || 50);
-  });
-}
-
 function SerialTransaction (finishCallback, errorCallback) {
   Transaction.apply(this, arraify(arguments, 2));
 
   this.init(finishCallback, errorCallback);
 }
+
 SerialTransaction.prototype = new Transaction();
 
 SerialTransaction.prototype.init = function (finishCallback, errorCallback) {
@@ -41,7 +30,7 @@ SerialTransaction.prototype.init = function (finishCallback, errorCallback) {
 
   this.memOps = new MemoryOperations();
   this.memOps.CHIP_ERASE_ARR = [0xAC, 0x80, 0x00, 0x00];
-}
+};
 
 SerialTransaction.prototype.errCb = function (message, id) {
   this.cleanup();
@@ -73,26 +62,19 @@ SerialTransaction.prototype.writeThenRead_ = function (outgoingMsg, responsePayl
   var outgoingBinary = buffer.binToBuf(outgoingMsg),
       self = this;
 
-  // schedule a read in 100ms
   this.serial.send(this.connectionId, outgoingBinary, function(writeArg) {
-    self.consumeMessage(responsePayloadSize, callback, function (error) {
-      self.errCb(error);
-      self.serial.disconnect(self.connectionId, function (ok) {
-        if (ok) {
-          self.connectionId = null;
-          self.log.log("Disconnected ok");
-        } else
-          self.log.error("Could not disconnect from " + this.connectionId);
-      });
-    });
+    self.consumeMessage(responsePayloadSize, callback, self.errCb);
   });
-};
+}
 
-// Simply wayt for byte
+
+// Simply wayt for bytes
 SerialTransaction.prototype.consumeMessage = function (payloadSize, callback, errorCb) {
-  throw new Error("Not implemented");
+  setTimeout(function () {
+    // Hide the strange arguments.
+    self.buffer.readAsync(payloadSize, callback, 500, self.errCb);
+  }, 100);
 };
-
 
 SerialTransaction.prototype.readToBuffer = function (readArg) {
   if (this.connectionId != readArg.connectionId) {
@@ -100,7 +82,6 @@ SerialTransaction.prototype.readToBuffer = function (readArg) {
   }
 
   this.buffer.write(readArg);
-  this.log.log("Received:", readArg);
 
   // Note that in BabelFish this does not ensure that the listener
   // stops.
@@ -156,6 +137,18 @@ SerialTransaction.prototype.writeByte = function (data, addr, cb) {
     writeOp = this.memoryOps.write(addr);
   }
 
+  // Callback gets the next iteration as first
+  function poll (maxRetries, timeout, cb) {
+    if (maxRetries < 0)
+      throw Error("Retry limit exceeded");
+
+    cb(function () {
+      setTimeout(function () {
+        poll(cb, maxRetries-1, timeout);
+      }, timeout);
+    });
+  }
+
   self.cmd(writeOp, function (ok, data) {
     if (!ok)
       throw Error("Failed to send operation", writeOp);
@@ -168,6 +161,24 @@ SerialTransaction.prototype.writeByte = function (data, addr, cb) {
         }
       });
     });
+  });
+};
+
+SerialTransaction.prototype.destroyOtherConnections = function (name, cb) {
+  var self = this;
+  this.serial.getConnections(function (cnx) {
+    cnx.forEach(function (c) {
+      if (c.name == name) {
+        self.log.log("Closing connection ", c.connectionId);
+        self.serial.disconnect(c.connectionId, function (ok) {
+          if (!ok) {
+            this.errCb("Failed to close connection ", c.connectionId);
+          }
+        });
+      }
+    });
+
+    cb();
   });
 };
 

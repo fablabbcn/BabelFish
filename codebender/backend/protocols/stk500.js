@@ -38,10 +38,13 @@ STK500Transaction.prototype.cmd = function (cmd, cb) {
 STK500Transaction.prototype.flash = function (deviceName, sketchData) {
   this.sketchData = sketchData;
   var self = this;
-  this.serial.connect(deviceName, {bitrate: 115200, name: deviceName},
-                      function (connectArg) {
-                        self.transition('connectDone', sketchData, connectArg);
-                      });
+  self.destroyOtherConnections(
+    deviceName,
+    function  () {
+      self.serial.connect(deviceName,
+                          {bitrate: 115200, name: deviceName},
+                          self.transitionCb('connectDone', sketchData));
+    });
 };
 
 STK500Transaction.prototype.eraseThenFlash  = function (deviceName, sketchData, dontFlash) {
@@ -68,45 +71,37 @@ STK500Transaction.prototype.connectDone = function (hexCode, connectArg) {
 
 };
 
-STK500Transaction.prototype.dtrSent = function (ok) {
-  if (!ok) {
-    this.errCb("Couldn't send DTR");
-  }
-  log.log("DTR sent (low) real good");
-
-  this.buffer.drain(this.transitionCb('drainedAgain'));
-}
-
-STK500Transaction.prototype.drainedAgain = function (readArg) {
-  var self = this;
-  log.log("DRAINED " + readArg.bytesRead + " BYTES");
-  if (readArg.bytesRead == 1024) {
-    // keep draining
-    self.buffer.drain(this.trasitioncb('drainedBytes'));
-  } else {
-    // Start the protocol
-    setTimeout(function() {
-      self.writeThenRead_([self.STK.GET_SYNC, self.STK.CRC_EOP],
-                          0, self.transitionCb('inSyncWithBoard'));
-    }, 50);
-  }
-
-};
-
 STK500Transaction.prototype.drainedBytes = function (readArg) {
   var self = this;
   log.log("DRAINED ", readArg.bytesRead, " BYTES, setting DTR/RTS to low");
   setTimeout(function() {
     self.serial.setControlSignals(self.connectionId, {dtr: false, rts: false}, function(ok) {
-      log.log("Lowered DTR/RTS, done: ", ok);
+      if (!ok) {
+        self.errCb("Couldn't send DTR");
+        return;
+      }
       setTimeout(function() {
         self.serial.setControlSignals(self.connectionId, {dtr: true, rts: true}, function(ok) {
-          log.log("Raised DTR/RTS, done: " + ok);
+          log.log("Raised DTR/RTS, done: ", ok);
           setTimeout(self.transitionCb('dtrSent', ok), 500);
         });
       }, 500);
     });
   }, 500);
+};
+
+STK500Transaction.prototype.dtrSent = function (ok) {
+  var self = this;
+  if (!ok) {
+    this.errCb("Couldn't send DTR");
+    return;
+  }
+  log.log("DTR sent (low) real good");
+
+  this.buffer.drain(function () {
+    self.writeThenRead_([self.STK.GET_SYNC, self.STK.CRC_EOP],
+                        0, self.transitionCb('inSyncWithBoard'));
+  });
 };
 
 STK500Transaction.prototype.inSyncWithBoard = function (ok, data) {
@@ -151,16 +146,15 @@ STK500Transaction.prototype.doneProgramming = function () {
 
 STK500Transaction.prototype.isProgramming = function () {
   return this.sketchData == null;
-}
+};
 
 STK500Transaction.prototype.leftProgmode = function (ok, data) {
   var self = this;
   this.cleanup(this.finishCallback);
-}
+};
 
 STK500Transaction.prototype.programFlash = function (offset, length, doneCallback) {
-  var payload,
-      data = this.sketchData;
+  var data = this.sketchData;
   log.log("program flash: data.length: ", data.length, ", offset: ", offset, ", length: ", length);
 
   if (offset >= data.length) {
@@ -169,23 +163,10 @@ STK500Transaction.prototype.programFlash = function (offset, length, doneCallbac
     return;
   }
 
-  if (offset + length > data.length) {
-    log.log("Grabbing " + length + " bytes would go past the end.");
-    log.log("Grabbing bytes " + offset + " to " + data.length + " bytes would go past the end.");
-    payload = data.slice(offset, data.length);
-    var padSize = length - payload.length;
-    log.log("Padding " + padSize + " 0 byte at the end");
-    for (var i = 0; i < padSize; ++i) {
-      payload.push(0);
-    }
-  } else {
-    log.log("Grabbing bytes: " + offset + " until " + (offset + length));
-    payload = data.slice(offset, offset + length);
-  }
-
-  var addressBytes = buffer.storeAsTwoBytes(offset / 2); // Word address, verify this
-  var sizeBytes = buffer.storeAsTwoBytes(length);
-  var kFlashMemoryType = 0x46;
+  var payload = this.padOrSlice(data, offset, length),
+      addressBytes = buffer.storeAsTwoBytes(offset / 2),
+      sizeBytes = buffer.storeAsTwoBytes(length),
+      kFlashMemoryType = 0x46;
 
   var loadAddressMessage = [
     this.STK.LOAD_ADDRESS, addressBytes[1], addressBytes[0], this.STK.CRC_EOP];
@@ -214,10 +195,31 @@ STK500Transaction.prototype.programFlash = function (offset, length, doneCallbac
 
 STK500Transaction.prototype.consumeMessage = function (payloadSize, callback, errorCb) {
   var self = this;
+  log.log("Will now read");
+  self.buffer.readAsync(payloadSize + 2, function  (arg) {
+    // XXX: Maybe we shouldn't destroy arg but probably noone will
+    // care.
+    if (arg.data.shift() != self.STK.INSYNC)
+      errorCb("Expected STK_INSYNC (" + buffer.hexRep(self.STK.INSYNC) +
+              ") at the beginning of received message" +
+              buffer.hexRep(arg.data));
+
+    if (arg.data.pop() != self.STK.OK)
+      errorCb("Expected STK_INSYNC (" + buffer.hexRep(self.STK.OK) +
+              ") at the end of received message" +
+              buffer.hexRep(arg.data));
+
+    callback(true, arg);
+
+  }, 2000, this.errCb.bind(this, "STK failed timeout"));
+};
+
+STK500Transaction.prototype.oldConsumeMessage = function (payloadSize, callback, errorCb) {
+  var self = this;
   self.log.log("consumeMessage (conn=", self.connectionId,
                ", payload_size=", payloadSize, " ...)");
   var ReadState = {
-    READY_FOR_IN_SYNC: 0,
+    READY_IN_SYNC: 0,
     READY_FOR_PAYLOAD: 1,
     READY_FOR_OK: 2,
     DONE: 3,
@@ -333,6 +335,5 @@ STK500Transaction.prototype.consumeMessage = function (payloadSize, callback, er
                             self.errCb("Connection timed out.");
                           }); }, 10);
 };
-
 
 module.exports.STK500Transaction = STK500Transaction;

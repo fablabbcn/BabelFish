@@ -59,14 +59,14 @@ Buffer.prototype = {
   },
 
   removeReader: function (reader) {
-    for (var i = 0; i < this.readers.length; i++) {
-      if (this.readers[i] === reader) {
-        if (reader.timeout)
-          clearTimeout(reader.timeout);
+    log.log("Removing reader:", reader);
+    var len = this.readers.length;
+    this.readers = this.readers.filter(function (r) {return (r !== reader);});
 
-        return (delete this.readers[i]);
-      }
-    }
+    if (len == this.readers.length + 1 && reader.timeout )
+      clearTimeout(reader.timeout);
+    else
+      log.warn("Tried to remove nonexistent reader.");
 
     return false;
   },
@@ -75,7 +75,8 @@ Buffer.prototype = {
   readAsync: function (maxBytes, callback, timeout, timeoutCb) {
     var reader = {timestamp: (new Date).getTime(),
                   expectBytes: maxBytes,
-                  callback: callback},
+                  callback: callback,
+                  ttl: timeout},
         self = this;
 
     log.log("Registering reader:", reader);
@@ -83,6 +84,7 @@ Buffer.prototype = {
     if (timeout) {
       log.log("Setting reader timeout at", timeout);
       reader.timeout = setTimeout(function () {
+        log.log("Reader timed out", reader);
         self.removeReader(reader);
         if (timeoutCb) {
           timeoutCb();
@@ -92,19 +94,19 @@ Buffer.prototype = {
       }, timeout);
     }
 
-    this.runAsyncReaders();
+    this.runAsyncReaders(this.readers);
   },
 
-  runAsyncReaders: function () {
+  runAsyncReaders: function (readers) {
     var ret = false;
-    while (this.readers[0] &&
-           this.readers[0].expectBytes <= this.databuffer.length){
-      var reader = this.readers.shift();
-      if (reader.timeout)
-        clearTimeout(reader.timeout);
+    log.log("Running reader:", readers, "databauffer:", this.databuffer);
+    while (readers[0] &&
+           readers[0].expectBytes <= this.databuffer.length) {
 
-      log.log("Released reader:", reader);
+      log.log("Reader found");
+      var reader = this.readers[0];
       this.read(reader.expectBytes, reader.callback);
+      this.removeReader(reader);
       ret = true;
     }
     return ret;
@@ -124,7 +126,8 @@ Buffer.prototype = {
     var hexData = bufToBin(readArg.data);
     this.databuffer = this.databuffer.concat(hexData);
     log.log("Pushing to buffer [", hexData.length, "]: ", hexData);
-    this.runAsyncReaders();
+    if (this.readers.length > 0)
+      this.runAsyncReaders(this.readers);
   },
 
   // Dump the entire databuffer
