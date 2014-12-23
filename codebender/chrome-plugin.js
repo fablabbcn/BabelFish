@@ -130,7 +130,7 @@ Plugin.prototype = {
                    mcu,
                    cb) {
 
-    var transaction = new protocols[protocol](), self = this;
+    var transaction = new protocols[protocol](cb), self = this;
     setTimeout(function () {
       console.log("Code length", code.length, typeof code,
                   "Protocol:", protocols,
@@ -143,7 +143,7 @@ Plugin.prototype = {
         code = Array.prototype.slice.call(code);
       }
 
-      transaction.flash(device, code, cb);
+      transaction.flash(device, code);
     }, 0);
   },
 
