@@ -48,12 +48,13 @@ STK500Transaction.prototype.flash = function (deviceName, sketchData) {
 };
 
 STK500Transaction.prototype.eraseThenFlash  = function (deviceName, sketchData, dontFlash) {
+  var self = this;
   log.log("Erasing chip");
   self.writeThenRead_(this.memOps.CHIP_ERASE_ARR, function  () {
     // XXX: Maybe we should care about the response when asking to
     // erase
     if (!dontFlash)
-      this.transition('flash', deviceName, sketchData);
+      self.transition('flash', deviceName, sketchData);
   });
 };
 
