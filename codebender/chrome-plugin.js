@@ -10,7 +10,7 @@ function Plugin() {
   dbg("Initializing plugin.");
   this.serial = chrome.serial;
   this.version = "1.6.0.8";
-  this.instance_id = window.plugins_initialized++;
+  // this.instance_id = window.plugins_initialized++;
 
   this.bufferSize = 100;
 
@@ -208,10 +208,10 @@ Plugin.prototype = {
 
       function unsafeCleanReadingInfo () {
         self.serial.onReceive.removeListener(self.readingInfo.handler);
-        self.serial.disconnect(self.readingInfo.connectionId, function (ok) {
+        var connectionId = self.readingInfo.connectionId;
+        self.serial.disconnect(connectionId, function (ok) {
           if (!ok) {
-            console.log("Reading info:", self.readingInfo);
-            throw Error("Failed to disconnect");
+            throw Error("Failed to disconnect: "+connectionId);
             // XXX: Maybe try again
           } else {
             dbg("Diconnected ok:", self.readingInfo);
@@ -219,8 +219,9 @@ Plugin.prototype = {
         });
 
         // Cleanup syncrhronously
-        console.log('Clearing readingInfo');
+        console.log('Clearing readingInfo:', connectionId);
         self.readingInfo = null;
+        self.disconnectCallback(null, 'disconnect');
       }
 
       if (force)
@@ -271,7 +272,8 @@ Plugin.prototype = {
   },
 
   setCallback: function (cb) {
-    this.callback = cb;
+    // Compilerflasher uses this callback to disconnect from serial monitor
+    this.disconnectCallback = cb;
   },
 
   setErrorCallback: function (cb) {
