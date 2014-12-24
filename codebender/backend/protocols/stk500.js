@@ -86,9 +86,9 @@ STK500Transaction.prototype.drainedBytes = function (readArg) {
           log.log("Raised DTR/RTS, done: ", ok);
           setTimeout(self.transitionCb('dtrSent', ok), 500);
         });
-      }, 500);
+      }, 0);
     });
-  }, 500);
+  }, 0);
 };
 
 STK500Transaction.prototype.dtrSent = function (ok) {

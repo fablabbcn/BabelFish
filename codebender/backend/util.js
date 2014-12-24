@@ -39,6 +39,12 @@ function infinitePoll (timeout, cb) {
   return stopPoll;
 }
 
+function dbg (varargs) {
+  var args = arraify(arguments, 0, '[plugin frontent]');
+  return console.log.apply(console, args);
+}
+
 module.exports.arraify = arraify;
 module.exports.deepCopy = deepCopy;
 module.exports.infinitePoll = infinitePoll;
+module.exports.dbg = dbg;

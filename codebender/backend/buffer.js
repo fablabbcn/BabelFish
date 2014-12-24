@@ -98,9 +98,9 @@ Buffer.prototype = {
     this.runAsyncReaders();
   },
 
-  runAsyncReaders: function (readers) {
+  runAsyncReaders: function () {
     var ret = false;
-    log.log("Running reader:", readers, "databauffer:", this.databuffer);
+    log.log("Running readers:", this.readers, "databuffer:", this.databuffer);
     while (this.readers[0] &&
            this.readers[0].expectBytes <= this.databuffer.length) {
 

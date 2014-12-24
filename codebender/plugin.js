@@ -14,5 +14,5 @@ if (!window.chrome) {
 }
 
 if (!window.CodebenderPlugin) {
-  throw Error("No extension or plugin.");
+  console.warn("No extension or plugin.");
 }

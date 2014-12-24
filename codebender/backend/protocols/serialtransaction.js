@@ -64,6 +64,12 @@ SerialTransaction.prototype.writeThenRead_ = function (outgoingMsg, responsePayl
       self = this;
 
   this.serial.send(this.connectionId, outgoingBinary, function(writeArg) {
+    self.serial.flush(self.connectionId, function (ok) {
+      if (!ok) {
+        self.errCb(1,'Failed to flush');
+        return;
+      }
+    });
     self.consumeMessage(responsePayloadSize, callback, self.errCb.bind(self));
   });
 }
