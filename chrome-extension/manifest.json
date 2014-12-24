@@ -12,7 +12,9 @@
 	"matches": [
 	    "http://ec2-54-174-134-98.compute-1.amazonaws.com:8080/*",
         "http://localhost:8080/*",
-        "http://localhost/*"
+        "http://localhost/*",
+        "http://staging.codebender.cc/*",
+        "https://staging.codebender.cc/*"
 	],
 	"accepts_tls_channel_id": false
     },
@@ -38,6 +40,8 @@
     "usb",
     "http://localhost:8080/*",
 	"http://ec2-54-174-134-98.compute-1.amazonaws.com:8080/*",
-    "http://localhost/*"
+    "http://localhost/*",
+    "http://staging.codebender.cc/*",
+    "https://staging.codebender.cc/*"
     ]
 }
