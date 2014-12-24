@@ -116,6 +116,7 @@ RPCHost.prototype = {
   // pass them to sendResp
   cbHandlerFactory: function (sendResp, callbackId, methodPath, sender) {
     var registered = [],
+        self = this,
         ret = function (var_args) {
           var args = Array.prototype.slice.call(arguments),
               msg = {args: argsEncode(args), error: null};
@@ -124,12 +125,14 @@ RPCHost.prototype = {
           try {
             sendResp(msg);
           } catch (e) {
-            console.warn("Tried to send to a closed connection. FIXME.",
+            console.warn("Tried to send to a closed connection. Considering the tab closed.",
                          {
                            msg: msg,
                            error: e,
                            sender: sender}
                         );
+            // This is probably the only way to be sure the tab closed.
+            self.cleanAllCallbacks(sender);
           }
         };
 
@@ -184,7 +187,7 @@ RPCHost.prototype = {
   },
 
   // Remove the cleaned from the lsitener stacks
-  garbageCollectCallbacks: function (listener) {
+  garbageCollectCallbacks: function () {
     var self = this;
     dbg("Garbage collection");
     function gcListener(ls) {
@@ -225,5 +228,6 @@ RPCHost.prototype = {
         console.warn("Dont know how to clean callbacks of:", ls);
       }
     });
+    self.gargbageCollectCallbacks();
   }
 };
