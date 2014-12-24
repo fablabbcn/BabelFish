@@ -4,9 +4,10 @@ var config = {
   //  extensionId: "adkkcgijolkkeldfhjcabekomonffhck", // windows remote
   // extensionId: "iihpjpedfemglflaabiadnnjanplblia", // mac local
   extensionId: "emkdlimhllpafhceedllklcaogghkadf",
+  // extensionId: "ejbadlbnpnlkflknleplmkebianiiegc", // Koka ubuntu
   methods: {
     serial: {
-      methods: ['getDevices', 'send', 'connect', 'disconnect', 'setControlSignals', 'getControlSignals', 'getConnections'],
+      methods: ['getDevices', 'send', 'connect', 'disconnect', 'setControlSignals', 'getControlSignals', 'getConnections', 'flush'],
       listeners: [{starter: 'onReceiveError.addListener',
                    cleaner: 'onReceiveError.removeListener'},
                   {starter: 'onReceive.addListener',

@@ -3,6 +3,9 @@
 var protocols = require('./backend/protocols').protocols,
 util = require('./backend/util'),
 _create_hex_parser = require('./backend/hexparser');
+
+var dbg = util.dbg;
+
 dbg("Looks like we are on chrome.");
 
 // A plugin object implementing the plugin interface.
@@ -16,13 +19,13 @@ function Plugin() {
 
   var self = this;
   self.serial.onReceiveError.addListener(function (info) {
-    console.error("Failed connection: " + info.connectionId +" ( " + info.error + " )");
+    console.warn("Failed connection: " + info.connectionId +" ( " + info.error + " )");
     self.serial.getConnections(function (connections) {
       connections.forEach(function (ci) {
         if (ci.connectionId == info.connectionId) {
           self.serial.disconnect(info.connectionId, function (ok) {
             if (!ok) {
-              console.error("Failed to disconnect serial from", info);
+              console.warn("Failed to disconnect serial from", info);
             }
           });
         }
@@ -45,7 +48,10 @@ Plugin.prototype = {
     dbg("Reading Info:",this.readingInfo);
     if (cb !== this.readingInfo.callbackUsedInHandler) {
       this.readingInfo.callbackUsedInHandler = cb;
+      var self = this;
       this.readingInfo.handler = function (readArg) {
+        if (!self.readingInfo)
+          return;
         if (readArg.connectionId != connectionId)
           return;
 
@@ -56,24 +62,37 @@ Plugin.prototype = {
           chars.push(bufferView[i]);
         }
 
+        if (!self.readingInfo.buffer_)
+          self.readingInfo.buffer_ = [];
+
         // FIXME: if the last line does not end in a newline it should
         // be buffered
         var msgs = String.fromCharCode.apply(null, chars).split("\n");
-        console.log("Bytes received:", readArg.data.length);
         // return cb("chrome-serial", rcv);
-        // XXX: This is a bit hacky but it should work.
-        // If we have complete messages or if the message so far is too large
-        this.readingInfo.buffer_ = this.readingInfo.buffer_ || "";
-        if (msgs.length > 1 ||
-            (this.readingInfo.buffer_ + msgs[0]).length > this.bufferSize) {
-          msgs[0] = this.readingInfo.buffer_ + msgs[0];
-          this.readingInfo.buffer_ = "";
-          cb("chrome-serial", msgs.join("\n"));
+        // There are three possible issues (solutions):
+        // - Output not readable if it is not delimited by new lines (new line split)
+        // - Large lines creates large buffers (timeout/buffersize)
+        // - Large lines are buffered for ever (timeout)
+
+        // self.readingInfo.buffer_ = self.readingInfo.buffer_.concat(msgs);
+        var buffer_head = self.readingInfo.buffer_;
+        var buffer_tail = self.readingInfo.buffer_.pop() || '';
+        var msgs_head = msgs.shift() || '';
+        var tail_msgs = msgs;
+        self.readingInfo.buffer_ = buffer_head.concat([buffer_tail + msgs_head]).concat(tail_msgs);
+
+        function __flushBuffer() {
+          var ret = self.readingInfo.buffer_.join("\n");
+          self.readingInfo.buffer_ = [];
+          cb("chrome-serial", ret);
+        }
+        if (self._getBufferSize(self.readingInfo.buffer_) > this.bufferSize) {
+          __flushBuffer();
         } else {
-          this.readingInfo.buffer_ += msgs[0];
           setTimeout(function () {
-            cb("chrome-serial", this.readingInfo.buffer_);
-            this.readingInfo.buffer_ = "";
+            if (self.readingInfo && self.readingInfo.buffer_.length > 0) {
+              __flushBuffer();
+            }
           }.bind(this), 200);
         }
       }.bind(this);
@@ -82,31 +101,36 @@ Plugin.prototype = {
     return this.readingInfo.handler;
   },
 
+  _getBufferSize: function (buffer_) {
+    return buffer_.reduce(function (a, b) {
+      return a.length + b.length;
+    });
+  },
+
+  _rcvError: function (connectionId, info) {
+    if (info.connectionId == connectionId) {
+      console.warn('Receive error:', info);
+      this.serial.onReceiveError.removeListener(this._rcvError);
+      this.disconnect(true);
+    }
+  },
+
   // Async methods
   serialRead: function (port, baudrate, cb, valCb) {
-    console.log("SerialRead connecting to port:", port);
+    dbg("SerialRead connecting to port:", port);
     var self = this;
     if (typeof baudrate !== "number") baudrate = Number(baudrate);
 
     this.serial.connect(port, {bitrate: baudrate, name: port}, function (info) {
       if (info) {
-        console.log("Serial connected to: ", info);
+        dbg("Serial connected to: ", info);
         self.readingInfo = info;
-        self.readingInfo.stopPoll = util.infinitePoll(500, function (next) {
-          self.serial.getConnections(function (cnx) {
-            var isConnected = cnx.some(function (c) {
-              return c.connectionId == self.readingInfo.connectionId;
-            });
-            if (isConnected)
-              next();
-            else
-              self.disconnect(true);
-          });
-        });
         self.serial.onReceive.addListener(
-          self.readingHandlerFactory(self.readingInfo.connectionId, cb));
+          self.readingHandlerFactory(self.readingInfo.connectionId, cb)
+        );
+        self.serial.onReceiveError.addListener(self._rcvError.bind(self, info.connectionId));
       } else {
-        throw Error("Failed to connect serial:", {bitrate: baudrate, name: port});
+        console.error("Failed to connect serial:", {bitrate: baudrate, name: port});
       }
     });
   },
@@ -152,7 +176,7 @@ Plugin.prototype = {
     },
     transaction = new protocols[protocol](finishCallback, errorCallback), self = this;
     setTimeout(function () {
-      console.log("Code length", code.length, typeof code,
+      dbg("Code length", code.length, typeof code,
                   "Protocol:", protocols,
                   "Device:", device);
 
@@ -208,18 +232,19 @@ Plugin.prototype = {
 
       function unsafeCleanReadingInfo () {
         self.serial.onReceive.removeListener(self.readingInfo.handler);
+        self.serial.onReceiveError.removeListener(self._rcvError);
         var connectionId = self.readingInfo.connectionId;
         self.serial.disconnect(connectionId, function (ok) {
           if (!ok) {
-            throw Error("Failed to disconnect: "+connectionId);
+            console.warn("Failed to disconnect: "+connectionId);
             // XXX: Maybe try again
           } else {
-            dbg("Diconnected ok:", self.readingInfo);
+            dbg("Disconnected ok:", self.readingInfo);
           }
         });
 
         // Cleanup syncrhronously
-        console.log('Clearing readingInfo:', connectionId);
+        dbg('Clearing readingInfo:', connectionId);
         self.readingInfo = null;
         self.disconnectCallback(null, 'disconnect');
       }
@@ -256,16 +281,16 @@ Plugin.prototype = {
         bufferView[i] = strData.charCodeAt(i);
       }
 
-      console.log("Sending data:", data[0], "from string:", strData);
+      dbg("Sending data:", data[0], "from string:", strData);
       this.serial.send(this.readingInfo.connectionId, data, function (sendInfo){
         if (!sendInfo) {
-          throw Error("No connection to serial monitor");
+          console.error("No connection to serial monitor");
         } else if(sendInfo.error) {
-          throw Error("Failed to send through",
+          console.error("Failed to send through",
                       self.readingInfo,":", sendInfo.error);
         }
 
-        console.log("Sent bytes:", sendInfo.bytesSent, "connid: ");
+        dbg("Sent bytes:", sendInfo.bytesSent, "connid: ");
         if (cb) cb(sendInfo.bytesSent);
       });
     }

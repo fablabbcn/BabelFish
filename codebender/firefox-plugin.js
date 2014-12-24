@@ -37,7 +37,7 @@ function Plugin() {
   this.element_.setAttribute("xmlns", "http://www.w3.org/1999/html");
 
   document.body.appendChild(this.element_);
-  this.element_.setAttribute("id", this.element_.instanceId);
+  this.element_.id = "plugin0";
 
   prototypeProperties(this.element_).forEach( function (attr) {
     if (typeof this.element_[attr] == 'function') {
