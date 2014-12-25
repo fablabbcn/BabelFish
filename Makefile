@@ -1,5 +1,5 @@
 firefox = /Applications/Firefox.app/Contents/MacOS/firefox # open  -n -a firefox --args
-chrome = ~/Applications/Chromium.app/Contents/MacOS/Chromium
+chrome = $(shell which chrome || which chromium || echo  ~/Applications/Chromium.app/Contents/MacOS/Chromium)
 export DYLD_LIBRARY_PATH=$(CURDIR)/root/lib:$$DYLD_LIBRARY_PATH
 build_script = $(CURDIR)/plugin/build.sh
 XPI = $(CURDIR)/plugin/codebendercc.xpi
@@ -101,10 +101,16 @@ kill-server:
 	kill $(shell cat server_pid)
 	rm server_pid
 
-chrome-args = --user-data-dir=/tmp/chromium-user-data --load-extension=$(CURDIR)/chrome-extension --no-first-run, --no-default-browser-check --debug-print --enable-logging=stderr --v=1
+chrome-args = --user-data-dir=/tmp/chromium-user-data --load-extension=$(CURDIR)/chrome-extension --no-first-run, --no-default-browser-check --debug-print --enable-logging=stderr --v=1 --disable-web-security --no-sandbox
+chrome-log-dir = $(CURDIR)/chrome-logs
 
-run-chrome: $(CURDIR)/bundles/chrome-client.js
-	($(chrome) $(chrome-args) $(URL); rm -rf /tmp/chromium-user-data) &
+$(chrome-log-dir):
+	mkdir $@
+
+run-chrome: $(CURDIR)/bundles/chrome-client.js | /tmp $(chrome-log-dir)
+	((sleep 3 &&\
+		$(chrome) $(chrome-args) $(URL) 2> $(chrome-log-dir)/chrome-$(shell date "+%s").log); \
+		rm -rf /tmp/chromium-use2r-data) &
 
 firefox-arch = $(CURDIR)/test/firefox-arch
 GET_FF_PROFILES = (find /var/folders -ls | grep  'tmp-[0-9a-zA-Z]*$$') 2> /dev/null | sort -r | awk '{print $$11}'
