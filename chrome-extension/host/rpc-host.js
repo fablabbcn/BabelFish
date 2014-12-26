@@ -118,6 +118,10 @@ RPCHost.prototype = {
     var registered = [],
         self = this,
         ret = function (var_args) {
+          if (chrome.runtime.lastError) {
+            self.sendError(chrome.runtime.lastError, sendResp);
+            return false;
+          }
           var args = Array.prototype.slice.call(arguments),
               msg = {args: argsEncode(args), error: null};
 
@@ -161,12 +165,23 @@ RPCHost.prototype = {
     return ret;
   },
 
-  // Given a starter or a cleaner, get the object
+  // Given a starter or a cleaner or an object, get the object
   getListenerObject: function (listenerMethodName) {
-    return this.supportedListeners.filter(function (l) {
-      return (l.cleaner == listenerMethodName ||
-              l.starter == listenerMethodName);
-    })[0];
+    var filter;
+
+    if (typeof listenerMethodName === "string")
+      filter = function (l) {
+        return (l.cleaner == listenerMethodName ||
+                l.starter == listenerMethodName);
+      };
+    else
+      filter = function (l) {
+        return (l.cleaner == listenerMethodName.cleaner &&
+                l.starter == listenerMethodName.starter);
+      };
+
+    return this.supportedListeners.filter(filter);
+
   },
 
   // Get all stored callbacks related to listenerMethodName that may
@@ -177,11 +192,13 @@ RPCHost.prototype = {
       return (l.cleaner == listenerMethodName ||
               l.starter == listenerMethodName);
     }),
+        self = this,
         // Concat the listeners that match starts, cleaners and the methodname
         ret = listenerObjects.reduce(function (lst, lo) {
-          return lst.concat(this.listenerCallbacks[lo.starter]).
-            concat(this.listenerCallbacks[lo.cleaner]);
-        }.bind(this), []).concat(this.listenerCallbacks[listenerMethodName]);
+          return lst.concat(self.listenerCallbacks[lo.starter])
+            .concat(self.listenerCallbacks[lo.cleaner]);
+        }, [])
+          .concat(this.listenerCallbacks[listenerMethodName] || []);
 
     return ret;
   },
@@ -221,13 +238,17 @@ RPCHost.prototype = {
         self.listenerCallbacks[ls.starter].forEach(function (cbToClean) {
           if (cbToClean.sender == sender) {
             dbg("Cleaning callback:", cbToClean.callbackId);
+            // Clean with api
             path2callable(self.obj, ls.cleaner)(cbToClean);
+
+            // Clean from data structure
+            self.listenerCallbacks[ls.cleaner].push(cbToClean);
           }
         });
       } else {
         console.warn("Dont know how to clean callbacks of:", ls);
       }
     });
-    self.gargbageCollectCallbacks();
+   this.garbageCollectCallbacks();
   }
 };
