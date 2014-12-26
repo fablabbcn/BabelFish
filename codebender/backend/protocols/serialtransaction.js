@@ -40,6 +40,8 @@ SerialTransaction.prototype.errCb = function (id, var_message) {
     this.errorCallback(id, logargs.join(''));
 };
 
+SerialTransacrion.prototype.getIdFromDevice = function ( )
+
 SerialTransaction.prototype.cleanup = function (callback) {
   var self = this;
   this.serial.onReceive.removeListener(this.listenerHandler);
@@ -181,6 +183,9 @@ SerialTransaction.prototype.destroyOtherConnections = function (name, cb) {
         self.serial.disconnect(c.connectionId, function (ok) {
           if (!ok) {
             self.errCb("Failed to close connection ", c.connectionId);
+          } else {
+            self.serial.onReceiveError.forceDispatch(
+              {connectionId: c.connectionId, error: "device_lost"});
           }
         });
       }
