@@ -1,8 +1,8 @@
 // file: chrome-plugin.js
 
 var protocols = require('./backend/protocols').protocols,
-util = require('./backend/util'),
-_create_hex_parser = require('./backend/hexparser');
+    util = require('./backend/util'),
+    _create_hex_parser = require('./backend/hexparser');
 
 var dbg = util.dbg;
 
@@ -111,7 +111,7 @@ Plugin.prototype = {
     if (info.connectionId == connectionId) {
       console.warn('Receive error:', info);
       this.serial.onReceiveError.removeListener(this._rcvError);
-      this.disconnect(true);
+      this.disconnect();
     }
   },
 
@@ -134,14 +134,6 @@ Plugin.prototype = {
       }
     });
   },
-
-  // Disconnect all chrome's connections.
-  disconnectAll: function () {
-    this.serial.getConnections(function (cons) {
-      this.serial.disconnect(cons[0].connectionID, this.disconnectAll.bind(this));
-    });
-  },
-
 
   doflashWithProgrammer: function (device, code, maxsize, string,
                                    programmerData, mcu, flash_callback) {
@@ -167,18 +159,18 @@ Plugin.prototype = {
                    cb) {
 
     var from = null,
-    finishCallback = function () {
-      var pluginReturnValue = 0;
-      cb(from, pluginReturnValue);
-    },
-    errorCallback = function (msg, id) {
-      cb(from, id);
-    },
-    transaction = new protocols[protocol](finishCallback, errorCallback), self = this;
+        finishCallback = function () {
+          var pluginReturnValue = 0;
+          cb(from, pluginReturnValue);
+        },
+        errorCallback = function (msg, id) {
+          cb(from, id);
+        },
+        transaction = new protocols[protocol](finishCallback, errorCallback), self = this;
     setTimeout(function () {
       dbg("Code length", code.length, typeof code,
-                  "Protocol:", protocols,
-                  "Device:", device);
+          "Protocol:", protocols,
+          "Device:", device);
 
       // STK500v1
       // Binary string to byte array
@@ -226,40 +218,33 @@ Plugin.prototype = {
 
   // Inherently sync or void methods. Force is if we don't know we
   // will still be there to hear the callback.
-  disconnect: function (force) {
-    if (this.readingInfo) {
-      var self = this;
+  disconnect: function () {
+    var self = this;
 
-      function unsafeCleanReadingInfo () {
-        self.serial.onReceive.removeListener(self.readingInfo.handler);
-        self.serial.onReceiveError.removeListener(self._rcvError);
-        var connectionId = self.readingInfo.connectionId;
-        self.serial.disconnect(connectionId, function (ok) {
-          if (!ok) {
-            console.warn("Failed to disconnect: "+connectionId);
-            // XXX: Maybe try again
-          } else {
-            dbg("Disconnected ok:", self.readingInfo);
-          }
-        });
+    if (self.readingInfo) {
+      self.serial.onReceive.removeListener(self.readingInfo.handler);
+      self.serial.onReceiveError.removeListener(self._rcvError);
 
-        // Cleanup syncrhronously
-        dbg('Clearing readingInfo:', connectionId);
-        self.readingInfo = null;
-        self.disconnectCallback(null, 'disconnect');
-      }
+      self.serial.getConnections(function (cnxs) {
+        cnxs.forEach(function (cnx) {
+          if (cnx.connectionId != self.readingInfo.connectionId)
+            return;
 
-      if (force)
-        unsafeCleanReadingInfo();
-      else
-        self.serial.getConnections(function (cnxs) {
-          cnxs.forEach(function (cnx) {
-            if (cnx.connectionId != self.readingInfo.connectionId)
-              return;
-
-            unsafeCleanReadingInfo();
+          self.serial.disconnect(self.readingInfo.connectionId, function (ok) {
+            if (!ok) {
+              console.warn("Failed to disconnect: ", self.readingInfo.connectionId);
+              // XXX: Maybe try again
+            } else {
+              dbg("Disconnected ok:", self.readingInfo);
+            }
           });
         });
+      });
+
+      // Cleanup syncrhronously
+      dbg('Clearing readingInfo:', self.readingInfo.connectionId);
+      self.readingInfo = null;
+      self.disconnectCallback(null, 'disconnect');
     }
   },
 
@@ -287,7 +272,7 @@ Plugin.prototype = {
           console.error("No connection to serial monitor");
         } else if(sendInfo.error) {
           console.error("Failed to send through",
-                      self.readingInfo,":", sendInfo.error);
+                        self.readingInfo,":", sendInfo.error);
         }
 
         dbg("Sent bytes:", sendInfo.bytesSent, "connid: ");
@@ -310,7 +295,7 @@ Plugin.prototype = {
 
   closeTab: function () {
     // Tab may close before the callback so do it unsafe.
-    this.disconnect(true);
+    this.disconnect();
   },
 
   // Internals
