@@ -118,6 +118,10 @@ RPCHost.prototype = {
     var registered = [],
         self = this,
         ret = function (var_args) {
+          if (chrome.runtime.lastError) {
+            self.sendError(chrome.runtime.lastError, sendResp);
+            return false;
+          }
           var args = Array.prototype.slice.call(arguments),
               msg = {args: argsEncode(args), error: null};
 
@@ -228,6 +232,6 @@ RPCHost.prototype = {
         console.warn("Dont know how to clean callbacks of:", ls);
       }
     });
-    self.gargbageCollectCallbacks();
+   this.garbageCollectCallbacks();
   }
 };

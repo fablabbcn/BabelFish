@@ -227,6 +227,7 @@ Plugin.prototype = {
   // Inherently sync or void methods. Force is if we don't know we
   // will still be there to hear the callback.
   disconnect: function (force) {
+    console.log('disconnect');
     if (this.readingInfo) {
       var self = this;
 
