@@ -188,7 +188,7 @@ SerialTransaction.prototype.destroyOtherConnections = function (name, cb) {
             self.serial.onReceiveError.forceDispatch(
               {connectionId: c.connectionId, error: "device_lost"});
           }
-          if (cnx.length >= ++cnt)
+          if (cnt >= cnx.length)
             cb();
         });
       }

@@ -225,17 +225,18 @@ Plugin.prototype = {
       self.serial.onReceive.removeListener(self.readingInfo.handler);
       self.serial.onReceiveError.removeListener(self._rcvError);
 
+      var connectionId = self.readingInfo.connectionId;
       self.serial.getConnections(function (cnxs) {
         cnxs.forEach(function (cnx) {
-          if (cnx.connectionId != self.readingInfo.connectionId)
+          if (cnx.connectionId != connectionId)
             return;
 
-          self.serial.disconnect(self.readingInfo.connectionId, function (ok) {
+          self.serial.disconnect(connectionId, function (ok) {
             if (!ok) {
-              console.warn("Failed to disconnect: ", self.readingInfo.connectionId);
+              console.warn("Failed to disconnect: ", connectionId);
               // XXX: Maybe try again
             } else {
-              dbg("Disconnected ok:", self.readingInfo);
+              dbg("Disconnected ok:", connectionId);
             }
           });
         });
