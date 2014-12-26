@@ -44,7 +44,23 @@ function dbg (varargs) {
   return console.log.apply(console, args);
 }
 
+function forEachWithCallback (array, iterationCb, finishCb) {
+  var arr = array.slice();
+  function nextCb () {
+    if (arr.length != 0) {
+      var item = arr.shift();
+      // Iteration with item
+      iterationCb(item, nextCb);
+    }
+    else {
+      finishCb();
+    }
+  }
+  nextCb();
+}
+
 module.exports.arraify = arraify;
 module.exports.deepCopy = deepCopy;
 module.exports.infinitePoll = infinitePoll;
 module.exports.dbg = dbg;
+module.exports.forEachWithCallback = forEachWithCallback;

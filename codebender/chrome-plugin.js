@@ -18,20 +18,20 @@ function Plugin() {
   this.bufferSize = 100;
 
   var self = this;
-  self.serial.onReceiveError.addListener(function (info) {
-    console.warn("Failed connection: " + info.connectionId +" ( " + info.error + " )");
-    self.serial.getConnections(function (connections) {
-      connections.forEach(function (ci) {
-        if (ci.connectionId == info.connectionId) {
-          self.serial.disconnect(info.connectionId, function (ok) {
-            if (!ok) {
-              console.warn("Failed to disconnect serial from", info);
-            }
-          });
-        }
-      });
-    });
-  });
+  // self.serial.onReceiveError.addListener(function (info) {
+  //   console.warn("Failed connection: " + info.connectionId +" ( " + info.error + " )");
+  //   self.serial.getConnections(function (connections) {
+  //     connections.forEach(function (ci) {
+  //       if (ci.connectionId == info.connectionId) {
+  //         self.serial.disconnect(info.connectionId, function (ok) {
+  //           if (!ok) {
+  //             console.warn("Failed to disconnect serial from", info);
+  //           }
+  //         });
+  //       }
+  //     });
+  //   });
+  // });
   this.errorCallback = function () {};
   this.readingInfo = null;
 
@@ -267,7 +267,7 @@ Plugin.prototype = {
         bufferView[i] = strData.charCodeAt(i);
       }
 
-      dbg("Sending data:", data[0], "from string:", strData);
+      dbg("Sending data:", bufferView, "from string:", strData);
       this.serial.send(this.readingInfo.connectionId, data, function (sendInfo){
         if (!sendInfo) {
           console.error("No connection to serial monitor");

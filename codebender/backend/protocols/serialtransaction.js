@@ -1,6 +1,7 @@
 var _create_chrome_client = require('./../../../chrome-extension/client/rpc-client'),
     Transaction = require('./../transaction').Transaction,
     arraify = require('./../util').arraify,
+    forEachWithCallback = require('./../util').forEachWithCallback,
     MemoryOperations = require('./memops'),
     buffer = require("./../buffer.js");
 
@@ -174,25 +175,29 @@ SerialTransaction.prototype.writeByte = function (data, addr, cb) {
 
 SerialTransaction.prototype.destroyOtherConnections = function (name, cb) {
   var self = this;
-  var cnt = 0;
   this.serial.getConnections(function (cnx) {
-    cnx.forEach(function (c) {
-      cnt ++;
-      if (c.name == name) {
-        self.log.log("Closing connection ", c.connectionId);
-        self.serial.disconnect(c.connectionId, function (ok) {
-          if (!ok) {
-            self.errCb("Failed to close connection ", c.connectionId);
-          } else {
-            self.log.log('Destroying connection:', c.connectionId);
-            self.serial.onReceiveError.forceDispatch(
-              {connectionId: c.connectionId, error: "device_lost"});
-          }
-          if (cnt >= cnx.length)
-            cb();
-        });
-      }
-    });
+    if (cnx.length == 0) {
+      cb();
+    }
+    else {
+      forEachWithCallback(cnx, function (c, next) {
+        if (c.name != name)
+          next();
+        else {
+          self.log.log("Closing connection ", c.connectionId);
+          self.serial.disconnect(c.connectionId, function (ok) {
+            if (!ok) {
+              self.errCb("Failed to close connection ", c.connectionId);
+            } else {
+              self.log.log('Destroying connection:', c.connectionId);
+              self.serial.onReceiveError.forceDispatch(
+                {connectionId: c.connectionId, error: "device_lost"});
+              next();
+            }
+          });
+        }
+      }, cb);
+    }
   });
 };
 
