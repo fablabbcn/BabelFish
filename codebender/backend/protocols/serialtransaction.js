@@ -40,8 +40,6 @@ SerialTransaction.prototype.errCb = function (id, var_message) {
     this.errorCallback(id, logargs.join(''));
 };
 
-SerialTransacrion.prototype.getIdFromDevice = function ( )
-
 SerialTransaction.prototype.cleanup = function (callback) {
   var self = this;
   this.serial.onReceive.removeListener(this.listenerHandler);
