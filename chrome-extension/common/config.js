@@ -7,7 +7,7 @@ var config = {
   // extensionId: "ejbadlbnpnlkflknleplmkebianiiegc", // Koka ubuntu
   methods: {
     serial: {
-      methods: ['getDevices', 'send', 'connect', 'disconnect', 'setControlSignals', 'getControlSignals', 'getConnections', 'flush'],
+      methods: ['getDevices', 'send', 'connect', 'disconnect', 'setControlSignals', 'getControlSignals', 'getConnections', 'flush', 'onReceiveError.forceDispatch'],
       listeners: [{starter: 'onReceiveError.addListener',
                    cleaner: 'onReceiveError.removeListener'},
                   {starter: 'onReceive.addListener',
