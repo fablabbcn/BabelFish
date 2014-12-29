@@ -23,7 +23,24 @@ function STK500v2Transaction () {
   SerialTransaction.apply(this, arraify(arguments));
 
   this.STK2 = {
+    CMD_SIGN_ON: 0x01,
+    CMD_SET_PARAMETER: 0x02,
+    CMD_GET_PARAMETER: 0x03,
+    CMD_SET_DEVICE_PARAMETERS: 0x04,
+    CMD_OSCCAL: 0x05,
+    CMD_LOAD_ADDRESS: 0x06,
+    CMD_FIRMWARE_UPGRADE: 0x07,
+    CMD_CHECK_TARGET_CONNECTION: 0x0D,
+    CMD_LOAD_RC_ID_TABLE: 0x0E,
+    CMD_LOAD_EC_ID_TABLE: 0x0F,
+
+    CMD_XPROG: 0x50,
+    CMD_XPROG_SETMODE: 0x51,
+
+    MESSAGE_START: 0x1B,
+    TOKEN: 0x0E,
   };
+
   this.pageSize = 128;
   this.log = log;
   this.cmdSeq = 0;
@@ -64,30 +81,50 @@ STK500Transaction.prototype.eraseThenFlash  = function (deviceName, sketchData, 
 // To retrieve the message first calculate the checksum
 // - [MESSAGE_START cmd_seq size1 size2 TOKEN data1 ... datan checksum===0]
 // Where checksum=msgBytes.reduce(xor)
+STK500Transaction.prototype.writeThenRead = function (data, cb) {
+  var self = this;
+  function modifyDatabuffer () {
+    // The weird binding of the reader.
+    var reader = this,
+        start = reader.buffer.databuffer
+          .indexOf(self.STK2.MESSAGE_START),
+        token = reader.buffer.databuffer
+          .indexOf(self.STK2.TOKEN);
 
-//// XXX: Make a namespace with the reader related functions. Package
-//// those into a callback for buffer reader.  // - Get head // - Get
-//// body // - calculate checksum // - Validate body // - Return the
-//// useful part of the body.
+    if (start < 0 || token < 0 || token - start != 4)
+      return false;
 
+    var db = reader.buffer.databuffer.slice(start);
 
-// Get the useful message length
-STK500Transaction.prototype.messageLength = function (data) {
-  var self = this,
-      start = data.indexOf(self.STK2.MESSAGE_START);
+    db.shift();                 // Throw the start
+    if (db.shift() != self.cmdSeq++) {
+      self.errCb(1, "Transaction out of sync with dev");
+      return false;
+    }
 
-  if (start < 0)
-    return -1;
+    var msgLen = (db.shift() << 8) | db.shift();
+    db.shift();                  // Throw token
 
-  var head = data.slice(start, 5);
+    var msg = db.slice(0, msgLen),
+        csum = reader.buffer.databuffer.slice(start, msgLen+6).reduce(function (a,b) {return a^b;});
 
-  if (head.length < 5) return -2;
-  if (head.shift() != self.STK2.MESSAGE_START) return -3;
-  if (head.shift() != self.cmdSeq) return -4; // Increment this on successful package
-  var msgLen = (head.shift() << 8) | head.shift();
-  if (head.shift() != self.STK2.TOKEN) return -5;
+    if (csum != 0) {
+      self.errCb(1, "Message checksum failed");
+      return false;
+    }
 
-  return msgLen;
+    reader.buffer.databuffer = reader.buffer.databuffer.slice(start + msgLen + 6);
+    // Don't include the packet head and tail
+    setTimeout(reader.callback.bind(null, msg), 0);
+
+    return true;
+  }
+
+  this.writeThenRead_({outgoingMsg: data,
+                       modifyDatabuffer: modifyDatabuffer,
+                       callback: cb,
+                       ttl: 500,
+                       errorCb: this.errCb.bind(this, 1, "STK failed timeout")});
 };
 
 // Message may be
@@ -100,5 +137,7 @@ STK500Transaction.prototype.consumeMessage = function (payloadSize, callback, er
 
   });
 };
+
+
 
 module.exports.STK500v2Transaction = STK500v2Transaction;
