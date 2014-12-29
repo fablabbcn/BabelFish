@@ -23,6 +23,13 @@ function AVR109Transaction () {
 
 AVR109Transaction.prototype = new SerialTransaction();
 
+AVR109Transaction.prototype.writeThenRead = function (data, rcvSize, cb) {
+  this.writeThenRead_({outgoingMsg: data,
+                       expectedBytes: rcvSize,
+                       callback: cb,
+                       errorCb: this.errCb.bind(this, 1, "STK failed timeout")});
+};
+
 AVR109Transaction.prototype.magicBaudReset = function (devName, hexData) {
   var kMagicBaudRate = 1200,
       oldDevices = [],
@@ -100,8 +107,8 @@ AVR109Transaction.prototype.connectDone = function (connectArg) {
 
 AVR109Transaction.prototype.programmingDone = function () {
   var self = this;
-  this.writeThenRead_([ this.AVR.LEAVE_PROGRAM_MODE ], 1, function(payload) {
-    self.writeThenRead_([ self.AVR.EXIT_BOOTLOADER ], 1, function(payload) {
+  this.writeThenRead([ this.AVR.LEAVE_PROGRAM_MODE ], 1, function(payload) {
+    self.writeThenRead([ self.AVR.EXIT_BOOTLOADER ], 1, function(payload) {
       self.serial.disconnect(self.connectionId, function (ok) {
         if (ok)
           self.finishCallback("ALL DONE");
@@ -117,7 +124,7 @@ AVR109Transaction.prototype.drainBytes = function (readArg) {
   var self = this;
   this.buffer.drain(function () {
     // Start the protocol
-    self.writeThenRead_([self.AVR.SOFTWARE_VERSION], 2, self.transitionCb('prepareToProgramFlash'));
+    self.writeThenRead([self.AVR.SOFTWARE_VERSION], 2, self.transitionCb('prepareToProgramFlash'));
   });
 };
 
@@ -128,7 +135,7 @@ AVR109Transaction.prototype.prepareToProgramFlash = function () {
       loadAddressMessage = [
         this.AVR.SET_ADDRESS, addressBytes[1], addressBytes[0]];
 
-  this.writeThenRead_(loadAddressMessage, 1, function(response) {
+  this.writeThenRead(loadAddressMessage, 1, function(response) {
     self.transition('programFlash', 0, 128);
   });
 };
@@ -151,7 +158,7 @@ AVR109Transaction.prototype.programFlash = function (offset, length) {
         this.AVR.WRITE, sizeBytes[0], sizeBytes[1], this.AVR.TYPE_FLASH ]
         .concat(payload);
 
-  this.writeThenRead_(programMessage, 1, function(resp) {
+  this.writeThenRead(programMessage, 1, function(resp) {
     // XXX: check respeonse.
     self.transition('programFlash', offset + length, length);
   });

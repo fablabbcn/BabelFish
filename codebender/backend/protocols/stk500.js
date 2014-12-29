@@ -29,10 +29,43 @@ function STK500Transaction () {
 
 STK500Transaction.prototype = new SerialTransaction();
 
+STK500Transaction.prototype.writeThenRead = function (data, rcvSize, cb) {
+  var self = this;
+  function modifyDatabuffer () {
+    // The weird binding of the reader.
+    var reader = this,
+        start = reader.buffer.databuffer
+          .indexOf(self.STK.INSYNC);
+
+    if (start < 0) return false;
+
+    var db = reader.buffer.databuffer.slice(start),
+        end = db.indexOf(this.STK.OK);
+
+    if (end < 0) return false;
+
+    if (end != rcvSize)
+      console.error("Requested", rcvSize, "from databuffer",
+                    reader.buffer.databuffer, "but found", end,
+                    "size package");
+
+    reader.buffer.databuffer = db.split(end);
+    // Don't include the packet head and tail
+    setTimeout(this.callback.bind(this, db.split(1,end-1)), 0);
+
+    return true;
+  }
+
+  this.writeThenRead_({outgoingMsg: data,
+                       modifyDatabuffer: modifyDatabuffer,
+                       callback: cb,
+                       errorCb: this.errCb.bind(this, 1, "STK failed timeout")});
+};
+
 // Cb should have the 'state' format, ie function (ok, data)
 STK500Transaction.prototype.cmd = function (cmd, cb) {
   // Always get a 4byte answer
-  this.writeThenRead_(cmd, 4, cb);
+  this.writeThenRead(cmd, 4, cb);
 };
 
 STK500Transaction.prototype.flash = function (deviceName, sketchData) {
@@ -50,7 +83,7 @@ STK500Transaction.prototype.flash = function (deviceName, sketchData) {
 STK500Transaction.prototype.eraseThenFlash  = function (deviceName, sketchData, dontFlash) {
   var self = this;
   log.log("Erasing chip");
-  self.writeThenRead_(this.memOps.CHIP_ERASE_ARR, function  () {
+  self.writeThenRead(this.memOps.CHIP_ERASE_ARR, function  () {
     // XXX: Maybe we should care about the response when asking to
     // erase
     if (!dontFlash)
@@ -100,7 +133,7 @@ STK500Transaction.prototype.dtrSent = function (ok) {
   log.log("DTR sent (low) real good");
 
   this.buffer.drain(function () {
-    self.writeThenRead_([self.STK.GET_SYNC, self.STK.CRC_EOP],
+    self.writeThenRead([self.STK.GET_SYNC, self.STK.CRC_EOP],
                         0, self.transitionCb('inSyncWithBoard'));
   });
 };
@@ -110,27 +143,27 @@ STK500Transaction.prototype.inSyncWithBoard = function (ok, data) {
     this.errCb(1, "InSyncWithBoard: NOT OK");
   }
   this.inSync_ = true;
-  this.writeThenRead_([this.STK.GET_PARAMETER, this.STK.HW_VER, this.STK.CRC_EOP], 1,
+  this.writeThenRead([this.STK.GET_PARAMETER, this.STK.HW_VER, this.STK.CRC_EOP], 1,
                       this.transitionCb('readHardwareVersion'));
 };
 
 STK500Transaction.prototype.readHardwareVersion = function (ok, data) {
-  this.writeThenRead_([this.STK.GET_PARAMETER, this.STK.SW_VER_MAJOR, this.STK.CRC_EOP],
+  this.writeThenRead([this.STK.GET_PARAMETER, this.STK.SW_VER_MAJOR, this.STK.CRC_EOP],
                       1, this.transitionCb('readSoftwareMajorVersion'));
 };
 
 STK500Transaction.prototype.readSoftwareMajorVersion = function (ok, data) {
-  this.writeThenRead_([this.STK.GET_PARAMETER, this.STK.SW_VER_MINOR, this.STK.CRC_EOP],
+  this.writeThenRead([this.STK.GET_PARAMETER, this.STK.SW_VER_MINOR, this.STK.CRC_EOP],
                       1, this.transitionCb('readSoftwareMinorVersion'));
 };
 
 STK500Transaction.prototype.readSoftwareMinorVersion = function (ok, data) {
-  this.writeThenRead_([this.STK.ENTER_PROGMODE, this.STK.CRC_EOP], 0,
+  this.writeThenRead([this.STK.ENTER_PROGMODE, this.STK.CRC_EOP], 0,
                       this.transitionCb('enteredProgmode'));
 };
 
 STK500Transaction.prototype.enteredProgmode = function (ok, data) {
-  this.writeThenRead_([this.STK.READ_SIGN, this.STK.CRC_EOP], 3,
+  this.writeThenRead([this.STK.READ_SIGN, this.STK.CRC_EOP], 3,
                       this.transitionCb('readSignature'));
 };
 
@@ -163,13 +196,13 @@ STK500Transaction.prototype.programFlash = function (offset, length) {
   programMessage.push(this.STK.CRC_EOP);
 
   var self = this;
-  self.writeThenRead_(loadAddressMessage, 0, function(ok, reponse) {
+  self.writeThenRead(loadAddressMessage, 0, function(ok, reponse) {
     console.log('Finished with block');
     if (!ok) {
       self.errCb(1, "Error programming the flash (load address)");
       return;
     }
-    self.writeThenRead_(programMessage, 0, function(ok, response) {
+    self.writeThenRead(programMessage, 0, function(ok, response) {
       if (!ok) {
         self.errCb(1, "Error programming the flash (send data)");
         return;
@@ -180,31 +213,9 @@ STK500Transaction.prototype.programFlash = function (offset, length) {
   });
 };
 
-
-STK500Transaction.prototype.consumeMessage = function (payloadSize, callback, errorCb) {
-  var self = this;
-  log.log("Will now read");
-  self.buffer.readAsync(payloadSize + 2, function  (arg) {
-    // XXX: Maybe we shouldn't destroy arg but probably noone will
-    // care.
-    if (arg.data.shift() != self.STK.INSYNC)
-      errorCb("Expected STK_INSYNC (" + buffer.hexRep(self.STK.INSYNC) +
-              ") at the beginning of received message" +
-              buffer.hexRep(arg.data));
-
-    if (arg.data.pop() != self.STK.OK)
-      errorCb("Expected STK_INSYNC (" + buffer.hexRep(self.STK.OK) +
-              ") at the end of received message" +
-              buffer.hexRep(arg.data));
-
-    callback(true, arg);
-
-  }, 2000, this.errCb.bind(this, 1, "STK failed timeout"));
-};
-
 STK500Transaction.prototype.doneProgramming = function () {
   this.sketchData = null;
-  this.writeThenRead_([this.STK.LEAVE_PROGMODE, this.STK.CRC_EOP],
+  this.writeThenRead([this.STK.LEAVE_PROGMODE, this.STK.CRC_EOP],
                       0, this.transitionCb('leftProgmode'));
 };
 

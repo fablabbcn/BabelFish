@@ -53,6 +53,14 @@ Transaction.prototype = {
     }
 
     return payload;
+  },
+
+  assert: function (bool, varMsg) {
+    var args = arraify(arguments, 1, 2, 'AssertionError');
+
+    if (!bool) {
+      this.cbErr.apply(this, args);
+    }
   }
 };
 

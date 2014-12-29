@@ -48,69 +48,100 @@ function bufToBin(buf) {
   return hexes;
 }
 
-function Buffer () {
+// Config
+// @param: ttl: Reader timeout
+
+function BufferReader (config) {
+  var self = this;
+  Object.keys(config || {}).forEach(function (k) {
+    self[k] = config[k];
+  });
+
+  this.modifyDatabuffer = this.modifyDatabuffer.bind(this);
+}
+
+BufferReader.prototype = {
+  // This is not set in the constructor to have a chance to make
+  // modifications.
+  register: function (buffer) {
+    var self = this;
+
+    this.buffer = buffer;
+    buffer.appendReader(this);
+    if (this.ttl) {
+      this.timeout_ = setTimeout(function () {
+        log.log("Reader timed out", this);
+        buffer.removeReader(this);
+        if (this.timeoutCb) {
+          this.timeoutCb();
+        } else {
+          throw Error("Unhandled async buffer read timeout.");
+        }
+      }, this.ttl);
+    }
+  },
+
+  destroy: function () {
+    this.buffer.removeReader(this);
+    if (this.timeout_)
+      clearTimeout(this.timeout_);
+  },
+
+  // Return true if you modified it ok You can override the function
+  // but `this` will be bound to the reader always.
+  modifyDatabuffer: function () {
+    if (Number.isInteger(this.expectedBytes) &&
+        this.buffer.databuffer.length >= this.expectedBytes) {
+      this.setTimeout(
+        this.callback.bind(this,
+                           this.buffer.databuffer.slice(0, this.expectedBytes)),
+        0);
+      this.buffer.databuffer = this.buffer.databuffer.slice(this.expectedBytes);
+      return true;
+    } else {
+      return false;
+    }
+  }
+};
+
+function Buffer (readerClass) {
   this.databuffer = [];
   this.readers = [];
+  this.readerClass = readerClass;
 }
 
 Buffer.prototype = {
-  lastReader: function () {
-    return this.readers[this.readers.length - 1];
-  },
-
   removeReader: function (reader) {
     log.log("Removing reader:", reader);
     var len = this.readers.length;
     this.readers = this.readers.filter(function (r) {return (r !== reader);});
-
-    if (len == this.readers.length + 1 && reader.timeout )
-      clearTimeout(reader.timeout);
-    else
-      log.warn("Tried to remove nonexistent reader.");
-
-    return false;
   },
 
-  // Event based read
-  readAsync: function (maxBytes, callback, timeout, timeoutCb) {
-    var reader = {timestamp: (new Date).getTime(),
-                  expectBytes: maxBytes,
-                  callback: callback,
-                  ttl: timeout},
-        self = this,
-        helper = (new Error()).stack;
-
-    log.log("Registering reader:", reader);
+  appendReader: function (reader) {
     this.readers.push(reader);
-    if (timeout) {
-      log.log("Setting reader timeout at", timeout);
-      reader.timeout = setTimeout(function () {
-        log.log("Reader timed out", reader);
-        self.removeReader(reader);
-        if (timeoutCb) {
-          timeoutCb();
-        } else {
-          throw Error("Unhandled async buffer read timeout.");
-        }
-      }, timeout);
-    }
-
-    this.runAsyncReaders();
   },
 
   runAsyncReaders: function () {
-    var ret = false;
+    var db;
     log.log("Running readers:", this.readers, "databuffer:", this.databuffer);
-    while (this.readers[0] &&
-           this.readers[0].expectBytes <= this.databuffer.length) {
-
-      log.log("Reader found");
-      var reader = this.readers[0];
-      this.read(reader.expectBytes, reader.callback);
-      this.removeReader(reader);
-      ret = true;
+    while (this.readers[0].modifyDatabuffer(this)) {
+      this.readers[0].destroy();
     }
-    return ret;
+  },
+
+  readAsync: function (maxBytesOrConfig, cb, ttl, errorCb) {
+    var reader;
+    if (Number.isInteger(maxBytesOrConfig)) {
+      reader = BufferReader({expectedBytes: maxBytesOrConfig,
+                             callback: cb,
+                             ttl: ttl || 2000,
+                             errorCb: errorCb});
+    } else {
+      reader = BufferReader(maxBytesOrConfig);
+    }
+
+    reader.register(this);
+    setTimeout(this.runAsyncReaders.bind(this), 0);
   },
 
   // Read as much as possible until maxBytes and send it to callback
@@ -119,7 +150,9 @@ Buffer.prototype = {
     var len =this.databuffer.length,
         accum = this.databuffer.splice(0, maxBytes);
     log.log("Reading from byffer [", maxBytes, "/", len,"]",  accum);
-    callback({bytesRead: accum.length, data: accum});
+    setTimeout(function () {
+      callback({bytesRead: accum.length, data: accum});
+    }, 0);
   },
 
 

@@ -59,9 +59,13 @@ SerialTransaction.prototype.cleanup = function (callback) {
   }
 };
 
-SerialTransaction.prototype.writeThenRead_ = function (outgoingMsg, responsePayloadSize, callback) {
-  this.log.log("Writing: " + buffer.hexRep(outgoingMsg));
-  var outgoingBinary = buffer.binToBuf(outgoingMsg),
+// Info is:
+// - outgoingMsg: byte array
+// - besides this passed as a reader config
+// callback is what to do with the data
+SerialTransaction.prototype.writeThenRead_ = function (info, callback) {
+  this.log.log("Writing: " + buffer.hexRep(info.outgoingMsg));
+  var outgoingBinary = buffer.binToBuf(info.outgoingMsg),
       self = this;
 
   this.serial.send(this.connectionId, outgoingBinary, function(writeArg) {
@@ -71,18 +75,8 @@ SerialTransaction.prototype.writeThenRead_ = function (outgoingMsg, responsePayl
         return;
       }
     });
-    self.consumeMessage(responsePayloadSize, callback, self.errCb.bind(self));
+    self.buffer.readAsync(info);
   });
-}
-
-
-// Simply wayt for bytes
-SerialTransaction.prototype.consumeMessage = function (payloadSize, callback, errorCb) {
-  var self = this;
-  setTimeout(function () {
-    // Hide the strange arguments.
-    self.buffer.readAsync(payloadSize, callback, 500, errorCb);
-  }, 100);
 };
 
 SerialTransaction.prototype.readToBuffer = function (readArg) {
