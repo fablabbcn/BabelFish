@@ -96,7 +96,7 @@ BufferReader.prototype = {
         this.callback.bind(this,
                            this.buffer.databuffer.slice(0, this.expectedBytes)),
         0);
-      this.buffer.databuffer = this.buffer.databuffer.slice(this.expectedBytes);
+      this.buffer.databuffer = this.buffer.databuffer.slice(true, this.expectedBytes);
       return true;
     } else {
       return false;
@@ -124,7 +124,8 @@ Buffer.prototype = {
   runAsyncReaders: function () {
     var db;
     log.log("Running readers:", this.readers, "databuffer:", this.databuffer);
-    while (this.readers[0].modifyDatabuffer(this)) {
+    while (this.readers[0] &&
+           this.readers[0].modifyDatabuffer(this)) {
       this.readers[0].destroy();
     }
   },
@@ -132,12 +133,12 @@ Buffer.prototype = {
   readAsync: function (maxBytesOrConfig, cb, ttl, errorCb) {
     var reader;
     if (Number.isInteger(maxBytesOrConfig)) {
-      reader = BufferReader({expectedBytes: maxBytesOrConfig,
-                             callback: cb,
-                             ttl: ttl || 2000,
-                             errorCb: errorCb});
+      reader = new BufferReader({expectedBytes: maxBytesOrConfig,
+                                 callback: cb,
+                                 ttl: ttl || 2000,
+                                 errorCb: errorCb});
     } else {
-      reader = BufferReader(maxBytesOrConfig);
+      reader = new BufferReader(maxBytesOrConfig);
     }
 
     reader.register(this);

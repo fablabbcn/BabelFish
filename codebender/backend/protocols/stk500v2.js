@@ -66,12 +66,9 @@ STK500Transaction.prototype.eraseThenFlash  = function (deviceName, sketchData, 
 // Where checksum=msgBytes.reduce(xor)
 
 //// XXX: Make a namespace with the reader related functions. Package
-//// those into a callback for buffer reader.
-// - Get head
-// - Get body
-// - calculate checksum
-// - Validate body
-// - Return the useful part of the body.
+//// those into a callback for buffer reader.  // - Get head // - Get
+//// body // - calculate checksum // - Validate body // - Return the
+//// useful part of the body.
 
 
 // Get the useful message length

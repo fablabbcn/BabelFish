@@ -40,18 +40,18 @@ STK500Transaction.prototype.writeThenRead = function (data, rcvSize, cb) {
     if (start < 0) return false;
 
     var db = reader.buffer.databuffer.slice(start),
-        end = db.indexOf(this.STK.OK);
+        end = db.indexOf(self.STK.OK);
 
     if (end < 0) return false;
 
-    if (end != rcvSize)
+    if (end-1 != rcvSize )
       console.error("Requested", rcvSize, "from databuffer",
-                    reader.buffer.databuffer, "but found", end,
+                    reader.buffer.databuffer, "but found", end-1,
                     "size package");
 
-    reader.buffer.databuffer = db.split(end);
+    reader.buffer.databuffer = db.slice(end);
     // Don't include the packet head and tail
-    setTimeout(this.callback.bind(this, db.split(1,end-1)), 0);
+    setTimeout(this.callback.bind(this, true, db.slice(1,end-1)), 0);
 
     return true;
   }
