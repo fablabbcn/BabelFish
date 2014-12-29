@@ -183,6 +183,12 @@ Plugin.prototype = {
     }, 0);
   },
 
+  flashWithProgrammer: function (port, binary, maximum_size, protocol,
+                                communication, speed, force, delay, mcu,
+                                cb) {
+    throw Error("Not implemeted");
+  },
+
   // Wrongly sync methods
 
   // Return a string of the port list
