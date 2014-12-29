@@ -26,8 +26,9 @@ AVR109Transaction.prototype = new SerialTransaction();
 AVR109Transaction.prototype.writeThenRead = function (data, rcvSize, cb) {
   this.writeThenRead_({outgoingMsg: data,
                        expectedBytes: rcvSize,
+                       ttl: 500,
                        callback: cb,
-                       errorCb: this.errCb.bind(this, 1, "STK failed timeout")});
+                       timeoutCb: this.errCb.bind(this, 1, "STK failed timeout")});
 };
 
 AVR109Transaction.prototype.magicBaudReset = function (devName, hexData) {

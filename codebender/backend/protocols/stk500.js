@@ -59,6 +59,7 @@ STK500Transaction.prototype.writeThenRead = function (data, rcvSize, cb) {
   this.writeThenRead_({outgoingMsg: data,
                        modifyDatabuffer: modifyDatabuffer,
                        callback: cb,
+                       ttl: 500,
                        errorCb: this.errCb.bind(this, 1, "STK failed timeout")});
 };
 

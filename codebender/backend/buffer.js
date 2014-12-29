@@ -70,10 +70,10 @@ BufferReader.prototype = {
     buffer.appendReader(this);
     if (this.ttl) {
       this.timeout_ = setTimeout(function () {
-        log.log("Reader timed out", this);
-        buffer.removeReader(this);
-        if (this.timeoutCb) {
-          this.timeoutCb();
+        log.log("Reader timed out", self);
+        buffer.removeReader(self);
+        if (self.timeoutCb) {
+          self.timeoutCb();
         } else {
           throw Error("Unhandled async buffer read timeout.");
         }
@@ -130,13 +130,13 @@ Buffer.prototype = {
     }
   },
 
-  readAsync: function (maxBytesOrConfig, cb, ttl, errorCb) {
+  readAsync: function (maxBytesOrConfig, cb, ttl, timeoutCb) {
     var reader;
     if (Number.isInteger(maxBytesOrConfig)) {
       reader = new BufferReader({expectedBytes: maxBytesOrConfig,
                                  callback: cb,
                                  ttl: ttl || 2000,
-                                 errorCb: errorCb});
+                                 timeoutCb: timeoutCb});
     } else {
       reader = new BufferReader(maxBytesOrConfig);
     }
