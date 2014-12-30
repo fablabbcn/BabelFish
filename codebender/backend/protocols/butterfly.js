@@ -4,6 +4,18 @@ var SerialTransaction = require('./serialtransaction'),
     arraify = require('./../util').arraify,
     buffer = require("./../buffer");
 
+function poll (maxRetries, timeout, cb) {
+  if (maxRetries < 0)
+    throw Error("Retry limit exceeded");
+
+  cb(function () {
+    setTimeout(function () {
+      poll(maxRetries-1, timeout, cb);
+    }, timeout);
+  });
+}
+
+
 function AVR109Transaction () {
   SerialTransaction.apply(this, arraify(arguments));
 
@@ -21,7 +33,8 @@ function AVR109Transaction () {
 
   this.timeouts = {
     magicBaudConnected: 2000,
-    disconnected: 300,
+    disconnectPollCount: 20,
+    disconnectPoll: 50,
     pollingForDev: 250,
     finishWait: 500,
     finishTimeout: 2000,
@@ -62,24 +75,27 @@ AVR109Transaction.prototype.magicBaudReset = function (devName, hexData) {
         self.serial.disconnect(connectInfo.connectionId, function(ok) {
           if (ok) {
             log.log("Disconnected from ", devName);
-            setTimeout(function () {
-              self.serial.getDevices(function (disDevices) {
-                log.log("Visible devices are now",
-                        disDevices.map(function (d) {return d.path;}));
+            poll(self.timeouts.disconnectPollCount,
+                 self.timeouts.disconnectPoll, function (next) {
+                   self.serial.getDevices(function (disDevices) {
+                     log.log("Visible devices are now",
+                             disDevices.map(function (d) {return d.path;}));
 
-                if (disDevices.some(function (d) {return d.path == devName;})){
-                  self.errCb(1, "Leonardo did not disappear after reset.");
-                  return;
-                }
+                     if (disDevices.some(function (d) {return d.path == devName;})){
+                       log.log("Leonardo did not disappear after reset.");
+                       next();
+                       return;
+                     }
 
-                self.waitForDeviceAndConnectArduinoIDE(connectInfo,
-                                                       iniDevices,
-                                                       disDevices,
-                                                       (new Date().getTime()) + 5000,
-                                                       (new Date().getTime()) + 10000,
-                                                       self.transitionCb('connectDone'));
-              });
-            }, self.timeouts.disconnected);
+                     self.waitForDeviceAndConnectArduinoIDE(
+                       connectInfo,
+                       iniDevices,
+                       disDevices,
+                       (new Date().getTime()) + 5000,
+                       (new Date().getTime()) + 10000,
+                       self.transitionCb('connectDone'));
+                   });
+                 });
           } else {
             self.errCb("Failed to disconnect from " + devName);
           }

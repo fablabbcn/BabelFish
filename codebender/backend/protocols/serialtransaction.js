@@ -28,6 +28,8 @@ SerialTransaction.prototype.init = function (finishCallback, errorCallback) {
   this.listenerHandler = this.readToBuffer.bind(this);
   this.memOps = new MemoryOperations();
   this.memOps.CHIP_ERASE_ARR = [0xAC, 0x80, 0x00, 0x00];
+
+  this.serial.customErrorHandler = this.errCb.bind(this, 1);
 };
 
 SerialTransaction.prototype.errCb = function (id, var_message) {
@@ -40,6 +42,8 @@ SerialTransaction.prototype.errCb = function (id, var_message) {
 
 SerialTransaction.prototype.cleanup = function (callback) {
   var self = this;
+
+  self.serial.customErrorHandler = null;
   this.serial.onReceive.removeListener(this.listenerHandler);
 
   if (this.connectionId) {

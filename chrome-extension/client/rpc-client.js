@@ -163,6 +163,9 @@ if (!window.chrome) {
     },
 
     errorHandler: function (message, callback) {
+      if (callback.rpcErrorHandler)
+        callback.rpcErrorHandler(message);
+
       throw err(message);
     },
 
@@ -170,6 +173,7 @@ if (!window.chrome) {
       if (!callback)
         return callback;
 
+      callback.rpcErrorHandler = this.customErrorHandler;
       var ret = function (resp) {
         // Ignore free resoponses
         if (!resp)
@@ -177,7 +181,7 @@ if (!window.chrome) {
 
         // Raise an error if the server reports one.
         if (resp.error) {
-          self.errorHandler("RPC call failed:" + resp.error);
+          self.errorHandler("RPC call failed:" + resp.error, callback);
         } else {
           // If there is a callback call it.
           if (callback) {
