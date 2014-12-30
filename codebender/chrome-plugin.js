@@ -183,10 +183,19 @@ Plugin.prototype = {
     }, 0);
   },
 
-  flashWithProgrammer: function (port, binary, maximum_size, protocol,
-                                communication, speed, force, delay, mcu,
+  flashWithProgrammer: function (selectedPort,
+                                 binary,
+                                 maximum_size,
+                                 protocol,
+                                 communication,
+                                 speed,
+                                 force,
+                                 delay,
+                                 mcu,
                                 cb) {
-    throw Error("Not implemeted");
+    // XXX: first argument is from (no used)
+    //      second argument is progress, currently 1 (change with actual progress)
+    cb(null, 1);
   },
 
   // Wrongly sync methods
@@ -219,6 +228,8 @@ Plugin.prototype = {
   },
 
   getFlashResult: function (cb) {
+    // XXX: Change: this.flashResult with actual flashResult
+    this.flashResult = '';
     cb(this.flashResult);
   },
 
