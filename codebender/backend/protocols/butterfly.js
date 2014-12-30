@@ -68,7 +68,7 @@ AVR109Transaction.prototype.magicBaudReset = function (devName, hexData) {
                         disDevices.map(function (d) {return d.path;}));
 
                 if (disDevices.some(function (d) {return d.path == devName;})){
-                  this.errCb (1, "Leonardo did not disappear after reset.");
+                  self.errCb(1, "Leonardo did not disappear after reset.");
                   return;
                 }
 
@@ -220,7 +220,7 @@ AVR109Transaction.prototype.programmingDone = function () {
                                       });
           }, self.timeouts.finishWait);
         else
-          self.errCb("Did not disconnect correctly from connection ",
+          self.errCb(1, "Did not disconnect correctly from connection ",
                      self.connectionId);
       });
     });
