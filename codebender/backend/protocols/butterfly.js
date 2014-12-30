@@ -38,7 +38,7 @@ AVR109Transaction.prototype.writeThenRead = function (data, rcvSize, cb) {
                        expectedBytes: rcvSize,
                        ttl: 500,
                        callback: cb,
-                       timeoutCb: this.errCb.bind(this, 1, "STK failed timeout")});
+                       timeoutCb: this.errCb.bind(this, 1, "AVR109 failed timeout")});
 };
 
 AVR109Transaction.prototype.magicBaudReset = function (devName, hexData) {
@@ -186,7 +186,7 @@ AVR109Transaction.prototype.waitForDeviceAndConnectArduinoIDE =
 
       setTimeout(function() {
         self.waitForDeviceAndConnectSensible(dev, iniDevices, disDevices,
-                                               earlyDeadline, finalDeadline, cb);
+                                             earlyDeadline, finalDeadline, cb);
       }, self.timeouts.pollingForDev);
     });
   };
@@ -209,19 +209,15 @@ AVR109Transaction.prototype.programmingDone = function () {
   var self = this;
   this.writeThenRead([ this.AVR.LEAVE_PROGRAM_MODE ], 1, function(payload) {
     self.writeThenRead([ self.AVR.EXIT_BOOTLOADER ], 1, function(payload) {
-      self.serial.disconnect(self.connectionId, function (ok) {
-        if (ok)
-          setTimeout( function () {
-            self.pollForInitialDevice((new Date().getTime()) +
-                                      self.timeouts.finishTimeout,
-                                      function () {
-                                        self.initialDev = null;
-                                        self.finishCallback("Done programming");
-                                      });
-          }, self.timeouts.finishWait);
-        else
-          self.errCb(1, "Did not disconnect correctly from connection ",
-                     self.connectionId);
+      self.cleanup(function () {
+        setTimeout(function () {
+          self.pollForInitialDevice((new Date().getTime()) +
+                                    self.timeouts.finishTimeout,
+                                    function () {
+                                      self.initialDev = null;
+                                      self.finishCallback("Done programming");
+                                    });
+        }, self.timeouts.finishWait);
       });
     });
   });

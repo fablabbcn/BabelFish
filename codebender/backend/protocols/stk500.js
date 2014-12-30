@@ -142,6 +142,7 @@ STK500Transaction.prototype.dtrSent = function (ok) {
 STK500Transaction.prototype.inSyncWithBoard = function (ok, data) {
   if (!ok) {
     this.errCb(1, "InSyncWithBoard: NOT OK");
+    return;
   }
   this.inSync_ = true;
   this.writeThenRead([this.STK.GET_PARAMETER, this.STK.HW_VER, this.STK.CRC_EOP], 1,
