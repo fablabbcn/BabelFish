@@ -183,6 +183,21 @@ Plugin.prototype = {
     }, 0);
   },
 
+  flashWithProgrammer: function (selectedPort,
+                                 binary,
+                                 maximum_size,
+                                 protocol,
+                                 communication,
+                                 speed,
+                                 force,
+                                 delay,
+                                 mcu,
+                                cb) {
+    // XXX: first argument is from (no used)
+    //      second argument is progress, currently 1 (change with actual progress)
+    cb(null, 1);
+  },
+
   // Wrongly sync methods
 
   // Return a string of the port list
@@ -213,6 +228,8 @@ Plugin.prototype = {
   },
 
   getFlashResult: function (cb) {
+    // XXX: Change: this.flashResult with actual flashResult
+    this.flashResult = '';
     cb(this.flashResult);
   },
 
