@@ -41,15 +41,22 @@ AVR109Transaction.prototype.magicBaudReset = function (devName, hexData) {
     oldDevices = devicesArg;
 
     self.serial.connect(devName, { bitrate: kMagicBaudRate, name: devName}, function(connectInfo) {
-      log.log("Made sentinel connection:", connectInfo, "waiting 2s ...");
+      log.log("Made sentinel connection: (baud: 1200)", connectInfo,
+              "waiting 2s ...");
       setTimeout(function () {
         self.serial.disconnect(connectInfo.connectionId, function(ok) {
           if (ok) {
             log.log("Disconnected from ", devName);
             setTimeout(function () {
-              self.waitForDeviceAndConnect(connectInfo, (new Date().getTime()) + 10000,
-                                           self.transitionCb('connectDone'));
-            }, 500);
+              self.serial.getDevices(function (oldDevices) {
+                log.log("Visible devices are now",
+                        oldDevices.map(function (d) {return d.path;}));
+                self.waitForDeviceAndConnect(connectInfo,
+                                             oldDevices,
+                                             (new Date().getTime()) + 10000,
+                                             self.transitionCb('connectDone'));
+              });
+            }, 350);
           } else {
             self.errCb("Failed to disconnect from " + devName);
           }
@@ -66,7 +73,7 @@ AVR109Transaction.prototype.flash = function (devName, hexData) {
 };
 
 // Poll for the device to reconnect.
-AVR109Transaction.prototype.waitForDeviceAndConnect = function(dev, deadline, cb) {
+AVR109Transaction.prototype.waitForDeviceAndConnect = function(dev, oldDevices, deadline, cb) {
   log.log("Waiting for new device...");
   if (new Date().getTime() > deadline) {
     log.error("Exceeded deadline");
@@ -77,18 +84,35 @@ AVR109Transaction.prototype.waitForDeviceAndConnect = function(dev, deadline, cb
       self = this;
   self.serial.getDevices(function(newDevices) {
     // XXX: Maybe name checking is not the best option
-    var appeared = newDevices.filter(function (d) {return d.path == dev.name;});
+    var newNames = newDevices.map(function (d) {return dev.name;}).sort(),
+        oldNames = oldDevices.map(function (d) {return dev.name;}).sort();
 
-    if (appeared.length == 0) {
-      setTimeout(function() {
-        self.waitForDeviceAndConnect(dev, deadline, cb);
-      }, 100);
-    } else if ((new Date().getTime()) > deadline){
-      log.error("Waited too long for " + dev.name);
-    } else {
-      log.log("Aha! Connecting to: " + dev.name);
-      self.serial.connect(dev.name, { bitrate: 57600, name: appeared[0].path }, cb);
+    // Python style zip
+    function zip(arrays) {
+      return arrays[0].map(function(_,i) {
+        return arrays.map(function(array){return array[i];});
+      });
     }
+
+    var newDev = zip([newNames, oldNames]).filter(function (pair) {
+      return pair[0] != pair[1];
+    })[0];
+
+    if (newDev) {
+      log.log("Aha! new device", newDev[0], "connecting (baud 57600)");
+      self.serial.connect(dev.name, {bitrate: 57600,
+                                     name: newDev[0]}, cb);
+      return;
+    }
+
+    if ((new Date().getTime()) > deadline){
+      log.error("Waited too long for something like", dev.name);
+      return;
+    }
+
+    setTimeout(function() {
+      self.waitForDeviceAndConnect(dev, oldDevices, deadline, cb);
+    }, 250);
   });
 };
 

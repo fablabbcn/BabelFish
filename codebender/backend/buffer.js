@@ -92,7 +92,7 @@ BufferReader.prototype = {
   modifyDatabuffer: function () {
     if (Number.isInteger(this.expectedBytes) &&
         this.buffer.databuffer.length >= this.expectedBytes) {
-      this.setTimeout(
+      setTimeout(
         this.callback.bind(this,
                            this.buffer.databuffer.slice(0, this.expectedBytes)),
         0);
