@@ -92,9 +92,6 @@ STK500Transaction.prototype.writeThenRead = function (data, cb) {
     }
 
     // Now msg is usefull
-
-
-
     reader.buffer.databuffer = reader.buffer.databuffer.slice(start + msgLen + 6);
     // Don't include the packet head and tail
     setTimeout(reader.callback.bind(null, msg), 0);
@@ -106,7 +103,7 @@ STK500Transaction.prototype.writeThenRead = function (data, cb) {
                        modifyDatabuffer: modifyDatabuffer,
                        callback: cb,
                        ttl: 500,
-                       errorCb: this.errCb.bind(this, 1, "STK failed timeout")});
+                       timeoutCb: this.errCb.bind(this, 1, "STK failed timeout")});
 };
 
 
@@ -138,14 +135,6 @@ STK500Transaction.prototype.eraseThenFlash  = function (deviceName, sketchData, 
       self.transition('flash', deviceName, sketchData);
   });
 };
-
-STK500Transaction.prototype.consumeMessage = function (payloadSize, callback, errorCb) {
-  var self = this;
-  self.buffer.readAsync(function  (arg) {
-
-  });
-};
-
 
 
 module.exports.STK500v2Transaction = STK500v2Transaction;

@@ -26,9 +26,6 @@ SerialTransaction.prototype.init = function (finishCallback, errorCallback) {
 
   // XXX: Remove me at the end. Maybe this could be in the buffer.
   this.listenerHandler = this.readToBuffer.bind(this);
-  this.log.log("Listening on buffer");
-  this.serial.onReceive.addListener(this.listenerHandler);
-
   this.memOps = new MemoryOperations();
   this.memOps.CHIP_ERASE_ARR = [0xAC, 0x80, 0x00, 0x00];
 };
@@ -68,7 +65,14 @@ SerialTransaction.prototype.writeThenRead_ = function (info, callback) {
   var outgoingBinary = buffer.binToBuf(info.outgoingMsg),
       self = this;
 
+  if (!self.registeredBufferListener){
+    self.registeredBufferListener = true;
+    this.log.log("Listening on buffer");
+    this.serial.onReceive.addListener(this.listenerHandler);
+  }
   this.serial.send(this.connectionId, outgoingBinary, function(writeArg) {
+    if (!writeArg) self.errCb(1, "Connection lost");
+
     self.serial.flush(self.connectionId, function (ok) {
       if (!ok) {
         self.errCb(1,'Failed to flush');

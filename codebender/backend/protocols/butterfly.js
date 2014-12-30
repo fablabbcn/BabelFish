@@ -21,7 +21,7 @@ function AVR109Transaction () {
 
   this.timeouts = {
     magicBaudConnected: 2000,
-    disconnected: 350,
+    disconnected: 300,
     pollingForDev: 250,
     finishWait: 500,
     finishTimeout: 2000,
@@ -50,21 +50,28 @@ AVR109Transaction.prototype.magicBaudReset = function (devName, hexData) {
   self.serial.getDevices(function(iniDevices) {
     self.serial.connect(devName, { bitrate: kMagicBaudRate, name: devName}, function(connectInfo) {
       log.log("Made sentinel connection: (baud: 1200)", connectInfo,
-              "waiting 2s ...");
+              "waiting", self.timeouts.magicBaudConnected, "ms");
       if (!connectInfo) {
-        self.errCb("Failed to connect with magic baud 1200");
+        self.errCb(1, "Failed to connect with magic baud 1200");
         return;
       }
 
       self.initialDev = devName;
       setTimeout(function () {
+        log.log("Disconnecting from " + devName);
         self.serial.disconnect(connectInfo.connectionId, function(ok) {
           if (ok) {
             log.log("Disconnected from ", devName);
             setTimeout(function () {
               self.serial.getDevices(function (disDevices) {
                 log.log("Visible devices are now",
-                        oldDevices.map(function (d) {return d.path;}));
+                        disDevices.map(function (d) {return d.path;}));
+
+                if (disDevices.some(function (d) {return d.path == devName;})){
+                  this.errCb (1, "Leonardo did not disappear after reset.");
+                  return;
+                }
+
                 self.waitForDeviceAndConnectArduinoIDE(connectInfo,
                                                        iniDevices,
                                                        disDevices,
@@ -102,7 +109,7 @@ AVR109Transaction.prototype.waitForDeviceAndConnectSensible =
     }
 
 
-    self.serial.getDevices(function(newDevices) {
+    self.serial.getDevices(function (newDevices) {
       var newNames = newDevices.map(function (d) {return dev.name;}).sort(),
           oldNames = disDevices.map(function (d) {return dev.name;}).sort();
 
@@ -127,7 +134,7 @@ AVR109Transaction.prototype.waitForDeviceAndConnectSensible =
       setTimeout(function() {
         self.waitForDeviceAndConnectSensible(dev, iniDevices, disDevices,
                                              earlyDeadline, finalDeadline, cb);
-      }, self.timouts.pollingForDev);
+      }, self.timeouts.pollingForDev);
     });
   };
 
@@ -178,9 +185,9 @@ AVR109Transaction.prototype.waitForDeviceAndConnectArduinoIDE =
       }
 
       setTimeout(function() {
-        self.waitForDeviceAndConnectArduinoIDE(dev, iniDevices, disDevices,
+        self.waitForDeviceAndConnectSensible(dev, iniDevices, disDevices,
                                                earlyDeadline, finalDeadline, cb);
-      }, 250);
+      }, self.timeouts.pollingForDev);
     });
   };
 

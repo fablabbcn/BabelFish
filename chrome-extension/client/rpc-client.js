@@ -62,14 +62,6 @@ if (!window.chrome) {
   }
 
   ClientBus.prototype = {
-    default_cb: function (msg) {
-      if (!msg)
-        err("Chrome's last error: " + this.runtime_.lastError);
-
-      if (msg.error)
-        throw err(msg.error);
-    },
-
     // cb(msg)
     clientMessage: function (persist, msg, callbackWrap) {
       callbackWrap = callbackWrap;
@@ -170,6 +162,10 @@ if (!window.chrome) {
       obj[method] = this._rpc.bind(this, name);
     },
 
+    errorHandler: function (message, callback) {
+      throw err(message);
+    },
+
     msgCallbackFactory: function (callback) {
       if (!callback)
         return callback;
@@ -181,7 +177,7 @@ if (!window.chrome) {
 
         // Raise an error if the server reports one.
         if (resp.error) {
-          err(resp.error);
+          self.errorHandler("RPC call failed:" + resp.error);
         } else {
           // If there is a callback call it.
           if (callback) {

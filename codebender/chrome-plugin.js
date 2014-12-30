@@ -32,7 +32,9 @@ function Plugin() {
   //     });
   //   });
   // });
-  this.errorCallback = function () {};
+  this.serial.errorHandler = function (message) {
+
+  };
   this.readingInfo = null;
 
   // Change to false to provide byte arrays for flashing.
