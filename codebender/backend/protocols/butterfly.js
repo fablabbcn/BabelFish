@@ -18,6 +18,16 @@ function AVR109Transaction () {
     CR: 0x0D,
     READ_PAGE: 0x67
   };
+
+  this.timeouts = {
+    magicBaudConnected: 2000,
+    disconnected: 350,
+    pollingForDev: 250,
+    finishWait: 500,
+    finishTimeout: 2000,
+    finishPollForDev: 100
+  };
+  this.initialDev = null;
   this.log = log;
 }
 
@@ -41,6 +51,12 @@ AVR109Transaction.prototype.magicBaudReset = function (devName, hexData) {
     self.serial.connect(devName, { bitrate: kMagicBaudRate, name: devName}, function(connectInfo) {
       log.log("Made sentinel connection: (baud: 1200)", connectInfo,
               "waiting 2s ...");
+      if (!connectInfo) {
+        self.errCb("Failed to connect with magic baud 1200");
+        return;
+      }
+
+      self.initialDev = devName;
       setTimeout(function () {
         self.serial.disconnect(connectInfo.connectionId, function(ok) {
           if (ok) {
@@ -56,12 +72,12 @@ AVR109Transaction.prototype.magicBaudReset = function (devName, hexData) {
                                                        (new Date().getTime()) + 10000,
                                                        self.transitionCb('connectDone'));
               });
-            }, 350);
+            }, self.timeouts.disconnected);
           } else {
             self.errCb("Failed to disconnect from " + devName);
           }
         });
-      }, 2000);
+      }, self.timeouts.magicBaudConnected);
     });
   });
 };
@@ -110,8 +126,8 @@ AVR109Transaction.prototype.waitForDeviceAndConnectSensible =
 
       setTimeout(function() {
         self.waitForDeviceAndConnectSensible(dev, iniDevices, disDevices,
-                                     earlyDeadline, finalDeadline, cb);
-      }, 250);
+                                             earlyDeadline, finalDeadline, cb);
+      }, self.timouts.pollingForDev);
     });
   };
 
@@ -188,12 +204,36 @@ AVR109Transaction.prototype.programmingDone = function () {
     self.writeThenRead([ self.AVR.EXIT_BOOTLOADER ], 1, function(payload) {
       self.serial.disconnect(self.connectionId, function (ok) {
         if (ok)
-          self.finishCallback("ALL DONE");
+          setTimeout( function () {
+            self.pollForInitialDevice((new Date().getTime()) +
+                                      self.timeouts.finishTimeout,
+                                      function () {
+                                        self.initialDev = null;
+                                        self.finishCallback("Done programming");
+                                      });
+          }, self.timeouts.finishWait);
         else
           self.errCb("Did not disconnect correctly from connection ",
                      self.connectionId);
       });
     });
+  });
+};
+
+AVR109Transaction.prototype.pollForInitialDevice = function (deadline, cb) {
+  var self = this;
+  if ((new Date().getTime()) > deadline) {
+    self.errCb(1, "Waited too long for device ", self.initialDev, " after flashing");
+    return;
+  }
+
+  self.serial.getDevices(function (devs) {
+    if (!devs.some(function (d) {return d.path == self.initialDev;})) {
+      log.log(self.initialDev, " not in ", devs.map(function (d) {return d.path;}));
+      setTimeout (self.pollForInitialDevice.bind(self, deadline, cb),
+                  self.timeouts.finishPollForDev);
+    } else
+      cb();
   });
 };
 
