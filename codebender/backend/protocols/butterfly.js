@@ -37,9 +37,7 @@ AVR109Transaction.prototype.magicBaudReset = function (devName, hexData) {
       self = this;
 
   self.hexData = hexData;
-  self.serial.getDevices(function(devicesArg) {
-    oldDevices = devicesArg;
-
+  self.serial.getDevices(function(iniDevices) {
     self.serial.connect(devName, { bitrate: kMagicBaudRate, name: devName}, function(connectInfo) {
       log.log("Made sentinel connection: (baud: 1200)", connectInfo,
               "waiting 2s ...");
@@ -48,13 +46,15 @@ AVR109Transaction.prototype.magicBaudReset = function (devName, hexData) {
           if (ok) {
             log.log("Disconnected from ", devName);
             setTimeout(function () {
-              self.serial.getDevices(function (oldDevices) {
+              self.serial.getDevices(function (disDevices) {
                 log.log("Visible devices are now",
                         oldDevices.map(function (d) {return d.path;}));
-                self.waitForDeviceAndConnect(connectInfo,
-                                             oldDevices,
-                                             (new Date().getTime()) + 10000,
-                                             self.transitionCb('connectDone'));
+                self.waitForDeviceAndConnectArduinoIDE(connectInfo,
+                                                       iniDevices,
+                                                       disDevices,
+                                                       (new Date().getTime()) + 5000,
+                                                       (new Date().getTime()) + 10000,
+                                                       self.transitionCb('connectDone'));
               });
             }, 350);
           } else {
@@ -73,48 +73,100 @@ AVR109Transaction.prototype.flash = function (devName, hexData) {
 };
 
 // Poll for the device to reconnect.
-AVR109Transaction.prototype.waitForDeviceAndConnect = function(dev, oldDevices, deadline, cb) {
-  log.log("Waiting for new device...");
-  if (new Date().getTime() > deadline) {
-    log.error("Exceeded deadline");
-    return;
-  }
+AVR109Transaction.prototype.waitForDeviceAndConnectSensible =
+  function(dev, iniDevices, disDevices, earlyDeadline, finalDeadline, cb) {
+    log.log("Waiting for new device...");
+    var found = false,
+        self = this;
 
-  var found = false,
-      self = this;
-  self.serial.getDevices(function(newDevices) {
-    // XXX: Maybe name checking is not the best option
-    var newNames = newDevices.map(function (d) {return dev.name;}).sort(),
-        oldNames = oldDevices.map(function (d) {return dev.name;}).sort();
 
-    // Python style zip
-    function zip(arrays) {
-      return arrays[0].map(function(_,i) {
-        return arrays.map(function(array){return array[i];});
-      });
-    }
-
-    var newDev = zip([newNames, oldNames]).filter(function (pair) {
-      return pair[0] != pair[1];
-    })[0];
-
-    if (newDev) {
-      log.log("Aha! new device", newDev[0], "connecting (baud 57600)");
-      self.serial.connect(dev.name, {bitrate: 57600,
-                                     name: newDev[0]}, cb);
-      return;
-    }
-
-    if ((new Date().getTime()) > deadline){
+    if ((new Date().getTime()) > finalDeadline) {
       log.error("Waited too long for something like", dev.name);
       return;
     }
 
-    setTimeout(function() {
-      self.waitForDeviceAndConnect(dev, oldDevices, deadline, cb);
-    }, 250);
-  });
-};
+
+    self.serial.getDevices(function(newDevices) {
+      var newNames = newDevices.map(function (d) {return dev.name;}).sort(),
+          oldNames = disDevices.map(function (d) {return dev.name;}).sort();
+
+      // Python style zip
+      function zip(arrays) {
+        return arrays[0].map(function(_,i) {
+          return arrays.map(function(array){return array[i];});
+        });
+      }
+
+      var newDev = zip([newNames, oldNames]).filter(function (pair) {
+        return pair[0] != pair[1];
+      })[0];
+
+      if (newDev) {
+        log.log("Aha! new device", newDev[0], "connecting (baud 57600)");
+        self.serial.connect(dev.name, {bitrate: 57600,
+                                       name: newDev[0]}, cb);
+        return;
+      }
+
+      setTimeout(function() {
+        self.waitForDeviceAndConnectSensible(dev, iniDevices, disDevices,
+                                     earlyDeadline, finalDeadline, cb);
+      }, 250);
+    });
+  };
+
+// Poll for the device to reconnect.
+AVR109Transaction.prototype.waitForDeviceAndConnectArduinoIDE =
+  function (dev, iniDevices, disDevices, earlyDeadline, finalDeadline, cb) {
+    log.log("Waiting for new device...");
+    if (new Date().getTime() > finalDeadline) {
+      log.error("Waited too long for for a port to appear");
+      return;
+    }
+
+    var found = false,
+        self = this,
+        success = function (dev) {
+          self.serial.connect(dev, {bitrate: 57600,
+                                    name: dev}, cb);
+        };
+    self.serial.getDevices(function(newDevices) {
+      var newNames = newDevices.map(function (d) {return dev.name;}).sort(),
+          oldNames = disDevices.map(function (d) {return dev.name;}).sort();
+      // XXX: arduino ide actually does it like this but it really
+      // makes absolutely no sense:
+      // oldNames = iniDevices.map(function (d) {return dev.name;}).sort();
+
+      // Python style zip
+      function zip(arrays) {
+        return arrays[0].map(function(_,i) {
+          return arrays.map(function(array){return array[i];});
+        });
+      }
+
+      var newDev = zip([newNames, oldNames]).filter(function (pair) {
+        return pair[0] != pair[1];
+      })[0];
+
+      if (newDev) {
+        log.log("Aha! new device", newDev[0], "connecting (baud 57600)");
+        success(newDev[0]);
+        return;
+      }
+
+      if ((new Date().getTime()) > earlyDeadline &&
+          newNames.indexOf(dev.name) != -1) {
+        log.log("Early deadline success: found original device");
+        success(dev.name);
+        return;
+      }
+
+      setTimeout(function() {
+        self.waitForDeviceAndConnectArduinoIDE(dev, iniDevices, disDevices,
+                                               earlyDeadline, finalDeadline, cb);
+      }, 250);
+    });
+  };
 
 
 AVR109Transaction.prototype.connectDone = function (connectArg) {
