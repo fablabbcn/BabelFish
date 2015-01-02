@@ -25,12 +25,16 @@ function STK500Transaction () {
   };
   this.pageSize = 128;
   this.log = log;
+  this.maxMessageRetries = 4;
 }
 
 STK500Transaction.prototype = new SerialTransaction();
 
-STK500Transaction.prototype.writeThenRead = function (data, rcvSize, cb) {
+STK500Transaction.prototype.writeThenRead = function (data, rcvSize, cb, _retryCnt) {
   var self = this;
+  if (!Number.isInteger(_retryCnt))
+    _retryCnt = this.maxMessageRetries;
+
   function modifyDatabuffer () {
     // The weird binding of the reader.
     var reader = this,
@@ -44,7 +48,7 @@ STK500Transaction.prototype.writeThenRead = function (data, rcvSize, cb) {
 
     if (end < 0) return false;
 
-    if (end-1 != rcvSize )
+    if (end-1 != rcvSize)
       console.error("Requested", rcvSize, "from databuffer",
                     reader.buffer.databuffer, "but found", end-1,
                     "size package");
@@ -56,11 +60,23 @@ STK500Transaction.prototype.writeThenRead = function (data, rcvSize, cb) {
     return true;
   }
 
+  function retryThenErrcb () {
+    // When we fail retry
+    if (_retryCnt == 0) {
+      self.errCb(1, "STK read timed out");
+    }
+
+    self.buffer.drain(function () {
+      log.log("Retrying read/write:", data, rcvSize);
+      self.writeThenRead(data, rcvSize, cb, _retryCnt - 1);
+    });
+  }
+
   this.writeThenRead_({outgoingMsg: data,
                        modifyDatabuffer: modifyDatabuffer,
                        callback: cb,
                        ttl: 500,
-                       timeoutCb: this.errCb.bind(this, 1, "STK failed timeout")});
+                       timeoutCb: retryThenErrcb});
 };
 
 // Cb should have the 'state' format, ie function (ok, data)
@@ -120,7 +136,7 @@ STK500Transaction.prototype.drainedBytes = function (readArg) {
           log.log("Raised DTR/RTS, done: ", ok);
           setTimeout(self.transitionCb('dtrSent', ok), 500);
         });
-      }, 0);
+      }, 250);
     });
   }, 0);
 };
@@ -134,8 +150,8 @@ STK500Transaction.prototype.dtrSent = function (ok) {
   log.log("DTR sent (low) real good");
 
   this.buffer.drain(function () {
-    self.writeThenRead([self.STK.GET_SYNC, self.STK.CRC_EOP],
-                        0, self.transitionCb('inSyncWithBoard'));
+    self.writeThenRead([self.STK2.CMD_SIGN_ON],
+                       self.transitionCb('inSyncWithBoard'));
   });
 };
 
@@ -146,27 +162,27 @@ STK500Transaction.prototype.inSyncWithBoard = function (ok, data) {
   }
   this.inSync_ = true;
   this.writeThenRead([this.STK.GET_PARAMETER, this.STK.HW_VER, this.STK.CRC_EOP], 1,
-                      this.transitionCb('readHardwareVersion'));
+                     this.transitionCb('readHardwareVersion'));
 };
 
 STK500Transaction.prototype.readHardwareVersion = function (ok, data) {
   this.writeThenRead([this.STK.GET_PARAMETER, this.STK.SW_VER_MAJOR, this.STK.CRC_EOP],
-                      1, this.transitionCb('readSoftwareMajorVersion'));
+                     1, this.transitionCb('readSoftwareMajorVersion'));
 };
 
 STK500Transaction.prototype.readSoftwareMajorVersion = function (ok, data) {
   this.writeThenRead([this.STK.GET_PARAMETER, this.STK.SW_VER_MINOR, this.STK.CRC_EOP],
-                      1, this.transitionCb('readSoftwareMinorVersion'));
+                     1, this.transitionCb('readSoftwareMinorVersion'));
 };
 
 STK500Transaction.prototype.readSoftwareMinorVersion = function (ok, data) {
   this.writeThenRead([this.STK.ENTER_PROGMODE, this.STK.CRC_EOP], 0,
-                      this.transitionCb('enteredProgmode'));
+                     this.transitionCb('enteredProgmode'));
 };
 
 STK500Transaction.prototype.enteredProgmode = function (ok, data) {
   this.writeThenRead([this.STK.READ_SIGN, this.STK.CRC_EOP], 3,
-                      this.transitionCb('readSignature'));
+                     this.transitionCb('readSignature'));
 };
 
 STK500Transaction.prototype.readSignature = function (ok, data) {
@@ -218,7 +234,7 @@ STK500Transaction.prototype.programFlash = function (offset, length) {
 STK500Transaction.prototype.doneProgramming = function () {
   this.sketchData = null;
   this.writeThenRead([this.STK.LEAVE_PROGMODE, this.STK.CRC_EOP],
-                      0, this.transitionCb('leftProgmode'));
+                     0, this.transitionCb('leftProgmode'));
 };
 
 STK500Transaction.prototype.leftProgmode = function (ok, data) {
