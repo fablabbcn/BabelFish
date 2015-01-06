@@ -93,6 +93,11 @@ SerialTransaction.prototype.cleanup = function (callback) {
 // - besides this passed as a reader config
 // callback is what to do with the data
 SerialTransaction.prototype.writeThenRead_ = function (info) {
+  if (this.previousErrors.length > 0) {
+    this.errCb(1, "Transaction was stopped with errors but continues to run");
+    return;
+  }
+
   this.log.log("Writing: " + buffer.hexRep(info.outgoingMsg));
   var outgoingBinary = buffer.binToBuf(info.outgoingMsg),
       self = this;

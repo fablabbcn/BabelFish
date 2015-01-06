@@ -96,7 +96,7 @@ AVR109Transaction.prototype.magicBaudReset = function (devName, hexData) {
                    });
                  });
           } else {
-            self.errCb("Failed to disconnect from " + devName);
+            self.errCb(1, "Failed to disconnect from " + devName);
           }
         });
       }, self.timeouts.magicBaudConnected);
