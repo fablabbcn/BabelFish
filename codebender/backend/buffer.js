@@ -82,6 +82,7 @@ BufferReader.prototype = {
   },
 
   destroy: function () {
+    log.log("Destroying reader from buffer", this.buffer);
     this.buffer.removeReader(this);
     if (this.timeout_)
       clearTimeout(this.timeout_);
@@ -108,6 +109,7 @@ function Buffer (readerClass) {
   this.databuffer = [];
   this.readers = [];
   this.readerClass = readerClass;
+  this.maxBufferSize = 200;
 }
 
 Buffer.prototype = {
@@ -123,7 +125,7 @@ Buffer.prototype = {
 
   runAsyncReaders: function () {
     var db;
-    log.log("Running readers:", this.readers, "databuffer:", this.databuffer);
+    log.log("Running readers:", this.readers, ":", this.databuffer);
     while (this.readers[0] &&
            this.readers[0].modifyDatabuffer(this)) {
       this.readers[0].destroy();
@@ -157,9 +159,16 @@ Buffer.prototype = {
   },
 
 
-  write: function (readArg) {
+  write: function (readArg, errorCb) {
     var hexData = bufToBin(readArg.data);
     this.databuffer = this.databuffer.concat(hexData);
+    if (this.databuffer.length > this.maxBufferSize) {
+      if (errorCb)
+        errorCb("Receive buffer larger than " + this.maxBufferSize);
+      else
+        throw Error("Receive buffer larger than " + this.maxBufferSize);
+    }
+
     log.log("Pushing to buffer [", hexData.length, "]: ", hexData);
     if (this.readers.length > 0)
       this.runAsyncReaders();
@@ -168,7 +177,13 @@ Buffer.prototype = {
   // Dump the entire databuffer
   drain: function(callback) {
     log.log("Draining bytes: ", this.databuffer);
-    var ret = this.databuffer;
+    // Clean up readers
+    this.readers.slice().forEach(function (r) {
+      self.removeReader(r);
+      setTimeout(r.timeoutCb, 0);
+    });
+
+    var ret = this.databuffer, self = this;
     this.databuffer = [];
     callback({bytesRead: ret.length, data: ret});
   },

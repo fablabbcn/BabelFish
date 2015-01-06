@@ -55,7 +55,9 @@ STK500Transaction.prototype.writeThenRead = function (data, rcvSize, cb, _retryC
 
     reader.buffer.databuffer = db.slice(end);
     // Don't include the packet head and tail
-    setTimeout(this.callback.bind(this, true, db.slice(1,end-1)), 0);
+    setTimeout(function () {
+      self.callback(db.slice(1,end-1));
+    }, 0);
 
     return true;
   }
@@ -79,13 +81,14 @@ STK500Transaction.prototype.writeThenRead = function (data, rcvSize, cb, _retryC
                        timeoutCb: retryThenErrcb});
 };
 
-// Cb should have the 'state' format, ie function (ok, data)
+// Cb should have the 'state' format, ie function (data)
 STK500Transaction.prototype.cmd = function (cmd, cb) {
   // Always get a 4byte answer
   this.writeThenRead(cmd, 4, cb);
 };
 
 STK500Transaction.prototype.flash = function (deviceName, sketchData) {
+  this.refreshTimeout();
   this.sketchData = sketchData;
   var self = this;
   self.destroyOtherConnections(
@@ -109,6 +112,8 @@ STK500Transaction.prototype.eraseThenFlash  = function (deviceName, sketchData, 
 };
 
 STK500Transaction.prototype.connectDone = function (hexCode, connectArg) {
+  var self = this;
+
   if (typeof(connectArg) == "undefined" ||
       typeof(connectArg.connectionId) == "undefined" ||
       connectArg.connectionId == -1) {
@@ -118,82 +123,49 @@ STK500Transaction.prototype.connectDone = function (hexCode, connectArg) {
 
   this.connectionId = connectArg.connectionId;
   log.log("Connected to board. ID: " + connectArg.connectionId);
-  this.buffer.drain(this.transitionCb('drainedBytes'));
-
-};
-
-STK500Transaction.prototype.drainedBytes = function (readArg) {
-  var self = this;
-  log.log("DRAINED ", readArg.bytesRead, " BYTES, setting DTR/RTS to low");
-  setTimeout(function() {
-    self.serial.setControlSignals(self.connectionId, {dtr: false, rts: false}, function(ok) {
-      if (!ok) {
-        self.errCb(1, "Couldn't send DTR");
-        return;
-      }
-      setTimeout(function() {
-        self.serial.setControlSignals(self.connectionId, {dtr: true, rts: true}, function(ok) {
-          log.log("Raised DTR/RTS, done: ", ok);
-          setTimeout(self.transitionCb('dtrSent', ok), 500);
-        });
-      }, 250);
-    });
-  }, 0);
-};
-
-STK500Transaction.prototype.dtrSent = function (ok) {
-  var self = this;
-  if (!ok) {
-    this.errCb(1, "Couldn't send DTR");
-    return;
-  }
-  log.log("DTR sent (low) real good");
-
   this.buffer.drain(function () {
-    self.writeThenRead([self.STK2.CMD_SIGN_ON],
-                       self.transitionCb('inSyncWithBoard'));
+    self.onOffDTR(function () {
+      self.writeThenRead([self.STK.GET_SYNC, self.STK.CRC_EOP],
+                         self.transitionCb('inSyncWithBoard'));
+    });
   });
-};
 
-STK500Transaction.prototype.inSyncWithBoard = function (ok, data) {
-  if (!ok) {
-    this.errCb(1, "InSyncWithBoard: NOT OK");
-    return;
-  }
+};
+STK500Transaction.prototype.inSyncWithBoard = function (data) {
   this.inSync_ = true;
   this.writeThenRead([this.STK.GET_PARAMETER, this.STK.HW_VER, this.STK.CRC_EOP], 1,
                      this.transitionCb('readHardwareVersion'));
 };
 
-STK500Transaction.prototype.readHardwareVersion = function (ok, data) {
+STK500Transaction.prototype.readHardwareVersion = function (data) {
   this.writeThenRead([this.STK.GET_PARAMETER, this.STK.SW_VER_MAJOR, this.STK.CRC_EOP],
                      1, this.transitionCb('readSoftwareMajorVersion'));
 };
 
-STK500Transaction.prototype.readSoftwareMajorVersion = function (ok, data) {
+STK500Transaction.prototype.readSoftwareMajorVersion = function (data) {
   this.writeThenRead([this.STK.GET_PARAMETER, this.STK.SW_VER_MINOR, this.STK.CRC_EOP],
                      1, this.transitionCb('readSoftwareMinorVersion'));
 };
 
-STK500Transaction.prototype.readSoftwareMinorVersion = function (ok, data) {
+STK500Transaction.prototype.readSoftwareMinorVersion = function (data) {
   this.writeThenRead([this.STK.ENTER_PROGMODE, this.STK.CRC_EOP], 0,
                      this.transitionCb('enteredProgmode'));
 };
 
-STK500Transaction.prototype.enteredProgmode = function (ok, data) {
+STK500Transaction.prototype.enteredProgmode = function (data) {
   this.writeThenRead([this.STK.READ_SIGN, this.STK.CRC_EOP], 3,
                      this.transitionCb('readSignature'));
 };
 
-STK500Transaction.prototype.readSignature = function (ok, data) {
+STK500Transaction.prototype.readSignature = function (data) {
   log.log("Signature:", buffer.hexRep(data));
   this.transition('programFlash', 0, this.pageSize,
                   this.transitionCb('doneProgramming'));
 };
 
-STK500Transaction.prototype.programFlash = function (offset, length) {
+STK500Transaction.prototype.programFlash = function (offset, pgSize) {
   var data = this.sketchData;
-  log.log("program flash: data.length: ", data.length, ", offset: ", offset, ", length: ", length);
+  log.log("program flash: data.length: ", data.length, ", offset: ", offset, ", page size: ", pgSize);
 
   if (offset >= data.length) {
     log.log("Done programming flash: ", offset, " vs. " + data.length);
@@ -201,9 +173,9 @@ STK500Transaction.prototype.programFlash = function (offset, length) {
     return;
   }
 
-  var payload = this.padOrSlice(data, offset, length),
+  var payload = this.padOrSlice(data, offset, pgSize),
       addressBytes = buffer.storeAsTwoBytes(offset / 2),
-      sizeBytes = buffer.storeAsTwoBytes(length),
+      sizeBytes = buffer.storeAsTwoBytes(pgSize),
       kFlashMemoryType = 0x46;
 
   var loadAddressMessage = [
@@ -214,19 +186,10 @@ STK500Transaction.prototype.programFlash = function (offset, length) {
   programMessage.push(this.STK.CRC_EOP);
 
   var self = this;
-  self.writeThenRead(loadAddressMessage, 0, function(ok, reponse) {
-    console.log('Finished with block');
-    if (!ok) {
-      self.errCb(1, "Error programming the flash (load address)");
-      return;
-    }
-    self.writeThenRead(programMessage, 0, function(ok, response) {
-      if (!ok) {
-        self.errCb(1, "Error programming the flash (send data)");
-        return;
-      }
+  self.writeThenRead(loadAddressMessage, 0, function(reponse) {
+    self.writeThenRead(programMessage, 0, function(response) {
       // Program the next section
-      self.transition('programFlash', offset + length, length);
+      self.transition('programFlash', offset + pgSize, pgSize);
     });
   });
 };
@@ -237,7 +200,7 @@ STK500Transaction.prototype.doneProgramming = function () {
                      0, this.transitionCb('leftProgmode'));
 };
 
-STK500Transaction.prototype.leftProgmode = function (ok, data) {
+STK500Transaction.prototype.leftProgmode = function (data) {
   var self = this;
   this.cleanup(this.finishCallback);
 };

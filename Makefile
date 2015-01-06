@@ -64,9 +64,11 @@ $(CURDIR)/node_modules:
 	npm install
 
 browserify $(CURDIR)/bundles/chrome-client.js: $(CLIENT_FILES) | $(CURDIR)/node_modules $(CURDIR)/bundles
-	$(CURDIR)/node_modules/.bin/browserify -e $(CURDIR)/codebender/plugin.js > $(CURDIR)/bundles/chrome-client.js
+	$(CURDIR)/node_modules/.bin/browserify -e $(CURDIR)/codebender/plugin.js | \
+		cat - $(CURDIR)/codebender/compilerflasher.js \
+		> $(CURDIR)/bundles/chrome-client.js
 
-plugin:
+$(CURDIR)/plugin $(CURDIR)/CodebenederChromeDeveloper:
 	git submodule init
 	git submodule update
 
@@ -91,7 +93,7 @@ test: $(CURDIR)/bundles/chrome-client.js $(CURDIR)/bundles/firefox-client.js $(X
 	$(MOCHA) $(CHROME_TEST) | sed 's_http://localhost:8080_$(CURDIR)_g' # $(FIREFOX_TEST)
 
 serve: browserify $(CHROME_ZIP)
-	($(CURDIR)/node_modules/.bin/watchify $(CLIENT_FILES) -o $(CURDIR)/bundles/chrome-client.js & node tools/serve.js)
+	node tools/serve.js
 
 async-serve:
 	node $(CURDIR)/tools/serve.js & \
@@ -101,15 +103,24 @@ kill-server:
 	kill $(shell cat server_pid)
 	rm server_pid
 
-chrome-args = --user-data-dir=/tmp/chromium-user-data --load-extension=$(CURDIR)/chrome-extension --no-first-run, --no-default-browser-check --debug-print --enable-logging=stderr --v=1 --disable-web-security --no-sandbox
+chrome-args = --user-data-dir=/tmp/chromium-user-data					\
+--load-extension=$(CURDIR)/CodebenederChromeDeveloper,$(CURDIR)/chrome-extension	\
+--no-first-run,										\
+--no-default-browser-check								\
+--disable-web-security									\
+--no-sandbox										\
+
 chrome-log-dir = $(CURDIR)/chrome-logs
+
+chrome-args:
+	@echo $(chrome-args)
 
 $(chrome-log-dir):
 	mkdir $@
 
-run-chrome: $(CURDIR)/bundles/chrome-client.js | /tmp $(chrome-log-dir)
+run-chrome: $(CURDIR)/bundles/chrome-client.js $(CURDIR)/CodebenederChromeDeveloper | /tmp $(chrome-log-dir)
 	((sleep 3 &&\
-		$(chrome) $(chrome-args) $(URL) 2> $(chrome-log-dir)/chrome-$(shell date "+%s").log); \
+		$(chrome) $(chrome-args) $(URL) chrome://extensions 2> $(chrome-log-dir)/chrome-$(shell date "+%s").log); \
 		rm -rf /tmp/chromium-use2r-data) &
 
 firefox-arch = $(CURDIR)/test/firefox-arch

@@ -14,6 +14,7 @@ function SerialTransaction (finishCallback, errorCallback) {
 SerialTransaction.prototype = new Transaction();
 
 SerialTransaction.prototype.init = function (finishCallback, errorCallback) {
+  this.previousErrors = [];
   if (Transaction.prototype.init)
     Transaction.prototype.init.apply(this, arraify(arguments, 2));
 
@@ -32,8 +33,30 @@ SerialTransaction.prototype.init = function (finishCallback, errorCallback) {
   this.serial.customErrorHandler = this.errCb.bind(this, 1);
 };
 
+
+SerialTransaction.prototype.refreshTimeout = function () {
+  var self = this;
+
+  if (this.timeout) {
+    this.log.log("Clearing old timeout");
+    clearTimeout(this.timeout);
+    this.timeout = null;
+  } else {
+    this.timeoutSecs = 2;
+  }
+
+  this.log.error("Setting timeout seconds:", this.timeoutSecs);
+  this.timeout = setTimeout(function () {
+    self.errCb(1, "Waited too long for something to happen.");
+  }, this.timeoutSecs * 1000);
+};
+
 SerialTransaction.prototype.errCb = function (id, var_message) {
+  if (this.previousErrors.length > 0)
+    this.log.warn("Previous errors", this.previousErrors);
+
   var logargs = arraify(arguments, 1, "state: ", this.state, " - ");
+  this.previousErrors.push(logargs);
   this.cleanup();
   this.log.error.apply(this.log.error, logargs);
   if (this.errorCallback)
@@ -43,6 +66,12 @@ SerialTransaction.prototype.errCb = function (id, var_message) {
 SerialTransaction.prototype.cleanup = function (callback) {
   var self = this;
 
+  if (this.timeout){
+    this.log.log("Stopping timeout");
+    clearTimeout(this.timeout);
+  }
+  this.timeout = null;
+
   self.serial.customErrorHandler = null;
   this.serial.onReceive.removeListener(this.listenerHandler);
 
@@ -50,7 +79,7 @@ SerialTransaction.prototype.cleanup = function (callback) {
     this.serial.disconnect(this.connectionId, function (ok) {
       if (!ok) {
         self.log.warn("Failed to disconnect (id:", self.connectionId,
-                    ") during cleanup");
+                      ") during cleanup");
       }
 
       self.log.log("Disconnected ", self.connectionId);
@@ -64,11 +93,12 @@ SerialTransaction.prototype.cleanup = function (callback) {
 // - outgoingMsg: byte array
 // - besides this passed as a reader config
 // callback is what to do with the data
-SerialTransaction.prototype.writeThenRead_ = function (info, callback) {
+SerialTransaction.prototype.writeThenRead_ = function (info) {
   this.log.log("Writing: " + buffer.hexRep(info.outgoingMsg));
   var outgoingBinary = buffer.binToBuf(info.outgoingMsg),
       self = this;
 
+  self.refreshTimeout();
   if (!self.registeredBufferListener){
     self.registeredBufferListener = true;
     this.log.log("Listening on buffer");
@@ -92,7 +122,7 @@ SerialTransaction.prototype.readToBuffer = function (readArg) {
     return true;
   }
 
-  this.buffer.write(readArg);
+  this.buffer.write(readArg, this.errCb.bind(this, 1));
 
   // Note that in BabelFish this does not ensure that the listener
   // stops.
@@ -150,12 +180,13 @@ SerialTransaction.prototype.writeByte = function (data, addr, cb) {
 
   // Callback gets the next iteration as first
   function poll (maxRetries, timeout, cb) {
+    var self = this;
     if (maxRetries < 0)
       throw Error("Retry limit exceeded");
 
     cb(function () {
       setTimeout(function () {
-        poll(maxRetries-1, timeout, cb);
+        self.poll(maxRetries-1, timeout, cb);
       }, timeout);
     });
   }
@@ -201,6 +232,39 @@ SerialTransaction.prototype.destroyOtherConnections = function (name, cb) {
       }, cb);
     }
   });
+};
+
+SerialTransaction.prototype.onOffDTR = function (cb) {
+  var args = arraify(arguments, 1),
+      self = this;
+
+  setTimeout(function() {
+    self.serial.setControlSignals(
+      self.connectionId, {dtr: false, rts: false},
+      function (ok) {
+        if (!ok) {
+          self.errCb(1, "Couldn't send DTR");
+          return;
+        }
+        setTimeout(function() {
+          self.serial.setControlSignals(
+            self.connectionId, {dtr: true, rts: true},
+            function(ok) {
+              self.log.log("Raised DTR/RTS, done: ", ok);
+              if (!ok) {
+                self.errCb(1,"Failed to set flags");
+                return;
+              }
+
+              setTimeout(function () {
+                self.buffer.drain(function () {
+                  cb.apply(null, args);
+                });
+              }, 500);
+            });
+        }, 250);
+      });
+  }, 0);
 };
 
 module.exports = SerialTransaction;

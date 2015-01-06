@@ -15,7 +15,6 @@ function poll (maxRetries, timeout, cb) {
   });
 }
 
-
 function AVR109Transaction () {
   SerialTransaction.apply(this, arraify(arguments));
 
@@ -106,6 +105,7 @@ AVR109Transaction.prototype.magicBaudReset = function (devName, hexData) {
 };
 
 AVR109Transaction.prototype.flash = function (devName, hexData) {
+  this.refreshTimeout();
   this.sketchData = hexData;
   this.destroyOtherConnections(devName,
                                this.transitionCb('magicBaudReset', devName, hexData));

@@ -110,7 +110,7 @@ STK500Transaction.prototype.writeThenRead = function (data, cb) {
 // Cb should have the 'state' format, ie function (ok, data)
 STK500Transaction.prototype.cmd = function (cmd, cb) {
   // Always get a 4byte answer
-  this.writeThenRead_(cmd, 4, cb);
+  this.writeThenRead(cmd, 4, cb);
 };
 
 STK500Transaction.prototype.flash = function (deviceName, sketchData) {
@@ -125,7 +125,74 @@ STK500Transaction.prototype.flash = function (deviceName, sketchData) {
     });
 };
 
-STK500Transaction.prototype.eraseThenFlash  = function (deviceName, sketchData, dontFlash) {
+STK500Transaction.prototype.connectDone = function (hexCode, connectArg) {
+  if (typeof(connectArg) == "undefined" ||
+      typeof(connectArg.connectionId) == "undefined" ||
+      connectArg.connectionId == -1) {
+    this.errCb(1, "Bad connectionId / Couldn't connect to board");
+    return;
+  }
+
+  this.connectionId = connectArg.connectionId;
+  log.log("Connected to board. ID: " + connectArg.connectionId);
+  this.buffer.drain(function () {
+    this.onOffDTR(self.transitionCb('signOn'));
+  });
+};
+
+STK500Transaction.prototype.signOn = function () {
+  var self = this;
+  self.writeThenRead([self.STK2.CMD_SIGN_ON],
+                     self.transitionCb('signedOn'));
+};
+
+STK500Transaction.prototype.signedOn  = function (data) {
+  var expectedData = [
+    this.STK2.CMD_SIGN_ON,
+    this.STK2.STATUS_CMD_OK,
+    8
+  ];
+  if(data.slice(0,3) != expectedData){
+    this.errCb(1, "Error signing on to device");
+    return;
+  }
+  // The following 8 bytes are the signature
+
+  self.transition("programDevice", 0, 128);
+};
+
+STK500Transaction.prototype.programDevice = function (offset, pgSize) {
+  var data = this.sketchData;
+  log.log("program flash: data.length: ", data.length, ", offset: ", offset, ", page size: ", pgSize);
+
+  if (offset >= data.length) {
+    log.log("Done programming flash: ", offset, " vs. " + data.length);
+    this.transition('doneProgramming', this.connectionId);
+    return;
+  }
+
+  var payload = this.padOrSlice(data, offset, pgSize),
+      addressBytes = buffer.storeAsTwoBytes(offset / 2),
+      sizeBytes = buffer.storeAsTwoBytes(pgSize),
+      kFlashMemoryType = 0x46;
+
+  var loadAddressMessage = [
+    this.STK.LOAD_ADDRESS, addressBytes[1], addressBytes[0], this.STK.CRC_EOP];
+  var programMessage = [
+    this.STK.PROG_PAGE, sizeBytes[0], sizeBytes[1], kFlashMemoryType]
+        .concat(payload);
+  programMessage.push(this.STK.CRC_EOP);
+
+  var self = this;
+  self.writeThenRead(loadAddressMessage, 0, function(reponse) {
+    self.writeThenRead(programMessage, 0, function(response) {
+      // Program the next section
+      self.transition('programFlash', offset + pgSize, pgSize);
+    });
+  });
+};
+
+STK500Transaction.prototype.eraseThenFlash = function (deviceName, sketchData, dontFlash) {
   var self = this;
   log.log("Erasing chip");
   self.writeThenRead_(this.memOps.CHIP_ERASE_ARR, function  () {

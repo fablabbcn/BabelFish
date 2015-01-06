@@ -4,8 +4,10 @@ function poll(cb, time) {
   }, time || 500);
 }
 
-var cf = new compilerflasher(function (){return [];});
-var protocol = "avr109";
+// var cf = new compilerflasher(function (){return [];});
+compilerflasher = new compilerflasher();
+var cf = compilerflasher,
+    protocol = "avr109";
 
 // Enable the plugin
 cf.pluginHandler.showPlugin();
@@ -13,7 +15,7 @@ cf.enableCompilerFlasherActions();
 cf.pluginHandler.scan();
 
 // We provide parsed hex
-cf.pluginHandler.plugin_.binaryMode = false;
+cf.pluginHandler.codebender_plugin.binaryMode = false;
 function customFlashSelectedPort () {
   var protocol = document.getElementById("protocols").value;
   $.get("/codebender/sketches/blink-" + protocol + ".hex", function (blob) {
@@ -38,7 +40,9 @@ function customFlashSelectedPort () {
           undefined,                //Flush with programmer
           ParseHexFile(blob),                       //binary
           function (from, progress) {
-            console.log("Uploading progress", from, progress);
+            var msg = "Return value:" + progress;
+            console.log(msg);
+            document.getElementById('hex').innerHTML = msg;
           }];
 
     // Mimic the usbflash behavior
@@ -68,11 +72,11 @@ function startMonitor () {
   document.getElementById('monitor').disabled = true;
 
   poll(function () {
-    if (!cf.pluginHandler.plugin_.readingInfo)
+    if (!cf.pluginHandler.codebender_plugin.readingInfo)
       return false;
 
     document.getElementById('monitor').innerHTML = "Disconnect: " +
-      cf.pluginHandler.plugin_.readingInfo.connectionId;
+      cf.pluginHandler.codebender_plugin.readingInfo.connectionId;
     document.getElementById('monitor').onclick = killMonitor;
     document.getElementById('monitor').disabled = false;
     return true;
@@ -91,14 +95,14 @@ document.getElementById('monitor').onclick = startMonitor;
 function populateConnections() {
   var cnxul = document.getElementById('connections');
 
-  cf.pluginHandler.plugin_.serial.getConnections(function (cnxs) {
+  cf.pluginHandler.codebender_plugin.serial.getConnections(function (cnxs) {
     cnxul.innerHTML = "";
     cnxs.forEach(function (cnx) {
       var li = document.createElement("li"), btn = document.createElement("button");
       li.innerHTML += cnx.name + " : " + cnx.connectionId;
       btn.innerHTML = "Disconnect";
       btn.onclick = function () {
-        cf.pluginHandler.plugin_.serial.disconnect(cnx.connectionId, function (ok) {
+        cf.pluginHandler.codebender_plugin.serial.disconnect(cnx.connectionId, function (ok) {
           if (ok) {
             // Remove from list
             cnxul.removeChild(li);
