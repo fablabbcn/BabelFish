@@ -81,7 +81,7 @@ AVR109Transaction.prototype.magicBaudReset = function (devName, hexData) {
                              disDevices.map(function (d) {return d.path;}));
 
                      if (disDevices.some(function (d) {return d.path == devName;})){
-                       log.log("Leonardo did not disappear after reset.");
+                       log.log("Leonardo did not disappear after reset. Will poll for it");
                        next();
                        return;
                      }

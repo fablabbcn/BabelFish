@@ -1186,7 +1186,7 @@ compilerflasher = function(lf){
         if (window.flashing_errors[error])
             msg = window.flashing_errors[error] + " <a href='https://codebender.uservoice.com/knowledgebase/articles/183395-usb-flashing-known-errors' target='_blank'>More Info</a>";
         else
-            msg = "An error occured while connecting to your device. Please try again.";
+            msg = "An error occured while connecting to your device. Please try again. (" + error + ")";
 
         return msg
     }

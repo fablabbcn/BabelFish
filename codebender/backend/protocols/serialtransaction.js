@@ -42,10 +42,9 @@ SerialTransaction.prototype.refreshTimeout = function () {
     clearTimeout(this.timeout);
     this.timeout = null;
   } else {
-    this.timeoutSecs = 2;
+    this.timeoutSecs = 5;
   }
 
-  this.log.error("Setting timeout seconds:", this.timeoutSecs);
   this.timeout = setTimeout(function () {
     self.errCb(1, "Waited too long for something to happen.");
   }, this.timeoutSecs * 1000);
