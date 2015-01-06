@@ -39,6 +39,13 @@ function Plugin() {
 
   // Change to false to provide byte arrays for flashing.
   this.binaryMode = true;
+
+  this._rcvError = function (connectionId, info) {
+    if (info.connectionId == connectionId) {
+      console.warn('Receive error:', info);
+      self.disconnect();
+    }
+  };
 }
 
 Plugin.prototype = {
@@ -47,22 +54,41 @@ Plugin.prototype = {
   },
 
   readingHandlerFactory: function (connectionId, cb) {
+    var self = this;
+
     dbg("Reading Info:",this.readingInfo);
     if (cb !== this.readingInfo.callbackUsedInHandler) {
       this.readingInfo.callbackUsedInHandler = cb;
-      var self = this;
       this.readingInfo.handler = function (readArg) {
         if (!self.readingInfo)
           return;
+
         if (readArg.connectionId != connectionId)
           return;
+
+        if (!Number.isInteger(self.readingInfo.samultaneousRequests))
+          self.readingInfo.samultaneousRequests = 0;
+
+        if (++self.readingInfo.samultaneousRequests > 3) {
+          console.warn("The number of requests is too damn high.");
+          self.errorCallback(
+            "monitor", "Getting messages more often than I can handle.", 0);
+          self.disconnect();
+        }
+
+        if (!readArg) {
+          console.warn("Someone else is reading aren't they.");
+          self.errorCallback(
+            "monitor", "I read nothing.", 0);
+          self.disconnect();
+        }
+
 
         var bufferView = new Uint8Array(readArg.data),
             chars = [];
 
-        for (var i = 0; i < bufferView.length; ++i) {
+        for (var i = 0; i < bufferView.length; ++i)
           chars.push(bufferView[i]);
-        }
 
         if (!self.readingInfo.buffer_)
           self.readingInfo.buffer_ = [];
@@ -81,22 +107,35 @@ Plugin.prototype = {
         var buffer_tail = self.readingInfo.buffer_.pop() || '';
         var msgs_head = msgs.shift() || '';
         var tail_msgs = msgs;
-        self.readingInfo.buffer_ = buffer_head.concat([buffer_tail + msgs_head]).concat(tail_msgs);
+        self.readingInfo.buffer_ = buffer_head.concat([buffer_tail + msgs_head])
+          .concat(tail_msgs);
 
         function __flushBuffer() {
           var ret = self.readingInfo.buffer_.join("\n");
           self.readingInfo.buffer_ = [];
           cb("chrome-serial", ret);
         }
+
         if (self._getBufferSize(self.readingInfo.buffer_) > this.bufferSize) {
-          __flushBuffer();
+          if (!self.readingInfo.overflowCount) {
+            self.readingInfo.overflowCount = 1;
+          } else {
+            if (++self.readingInfo.overflowCount < 10)
+              __flushBuffer();
+            else
+              // Too fast man
+              self.disconnect();
+          }
+
         } else {
           setTimeout(function () {
             if (self.readingInfo && self.readingInfo.buffer_.length > 0) {
+              self.readingInfo.overflowCount = 0;
               __flushBuffer();
             }
-          }.bind(this), 200);
+          }, 200);
         }
+        self.readingInfo.samultaneousRequests--;
       }.bind(this);
     }
 
@@ -107,14 +146,6 @@ Plugin.prototype = {
     return buffer_.reduce(function (a, b) {
       return a.length + b.length;
     });
-  },
-
-  _rcvError: function (connectionId, info) {
-    if (info.connectionId == connectionId) {
-      console.warn('Receive error:', info);
-      this.serial.onReceiveError.removeListener(this._rcvError);
-      this.disconnect();
-    }
   },
 
   // Async methods
@@ -130,7 +161,7 @@ Plugin.prototype = {
         self.serial.onReceive.addListener(
           self.readingHandlerFactory(self.readingInfo.connectionId, cb)
         );
-        self.serial.onReceiveError.addListener(self._rcvError.bind(self, info.connectionId));
+        self.serial.onReceiveError.addListener(self._rcvError);
       } else {
         console.error("Failed to connect serial:", {bitrate: baudrate, name: port});
       }
@@ -194,7 +225,7 @@ Plugin.prototype = {
                                  force,
                                  delay,
                                  mcu,
-                                cb) {
+                                 cb) {
     // XXX: first argument is from (no used)
     //      second argument is progress, currently 1 (change with actual progress)
     cb(null, 1);
@@ -245,20 +276,17 @@ Plugin.prototype = {
       self.serial.onReceiveError.removeListener(self._rcvError);
 
       var connectionId = self.readingInfo.connectionId;
-      self.serial.getConnections(function (cnxs) {
-        cnxs.forEach(function (cnx) {
-          if (cnx.connectionId != connectionId)
-            return;
 
-          self.serial.disconnect(connectionId, function (ok) {
-            if (!ok) {
-              console.warn("Failed to disconnect: ", connectionId);
-              // XXX: Maybe try again
-            } else {
-              dbg("Disconnected ok:", connectionId);
-            }
-          });
-        });
+      // This HAS to be synchronous. There may be no tab when this
+      // ends to run the callbacks.
+      self.serial.disconnect(connectionId, function (ok) {
+        // Probably wont reach here anyway.
+        if (!ok) {
+          console.warn("Failed to disconnect: ", connectionId);
+          // XXX: Maybe try again
+        } else {
+          dbg("Disconnected ok:", connectionId);
+        }
       });
 
       // Cleanup syncrhronously
@@ -311,7 +339,9 @@ Plugin.prototype = {
   },
 
   // Dummies for plugin garbage collection.
-  deleteMap: function () {},
+  deleteMap: function () {
+    this.disconnect();
+  },
 
   closeTab: function () {
     // Tab may close before the callback so do it unsafe.

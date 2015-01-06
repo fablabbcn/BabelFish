@@ -128,6 +128,7 @@ RPCHost.prototype = {
           dbg("RPCHost requesting callback", callbackId, " with args:", args);
           try {
             sendResp(msg);
+            return true;
           } catch (e) {
             console.warn("Tried to send to a closed connection. Considering the tab closed.",
                          {
