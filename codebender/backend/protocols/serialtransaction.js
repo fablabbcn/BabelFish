@@ -149,23 +149,12 @@ SerialTransaction.prototype.readByte = function (addr, cb) {
     readOp = this.memoryOps.read(addr);
   }
 
-  var safeCmd = this.cmd.bind(this, readOp, function (ok, data) {
-    if (!ok) {
-      throw Error("Failed to send operation", readOp);
-    }
-
-    cb(ok, data);
-  });
+  var safeCmd = this.cmd.bind(this, readOp, cb);
 
   if (this.memOps.loadExtAddr)
-    this.cmd(this.memOps.loadExtAddr(addr), function (ok, data) {
+    this.cmd(this.memOps.loadExtAddr(addr), function (data) {
       self.log.log("Ignoring extended addr read.");
-      if (ok) {
-        self.log.log("ExtAddr opcode success.");
-        safeCmd();
-      } else {
-        self.log.error("ExtAddr opcode failed. data: ", data);
-      }
+      safeCmd();
     });
   else
     safeCmd();
@@ -197,10 +186,7 @@ SerialTransaction.prototype.writeByte = function (data, addr, cb) {
     });
   }
 
-  self.cmd(writeOp, function (ok, data) {
-    if (!ok)
-      throw Error("Failed to send operation", writeOp);
-
+  self.cmd(writeOp, function (data) {
     // Check if we wrote the correct byte
     poll(5, 250, function (tryAgain) {
       self.readByte(addr, function (readData) {
