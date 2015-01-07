@@ -53,36 +53,23 @@ Plugin.prototype = {
     console.error("["+ from + "] ", msg, "(status: " + status + ")");
   },
 
-  readingHandlerFactory: function (connectionId, cb) {
+  readingHandlerFactory: function (connectionId, cb, returnCb) {
     var self = this;
 
     dbg("Reading Info:",this.readingInfo);
     if (cb !== this.readingInfo.callbackUsedInHandler) {
       this.readingInfo.callbackUsedInHandler = cb;
-      this.readingInfo.handler = function (readArg) {
-        if (!self.readingInfo)
-          return;
 
+      // This will fail if:
+      // - More than 3 of this are running simultaneously
+      // - More than 10 sonsecutive buffer overflows occur
+      this.readingInfo.handler = function (readArg) {
+        if (!self.readingInfo || !readArg) {
+          console.warn("Bad reading info or read arg. Tends to correct itself.");
+          return;
+        }
         if (readArg.connectionId != connectionId)
           return;
-
-        if (!Number.isInteger(self.readingInfo.samultaneousRequests))
-          self.readingInfo.samultaneousRequests = 0;
-
-        if (++self.readingInfo.samultaneousRequests > 3) {
-          console.warn("The number of requests is too damn high.");
-          self.errorCallback(
-            "monitor", "Getting messages more often than I can handle.", 0);
-          self.disconnect();
-        }
-
-        if (!readArg) {
-          console.warn("Someone else is reading aren't they.");
-          self.errorCallback(
-            "monitor", "I read nothing.", 0);
-          self.disconnect();
-        }
-
 
         var bufferView = new Uint8Array(readArg.data),
             chars = [];
@@ -92,6 +79,9 @@ Plugin.prototype = {
 
         if (!self.readingInfo.buffer_)
           self.readingInfo.buffer_ = [];
+
+        if (self.spamGuard(returnCb))
+          return;
 
         // FIXME: if the last line does not end in a newline it should
         // be buffered
@@ -116,30 +106,43 @@ Plugin.prototype = {
           cb("chrome-serial", ret);
         }
 
-        if (self._getBufferSize(self.readingInfo.buffer_) > this.bufferSize) {
-          if (!self.readingInfo.overflowCount) {
-            self.readingInfo.overflowCount = 1;
-          } else {
-            if (++self.readingInfo.overflowCount < 10)
-              __flushBuffer();
-            else
-              // Too fast man
-              self.disconnect();
-          }
-
+        if (self._getBufferSize(self.readingInfo.buffer_) > self.bufferSize) {
+          __flushBuffer();
         } else {
+
           setTimeout(function () {
             if (self.readingInfo && self.readingInfo.buffer_.length > 0) {
               self.readingInfo.overflowCount = 0;
               __flushBuffer();
             }
-          }, 200);
+          }, 100);
         }
-        self.readingInfo.samultaneousRequests--;
       }.bind(this);
     }
 
     return this.readingInfo.handler;
+  },
+
+  spamGuard: function (returnCb) {
+    if (!Number.isInteger(this.readingInfo.samultaneousRequests))
+      this.readingInfo.samultaneousRequests = 0;
+
+
+    if (++this.readingInfo.samultaneousRequests > 3) {
+      // The speed of your device is too high for this serial,
+      // may I suggest minicom or something. This happens if we
+      // have more than 3 x 10 rps
+      returnCb(3005);
+      this.disconnect();
+      return true;
+    }
+
+    var self = this;
+    setTimeout(function () {
+      self.readingInfo.samultaneousRequests--;
+    }, 100);
+
+    return false;
   },
 
   _getBufferSize: function (buffer_) {
@@ -149,22 +152,35 @@ Plugin.prototype = {
   },
 
   // Async methods
-  serialRead: function (port, baudrate, cb, valCb) {
+  serialRead: function (port, baudrate, cb, retCb) {
     dbg("SerialRead connecting to port:", port);
     var self = this;
     if (typeof baudrate !== "number") baudrate = Number(baudrate);
 
-    this.serial.connect(port, {bitrate: baudrate, name: port}, function (info) {
-      if (info) {
-        dbg("Serial connected to: ", info);
-        self.readingInfo = info;
-        self.serial.onReceive.addListener(
-          self.readingHandlerFactory(self.readingInfo.connectionId, cb)
-        );
-        self.serial.onReceiveError.addListener(self._rcvError);
-      } else {
-        console.error("Failed to connect serial:", {bitrate: baudrate, name: port});
+    function returnCb (val) {
+      retCb("monitor", String(val));
+      self.disconnect();
+    }
+
+    this.serial.getConnections(function (cnxs){
+
+      if (cnxs.some(function (c) {return c.name == port;})) {
+        returnCb(-22);
+        return;
       }
+
+      self.serial.connect(port, {bitrate: baudrate, name: port}, function (info) {
+        if (info) {
+          dbg("Serial connected to: ", info);
+          self.readingInfo = info;
+          self.serial.onReceive.addListener(
+            self.readingHandlerFactory(self.readingInfo.connectionId, cb, returnCb)
+          );
+          self.serial.onReceiveError.addListener(self._rcvError);
+        } else {
+          console.error("Failed to connect serial:", {bitrate: baudrate, name: port});
+        }
+      });
     });
   },
 
@@ -199,7 +215,8 @@ Plugin.prototype = {
         errorCallback = function (msg, id) {
           cb(from, id);
         },
-        transaction = new protocols[protocol](finishCallback, errorCallback), self = this;
+        transaction = new protocols[protocol](finishCallback, errorCallback),
+        self = this;
     setTimeout(function () {
       dbg("Code length", code.length, typeof code,
           "Protocol:", protocols,
@@ -292,8 +309,8 @@ Plugin.prototype = {
       // Cleanup syncrhronously
       dbg('Clearing readingInfo:', self.readingInfo.connectionId);
       self.readingInfo = null;
-      self.disconnectCallback(null, 'disconnect');
     }
+    self.disconnectCallback(null, 'disconnect');
   },
 
   init: function () {
