@@ -25,10 +25,10 @@ function AVR109Transaction () {
     disconnectPollCount: 10,
     disconnectPoll: 100,
     pollingForDev: 250,
-    finishWait: 500,
+    finishWait: 2000,
     finishTimeout: 2000,
     finishPollForDev: 100,
-    magicRetries: 5,
+    magicRetries: 3,
     magicRetryTimeout: 1000
   };
   this.initialDev = null;
@@ -91,6 +91,7 @@ AVR109Transaction.prototype.magicBaudReset = function (devName, hexData) {
 
   self.hexData = hexData;
   self.serial.getDevices(function(iniDevices) {
+    self.refreshTimeout();
     self.serial.connect(devName, { bitrate: kMagicBaudRate, name: devName}, function(connectInfo) {
       log.log("Made sentinel connection: (baud: 1200)", connectInfo,
               "waiting", self.timeouts.magicBaudConnected, "ms");
@@ -157,6 +158,7 @@ AVR109Transaction.prototype.waitForDeviceAndConnectSensible =
 
       if (newDev) {
         log.log("Aha! new device", newDev[0], "connecting (baud 57600)");
+        self.refreshTimeout();
         self.serial.connect(dev.name, {bitrate: 57600,
                                        name: newDev[0]}, cb);
         return;
@@ -182,6 +184,7 @@ AVR109Transaction.prototype.waitForDeviceAndConnectArduinoIDE =
     var found = false,
         self = this,
         success = function (dev) {
+          self.refreshTimeout();
           self.serial.connect(dev, {bitrate: 57600,
                                     name: dev}, cb);
         };
@@ -244,12 +247,13 @@ AVR109Transaction.prototype.programmingDone = function () {
     self.writeThenRead([ self.AVR.EXIT_BOOTLOADER ], 1, function(payload) {
       self.cleanup(function () {
         setTimeout(function () {
-          self.pollForInitialDevice((new Date().getTime()) +
-                                    self.timeouts.finishTimeout,
-                                    function () {
-                                      self.initialDev = null;
-                                      self.finishCallback("Done programming");
-                                    });
+          self.pollForInitialDevice(
+            (new Date().getTime()) +
+              self.timeouts.finishTimeout,
+            function () {
+              self.initialDev = null;
+              self.finishCallback("Done programming");
+            });
         }, self.timeouts.finishWait);
       });
     });

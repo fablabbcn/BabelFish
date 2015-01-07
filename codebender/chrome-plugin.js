@@ -117,7 +117,6 @@ Plugin.prototype = {
           console.log("Buffer overflow, info:", self.readingInfo);
           __flushBuffer();
         } else {
-
           setTimeout(function () {
             if (self.readingInfo && self.readingInfo.buffer_.length > 0) {
               self.readingInfo.overflowCount = 0;
@@ -217,14 +216,16 @@ Plugin.prototype = {
                    cb) {
 
     var from = null,
+        self = this,
         finishCallback = function () {
           var pluginReturnValue = 0;
           cb(from, pluginReturnValue);
+          self.transaction = null;
         },
         errorCallback = function (id, msg) {
           cb(from, id);
-        },
-        self = this;
+          self.transaction = null;
+        };
 
     if(self.transaction)
       self.transaction.errCb(1, "Trying to restart flashing");

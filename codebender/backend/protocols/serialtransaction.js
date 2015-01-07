@@ -46,7 +46,7 @@ SerialTransaction.prototype.refreshTimeout = function () {
   }
 
   this.timeout = setTimeout(function () {
-    self.errCb(1, "Waited too long for something to happen.");
+    self.errCb(1, "No communication with device for over ", self.timeoutSecs, "s");
   }, this.timeoutSecs * 1000);
 };
 
