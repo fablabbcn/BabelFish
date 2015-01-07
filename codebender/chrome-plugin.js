@@ -40,10 +40,17 @@ function Plugin() {
   // Change to false to provide byte arrays for flashing.
   this.binaryMode = true;
 
-  this._rcvError = function (connectionId, info) {
-    if (info.connectionId == connectionId) {
+  this._rcvError = function (info) {
+    if (info.connectionId == self.readingInfo.connectionId) {
       console.warn('Receive error:', info);
       self.disconnect();
+    }
+
+    if (self.transaction &&
+        self.transaction.connectionId &&
+        info.connectionId == self.transaction.connectionId) {
+      console.warn('Receive error:', info);
+      self.transaction.errCb(1, "An unknown error occured");
     }
   };
 }
@@ -116,7 +123,7 @@ Plugin.prototype = {
               self.readingInfo.overflowCount = 0;
               __flushBuffer();
             }
-          }, 100);
+          }, 50);
         }
       }.bind(this);
     }
@@ -256,15 +263,35 @@ Plugin.prototype = {
   // Wrongly sync methods
 
   // Return a string of the port list
+  // XXX: this is abused by compilerflasher
+  cachingGetDevices: function (cb) {
+    var self = this;
+
+    if (!self._cachedPorts) {
+      this.serial.getDevices(function (devs) {
+        // ULTRAHACK: If we are spammed with requests for ports
+        // provide a cached version of reality updating every
+        // second. This is temporaray code.
+        self._cachedPorts = devs;
+        cb(self._cachedPorts);
+
+        // Clean cache in a sec
+        setTimeout(function () {self._cachedPorts = null;}, 1000);
+      });
+    } else
+      cb(self._cachedPorts);
+  },
+
   availablePorts: function (cb) {
-    this.serial.getDevices(function (devs) {
-      cb(this.pluginDevsFormat_(devs).map(function (d) {return d.port;}).join(','));
+    this.cachingGetDevices(function (devs) {
+      cb(this.pluginDevsFormat_(devs)
+         .map(function (d) {return d.port;}).join(','));
     }.bind(this));
   },
 
   // Return json files with the prots
   getPorts: function (cb) {
-    this.serial.getDevices(function (devs) {
+    this.cachingGetDevices(function (devs) {
       cb(JSON.stringify(this.pluginDevsFormat_(devs)));
     }.bind(this));
   },
@@ -337,7 +364,7 @@ Plugin.prototype = {
       }
 
       dbg("Sending data:", bufferView, "from string:", strData);
-      this.serial.send(this.readingInfo.connectionId, data, function (sendInfo){
+      this.serial.send(self.readingInfo.connectionId, data, function (sendInfo){
         if (!sendInfo) {
           console.error("No connection to serial monitor");
         } else if(sendInfo.error) {
