@@ -72,7 +72,8 @@ AVR109Transaction.prototype.checkDisappearance = function (devName, connectInfo,
       return;
     }
 
-    self.waitForDeviceAndConnectArduinoIDE(
+    self.transition(
+      'waitForDeviceAndConnectArduinoIDE',
       connectInfo,
       iniDevices,
       disDevices,
@@ -162,8 +163,9 @@ AVR109Transaction.prototype.waitForDeviceAndConnectSensible =
       }
 
       setTimeout(function() {
-        self.waitForDeviceAndConnectSensible(dev, iniDevices, disDevices,
-                                             earlyDeadline, finalDeadline, cb);
+        self.transition("waitForDeviceAndConnectSensible",
+                        dev, iniDevices, disDevices,
+                        earlyDeadline, finalDeadline, cb);
       }, self.timeouts.pollingForDev);
     });
   };
@@ -215,8 +217,9 @@ AVR109Transaction.prototype.waitForDeviceAndConnectArduinoIDE =
       }
 
       setTimeout(function() {
-        self.waitForDeviceAndConnectSensible(dev, iniDevices, disDevices,
-                                             earlyDeadline, finalDeadline, cb);
+        self.transition("waitForDeviceAndConnectArduinoIDE",
+                        dev, iniDevices, disDevices,
+                        earlyDeadline, finalDeadline, cb);
       }, self.timeouts.pollingForDev);
     });
   };
