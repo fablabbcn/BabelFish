@@ -6,6 +6,7 @@ function Transaction () {
   this.hooks_ = {};
   this.state = null;
   this.transitions = [];
+  this.block = false;
   this.context = {};
 }
 Transaction.prototype = {
@@ -27,6 +28,9 @@ Transaction.prototype = {
     this.state = state;
     // this.triggerHook(['enter', this.state], this.context);
     // this.transitions.push([state, oldState, deepCopy(this.context)]);
+
+    if (this.block)
+      console.log("Jumping to state\'", state, "' arguments:", args,"BLOCKED");
 
     console.log("Jumping to state\'", state, "' arguments:", args);
     this[state].apply(this, args);

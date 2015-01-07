@@ -139,7 +139,8 @@ Plugin.prototype = {
 
     var self = this;
     setTimeout(function () {
-      self.readingInfo.samultaneousRequests--;
+      if (self.readingInfo)
+        self.readingInfo.samultaneousRequests--;
     }, 100);
 
     return false;
@@ -212,7 +213,7 @@ Plugin.prototype = {
           var pluginReturnValue = 0;
           cb(from, pluginReturnValue);
         },
-        errorCallback = function (msg, id) {
+        errorCallback = function (id, msg) {
           cb(from, id);
         },
         transaction = new protocols[protocol](finishCallback, errorCallback),

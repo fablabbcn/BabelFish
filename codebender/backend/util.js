@@ -59,8 +59,24 @@ function forEachWithCallback (array, iterationCb, finishCb) {
   nextCb();
 }
 
+function poll (maxRetries, timeout, cb, errCb) {
+  if (maxRetries < 0){
+    if (errCb)
+      errCb();
+    else
+      throw Error("Retry limit exceeded");
+  }
+  cb(function () {
+    setTimeout(function () {
+      poll(maxRetries-1, timeout, cb, errCb);
+    }, timeout);
+  });
+}
+
+
 module.exports.arraify = arraify;
 module.exports.deepCopy = deepCopy;
 module.exports.infinitePoll = infinitePoll;
+module.exports.poll = poll;
 module.exports.dbg = dbg;
 module.exports.forEachWithCallback = forEachWithCallback;

@@ -2,18 +2,8 @@ var SerialTransaction = require('./serialtransaction'),
     Log = require('./../logging').Log,
     log = new Log('avr109'),
     arraify = require('./../util').arraify,
+    poll = require('./../util').poll,
     buffer = require("./../buffer");
-
-function poll (maxRetries, timeout, cb) {
-  if (maxRetries < 0)
-    throw Error("Retry limit exceeded");
-
-  cb(function () {
-    setTimeout(function () {
-      poll(maxRetries-1, timeout, cb);
-    }, timeout);
-  });
-}
 
 function AVR109Transaction () {
   SerialTransaction.apply(this, arraify(arguments));
@@ -37,10 +27,13 @@ function AVR109Transaction () {
     pollingForDev: 250,
     finishWait: 500,
     finishTimeout: 2000,
-    finishPollForDev: 100
+    finishPollForDev: 100,
+    magicRetries: 5,
+    magicRetryTimeout: 1000
   };
   this.initialDev = null;
   this.log = log;
+  this.magicRetries = 0;
 }
 
 AVR109Transaction.prototype = new SerialTransaction();
@@ -51,6 +44,19 @@ AVR109Transaction.prototype.writeThenRead = function (data, rcvSize, cb) {
                        ttl: 500,
                        callback: cb,
                        timeoutCb: this.errCb.bind(this, 1, "AVR109 failed timeout")});
+};
+
+
+AVR109Transaction.prototype.magicRetry = function (devName, hexData) {
+  var self = this;
+  log.log("Device", devName, "did not disappear, trying again in",
+          this.timeouts.magicRetryTimeout, "ms(" +
+          self.magicRetries + "/" + self.timeouts.magicRetries+")");
+
+  if (self.magicRetries < self.timeouts.magicRetries)
+    setTimeout(function () {
+      self.transition('magicBaudReset', devName, hexData);
+    }, this.timeouts.magicRetryTimeout);
 };
 
 AVR109Transaction.prototype.magicBaudReset = function (devName, hexData) {
@@ -68,33 +74,38 @@ AVR109Transaction.prototype.magicBaudReset = function (devName, hexData) {
         return;
       }
 
+
+      function waitDisappearance (next) {
+        self.serial.getDevices(function (disDevices) {
+          log.log("Visible devices are now",
+                  disDevices.map(function (d) {return d.path;}));
+
+          if (disDevices.some(function (d) {return d.path == devName;})){
+            log.log("Leonardo did not disappear after reset. Will poll for it");
+            next();
+            return;
+          }
+
+          self.waitForDeviceAndConnectArduinoIDE(
+            connectInfo,
+            iniDevices,
+            disDevices,
+            (new Date().getTime()) + 5000,
+            (new Date().getTime()) + 10000,
+            self.transitionCb('connectDone'));
+        });
+      }
+
       self.initialDev = devName;
       setTimeout(function () {
         log.log("Disconnecting from " + devName);
         self.serial.disconnect(connectInfo.connectionId, function(ok) {
           if (ok) {
-            log.log("Disconnected from ", devName);
+            log.log("Disconnected from", devName);
             poll(self.timeouts.disconnectPollCount,
-                 self.timeouts.disconnectPoll, function (next) {
-                   self.serial.getDevices(function (disDevices) {
-                     log.log("Visible devices are now",
-                             disDevices.map(function (d) {return d.path;}));
-
-                     if (disDevices.some(function (d) {return d.path == devName;})){
-                       log.log("Leonardo did not disappear after reset. Will poll for it");
-                       next();
-                       return;
-                     }
-
-                     self.waitForDeviceAndConnectArduinoIDE(
-                       connectInfo,
-                       iniDevices,
-                       disDevices,
-                       (new Date().getTime()) + 5000,
-                       (new Date().getTime()) + 10000,
-                       self.transitionCb('connectDone'));
-                   });
-                 });
+                 self.timeouts.disconnectPoll,
+                 waitDisappearance,
+                 self.transitionCb('magicRetry', devName, hexData));
           } else {
             self.errCb(1, "Failed to disconnect from " + devName);
           }

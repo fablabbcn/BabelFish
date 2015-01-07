@@ -31,6 +31,7 @@ SerialTransaction.prototype.init = function (finishCallback, errorCallback) {
   this.memOps.CHIP_ERASE_ARR = [0xAC, 0x80, 0x00, 0x00];
 
   this.serial.customErrorHandler = this.errCb.bind(this, 1);
+  this.block = false;
 };
 
 
@@ -51,6 +52,7 @@ SerialTransaction.prototype.refreshTimeout = function () {
 };
 
 SerialTransaction.prototype.errCb = function (id, var_message) {
+  this.block = true;
   if (this.previousErrors.length > 0)
     this.log.warn("Previous errors", this.previousErrors);
 
@@ -186,7 +188,7 @@ SerialTransaction.prototype.writeByte = function (data, addr, cb) {
   function poll (maxRetries, timeout, cb) {
     var self = this;
     if (maxRetries < 0)
-      throw Error("Retry limit exceeded");
+      throw Error("(writeByte) Retry limit exceeded");
 
     cb(function () {
       setTimeout(function () {
