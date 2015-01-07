@@ -26,7 +26,6 @@ SerialTransaction.prototype.init = function (finishCallback, errorCallback) {
   this.log = console;
 
   // XXX: Remove me at the end. Maybe this could be in the buffer.
-  this.listenerHandler = this.readToBuffer.bind(this);
   this.memOps = new MemoryOperations();
   this.memOps.CHIP_ERASE_ARR = [0xAC, 0x80, 0x00, 0x00];
 
@@ -52,6 +51,7 @@ SerialTransaction.prototype.refreshTimeout = function () {
 };
 
 SerialTransaction.prototype.errCb = function (id, var_message) {
+  this.log.error.apply(this.log, arraify(arguments, 1, "[FINAL ERROR]"));
   this.block = true;
   if (this.previousErrors.length > 0)
     this.log.warn("Previous errors", this.previousErrors);
@@ -64,6 +64,7 @@ SerialTransaction.prototype.errCb = function (id, var_message) {
     this.errorCallback(id, logargs.join(''));
 };
 
+// Should spawn api calls synchronously, that is not in callbacks.
 SerialTransaction.prototype.cleanup = function (callback) {
   var self = this;
 
@@ -74,8 +75,10 @@ SerialTransaction.prototype.cleanup = function (callback) {
   this.timeout = null;
 
   self.serial.customErrorHandler = null;
-  this.serial.onReceive.removeListener(this.listenerHandler);
+  if (this.listenerHandler)
+    this.serial.onReceive.removeListener(this.listenerHandler);
 
+  this.listenerHandler = null;
   if (this.connectionId) {
     this.serial.disconnect(this.connectionId, function (ok) {
       if (!ok) {
@@ -108,8 +111,10 @@ SerialTransaction.prototype.writeThenRead_ = function (info) {
   if (!self.registeredBufferListener){
     self.registeredBufferListener = true;
     this.log.log("Listening on buffer");
+    this.listenerHandler = this.readToBuffer.bind(this);
     this.serial.onReceive.addListener(this.listenerHandler);
   }
+
   this.serial.send(this.connectionId, outgoingBinary, function(writeArg) {
     if (!writeArg) self.errCb(1, "Connection lost");
 

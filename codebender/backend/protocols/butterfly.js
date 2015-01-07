@@ -22,8 +22,8 @@ function AVR109Transaction () {
 
   this.timeouts = {
     magicBaudConnected: 2000,
-    disconnectPollCount: 20,
-    disconnectPoll: 50,
+    disconnectPollCount: 10,
+    disconnectPoll: 100,
     pollingForDev: 250,
     finishWait: 500,
     finishTimeout: 2000,
@@ -53,11 +53,35 @@ AVR109Transaction.prototype.magicRetry = function (devName, hexData) {
           this.timeouts.magicRetryTimeout, "ms(" +
           self.magicRetries + "/" + self.timeouts.magicRetries+")");
 
-  if (self.magicRetries < self.timeouts.magicRetries)
-    setTimeout(function () {
-      self.transition('magicBaudReset', devName, hexData);
-    }, this.timeouts.magicRetryTimeout);
+  if (++self.magicRetries < self.timeouts.magicRetries)
+    setTimeout(
+      self.transitionCb('magicBaudReset', devName, hexData),
+      this.timeouts.magicRetryTimeout);
 };
+
+
+AVR109Transaction.prototype.checkDisappearance = function (devName, connectInfo, iniDevices, next) {
+  var self = this;
+  this.serial.getDevices(function (disDevices) {
+    log.log("Visible devices are now",
+            disDevices.map(function (d) {return d.path;}));
+
+    if (disDevices.some(function (d) {return d.path == devName;})){
+      log.log("Leonardo did not disappear after reset. Will poll for it");
+      next();
+      return;
+    }
+
+    self.waitForDeviceAndConnectArduinoIDE(
+      connectInfo,
+      iniDevices,
+      disDevices,
+      (new Date().getTime()) + 5000,
+      (new Date().getTime()) + 10000,
+      self.transitionCb('connectDone'));
+  });
+}
+
 
 AVR109Transaction.prototype.magicBaudReset = function (devName, hexData) {
   var kMagicBaudRate = 1200,
@@ -74,28 +98,6 @@ AVR109Transaction.prototype.magicBaudReset = function (devName, hexData) {
         return;
       }
 
-
-      function waitDisappearance (next) {
-        self.serial.getDevices(function (disDevices) {
-          log.log("Visible devices are now",
-                  disDevices.map(function (d) {return d.path;}));
-
-          if (disDevices.some(function (d) {return d.path == devName;})){
-            log.log("Leonardo did not disappear after reset. Will poll for it");
-            next();
-            return;
-          }
-
-          self.waitForDeviceAndConnectArduinoIDE(
-            connectInfo,
-            iniDevices,
-            disDevices,
-            (new Date().getTime()) + 5000,
-            (new Date().getTime()) + 10000,
-            self.transitionCb('connectDone'));
-        });
-      }
-
       self.initialDev = devName;
       setTimeout(function () {
         log.log("Disconnecting from " + devName);
@@ -104,7 +106,8 @@ AVR109Transaction.prototype.magicBaudReset = function (devName, hexData) {
             log.log("Disconnected from", devName);
             poll(self.timeouts.disconnectPollCount,
                  self.timeouts.disconnectPoll,
-                 waitDisappearance,
+                 self.transitionCb("checkDisappearance",
+                                   devName, connectInfo, iniDevices),
                  self.transitionCb('magicRetry', devName, hexData));
           } else {
             self.errCb(1, "Failed to disconnect from " + devName);

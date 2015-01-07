@@ -217,21 +217,24 @@ Plugin.prototype = {
         errorCallback = function (id, msg) {
           cb(from, id);
         },
-        transaction = new protocols[protocol](finishCallback, errorCallback),
         self = this;
+
+    if(self.transaction)
+      self.transaction.errCb(1, "Trying to restart flashing");
+
+    self.transaction = new protocols[protocol](finishCallback, errorCallback),
     setTimeout(function () {
       dbg("Code length", code.length, typeof code,
           "Protocol:", protocols,
           "Device:", device);
 
-      // STK500v1
       // Binary string to byte array
       if (self.binaryMode) {
         code = Base64Binary.decode(code);
         code = Array.prototype.slice.call(code);
       }
 
-      transaction.flash(device, code);
+      self.transaction.flash(device, code);
     }, 0);
   },
 
@@ -359,12 +362,15 @@ Plugin.prototype = {
 
   // Dummies for plugin garbage collection.
   deleteMap: function () {
-    this.disconnect();
+    this.closeTab();
   },
 
   closeTab: function () {
     // Tab may close before the callback so do it unsafe.
     this.disconnect();
+
+    if (self.transaction)
+      self.transaction.cleanup();
   },
 
   // Internals

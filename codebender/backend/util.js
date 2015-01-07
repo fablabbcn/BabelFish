@@ -65,6 +65,8 @@ function poll (maxRetries, timeout, cb, errCb) {
       errCb();
     else
       throw Error("Retry limit exceeded");
+
+    return;
   }
   cb(function () {
     setTimeout(function () {
