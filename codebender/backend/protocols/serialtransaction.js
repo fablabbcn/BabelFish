@@ -103,7 +103,6 @@ SerialTransaction.prototype.writeThenRead_ = function (info) {
     return;
   }
 
-  this.log.log("Writing: " + buffer.hexRep(info.outgoingMsg));
   var outgoingBinary = buffer.binToBuf(info.outgoingMsg),
       self = this;
 
@@ -115,6 +114,7 @@ SerialTransaction.prototype.writeThenRead_ = function (info) {
     this.serial.onReceive.addListener(this.listenerHandler);
   }
 
+  this.log.log("Writing: " + buffer.hexRep(info.outgoingMsg));
   this.serial.send(this.connectionId, outgoingBinary, function(writeArg) {
     if (!writeArg) self.errCb(1, "Connection lost");
 
@@ -233,11 +233,13 @@ SerialTransaction.prototype.destroyOtherConnections = function (name, cb) {
 
 SerialTransaction.prototype.onOffDTR = function (cb) {
   var args = arraify(arguments, 1),
-      self = this;
+      self = this,
+      before = false,
+      after = !before;
 
   setTimeout(function() {
     self.serial.setControlSignals(
-      self.connectionId, {dtr: false, rts: false},
+      self.connectionId, {dtr: before, rts: before},
       function (ok) {
         if (!ok) {
           self.errCb(1, "Couldn't send DTR");
@@ -245,7 +247,7 @@ SerialTransaction.prototype.onOffDTR = function (cb) {
         }
         setTimeout(function() {
           self.serial.setControlSignals(
-            self.connectionId, {dtr: true, rts: true},
+            self.connectionId, {dtr: after, rts: after},
             function(ok) {
               self.log.log("Raised DTR/RTS, done: ", ok);
               if (!ok) {

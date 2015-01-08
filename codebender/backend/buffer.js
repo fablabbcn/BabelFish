@@ -161,6 +161,7 @@ Buffer.prototype = {
 
   write: function (readArg, errorCb) {
     var hexData = bufToBin(readArg.data);
+    log.log("Dev said:", hexData);
     this.databuffer = this.databuffer.concat(hexData);
     if (this.databuffer.length > this.maxBufferSize) {
       if (errorCb)

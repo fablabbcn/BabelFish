@@ -2,7 +2,7 @@
 
 var SerialTransaction = require('./serialtransaction'),
     Log = require('./../logging').Log,
-    log = new Log('STK500'),
+    log = new Log('STK500v2'),
     arraify = require('./../util').arraify,
     buffer = require("./../buffer.js");
 
@@ -59,8 +59,20 @@ STK500v2Transaction.prototype = new SerialTransaction();
 // - CMD_XPROG_SETMODE XPROXPRG_ERR_{OK,FAILED,COLLISION,TIMEOUT}
 // - CMD_XPROG XPRG_CMD_* XPROXPRG_ERR_{OK,FAILED,COLLISION,TIMEOUT}
 //
-STK500Transaction.prototype.writeThenRead = function (data, cb) {
-  var self = this;
+STK500v2Transaction.prototype.writeThenRead = function (data, cb, retries) {
+  var self = this,
+      size = buffer.storeAsTwoBytes(data.length + 6),
+      message = [self.STK2.MESSAGE_START,
+                 self.cmdSeq,
+                 size[0], size[1],
+                 self.STK2.TOKEN,
+                ].concat(data);
+  message.push(message.reduce(function (a,b) {
+    return a^b;
+  }));
+
+  if (retries === undefined) retries = 3;
+
   function modifyDatabuffer () {
     // The weird binding of the reader.
     var reader = this,
@@ -75,16 +87,19 @@ STK500Transaction.prototype.writeThenRead = function (data, cb) {
     var db = reader.buffer.databuffer.slice(start);
 
     db.shift();                 // Throw the start
-    if (db.shift() != self.cmdSeq++) {
+    if (db.shift() != self.cmdSeq) {
       self.errCb(1, "Transaction out of sync with dev");
       return false;
     }
 
+    self.cmdSeq = (self.cmdSeq + 1) & 0xff;
     var msgLen = (db.shift() << 8) | db.shift();
     db.shift();                  // Throw token
 
     var msg = db.slice(0, msgLen),
-        csum = reader.buffer.databuffer.slice(start, msgLen+6).reduce(function (a,b) {return a^b;});
+        csum = reader.buffer.databuffer
+          .slice(start, msgLen+6)
+          .reduce(function (a,b) {return a^b;});
 
     if (csum != 0) {
       self.errCb(1, "Message checksum failed");
@@ -99,21 +114,27 @@ STK500Transaction.prototype.writeThenRead = function (data, cb) {
     return true;
   }
 
-  this.writeThenRead_({outgoingMsg: data,
+  log.log("Sending:", message);
+  this.writeThenRead_({outgoingMsg: message,
                        modifyDatabuffer: modifyDatabuffer,
                        callback: cb,
                        ttl: 500,
-                       timeoutCb: this.errCb.bind(this, 1, "STK failed timeout")});
+                       timeoutCb: function () {
+                         if (retries > 0)
+                           self.writeThenRead(data, cb, retries-1);
+                         else
+                           self.errCb(1, "STKv2 reader timed out");
+                       }});
 };
 
 
 // Cb should have the 'state' format, ie function (ok, data)
-STK500Transaction.prototype.cmd = function (cmd, cb) {
+STK500v2Transaction.prototype.cmd = function (cmd, cb) {
   // Always get a 4byte answer
-  this.writeThenRead(cmd, 4, cb);
+  this.writeThenRead(cmd, cb);
 };
 
-STK500Transaction.prototype.flash = function (deviceName, sketchData) {
+STK500v2Transaction.prototype.flash = function (deviceName, sketchData) {
   this.sketchData = sketchData;
   var self = this;
   self.destroyOtherConnections(
@@ -125,7 +146,7 @@ STK500Transaction.prototype.flash = function (deviceName, sketchData) {
     });
 };
 
-STK500Transaction.prototype.connectDone = function (hexCode, connectArg) {
+STK500v2Transaction.prototype.connectDone = function (hexCode, connectArg) {
   if (typeof(connectArg) == "undefined" ||
       typeof(connectArg.connectionId) == "undefined" ||
       connectArg.connectionId == -1) {
@@ -133,35 +154,55 @@ STK500Transaction.prototype.connectDone = function (hexCode, connectArg) {
     return;
   }
 
+  var self = this;
   this.connectionId = connectArg.connectionId;
   log.log("Connected to board. ID: " + connectArg.connectionId);
   this.buffer.drain(function () {
-    this.onOffDTR(self.transitionCb('signOn'));
+    self.onOffDTR(self.transitionCb('signOn'));
   });
 };
 
-STK500Transaction.prototype.signOn = function () {
+STK500v2Transaction.prototype.signOn = function () {
   var self = this;
   self.writeThenRead([self.STK2.CMD_SIGN_ON],
                      self.transitionCb('signedOn'));
 };
 
-STK500Transaction.prototype.signedOn  = function (data) {
+STK500v2Transaction.prototype.signedOn  = function (data) {
   var expectedData = [
     this.STK2.CMD_SIGN_ON,
     this.STK2.STATUS_CMD_OK,
+    // The following 8 bytes are the signature
     8
   ];
   if(data.slice(0,3) != expectedData){
     this.errCb(1, "Error signing on to device");
     return;
   }
-  // The following 8 bytes are the signature
 
-  self.transition("programDevice", 0, 128);
+  // Found in avrdude.conf
+  var timeout = 200,
+      cmdExecDelay = 25,
+      syncHLoops = 32,
+      byteDelay = 0,
+      pollValue = 0x53,
+      pollIndex = 3,
+      pgmEnable1 = 0xac,
+      pgmEnable2 = 0x53;
+
+  self.writeThenRead([self.STK2.CMD_ENTER_PROGMODE_ISP,
+                      timeout,
+                      cmdExecDelay,
+                      syncHLoops,
+                      byteDelay,
+                      pollValue,
+                      pollIndex,
+                      pgmEnable1, pgmEnable2,
+                      0x00, 0x0c],
+                     self.transitionCb("programDevice", 0, 128));
 };
 
-STK500Transaction.prototype.programDevice = function (offset, pgSize) {
+STK500v2Transaction.prototype.programDevice = function (offset, pgSize) {
   var data = this.sketchData;
   log.log("program flash: data.length: ", data.length, ", offset: ", offset, ", page size: ", pgSize);
 
@@ -171,37 +212,46 @@ STK500Transaction.prototype.programDevice = function (offset, pgSize) {
     return;
   }
 
-  var payload = this.padOrSlice(data, offset, pgSize),
+  var self = this,
+      payload = this.padOrSlice(data, offset, pgSize),
       addressBytes = buffer.storeAsTwoBytes(offset / 2),
       sizeBytes = buffer.storeAsTwoBytes(pgSize),
-      kFlashMemoryType = 0x46;
+      memMode = 0x31,
+      delay = 10,
+      loadpageLoCmd = 0x40,
+      writepageCmd = 0x4c,
+      avrOpReadLo = 0x20,
+      loadAddressMessage = [
+        this.STK2.CMD_LOAD_ADDRESS,
+        0x80,
+        addressBytes[1],
+        addressBytes[0],
+        0x00],
+      programMessage = [
+        this.STK2.CMD_PROGRAM_FLASH_ISP,
+        sizeBytes[1],
+        sizeBytes[0],
+        memMode | 0x80,
+        delay,
+        loadpageLoCmd,
+        writepageCmd,
+        0x00, 0x00              // Readback
+      ].concat(payload);
 
-  var loadAddressMessage = [
-    this.STK.LOAD_ADDRESS, addressBytes[1], addressBytes[0], this.STK.CRC_EOP];
-  var programMessage = [
-    this.STK.PROG_PAGE, sizeBytes[0], sizeBytes[1], kFlashMemoryType]
-        .concat(payload);
-  programMessage.push(this.STK.CRC_EOP);
-
-  var self = this;
-  self.writeThenRead(loadAddressMessage, 0, function(reponse) {
-    self.writeThenRead(programMessage, 0, function(response) {
+  self.writeThenRead(loadAddressMessage, function(reponse) {
+    self.writeThenRead(programMessage, function(response) {
       // Program the next section
       self.transition('programFlash', offset + pgSize, pgSize);
     });
   });
 };
 
-STK500Transaction.prototype.eraseThenFlash = function (deviceName, sketchData, dontFlash) {
+STK500v2Transaction.prototype.doneProgramming = function (cid) {
   var self = this;
-  log.log("Erasing chip");
-  self.writeThenRead_(this.memOps.CHIP_ERASE_ARR, function  () {
-    // XXX: Maybe we should care about the response when asking to
-    // erase
-    if (!dontFlash)
-      self.transition('flash', deviceName, sketchData);
+
+  self.writeThenRead([0x11, 0x01, 0x01], function (data) {
+    setTimeout(self.finishCallback, 1000);
   });
 };
-
 
 module.exports.STK500v2Transaction = STK500v2Transaction;
