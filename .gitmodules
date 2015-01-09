@@ -2,6 +2,6 @@
 	path = plugin
 	url = git@github.com:fakedrake/npapiPlugins
 	branch = build-script
-[submodule "CodebenederChromeDeveloper"]
+[submodule "CodebenderChromeDeveloper"]
 	path = CodebenderChromeDeveloper
-	url = git@github.com:fakedrake/CodebenederChromeDeveloper
+	url = git@github.com:fakedrake/CodebenderChromeDeveloper
