@@ -68,7 +68,7 @@ browserify $(CURDIR)/bundles/chrome-client.js: $(CLIENT_FILES) | $(CURDIR)/node_
 		cat - $(CURDIR)/codebender/compilerflasher.js \
 		> $(CURDIR)/bundles/chrome-client.js
 
-$(CURDIR)/plugin $(CURDIR)/CodebenederChromeDeveloper:
+$(CURDIR)/plugin $(CURDIR)/CodebenderChromeDeveloper:
 	git submodule init
 	git submodule update
 
@@ -104,7 +104,7 @@ kill-server:
 	rm server_pid
 
 chrome-args = --user-data-dir=/tmp/chromium-user-data					\
---load-extension=$(CURDIR)/CodebenederChromeDeveloper,$(CURDIR)/chrome-extension	\
+--load-extension=$(CURDIR)/CodebenderChromeDeveloper,$(CURDIR)/chrome-extension	\
 --no-first-run,										\
 --no-default-browser-check								\
 --disable-web-security									\

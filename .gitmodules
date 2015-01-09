@@ -4,4 +4,4 @@
 	branch = build-script
 [submodule "CodebenederChromeDeveloper"]
 	path = CodebenederChromeDeveloper
-	url = git@github.com:fakedrake/CodebenederChromeDeveloper
+	url = git@github.com:fakedrake/CodebenderChromeDeveloper
