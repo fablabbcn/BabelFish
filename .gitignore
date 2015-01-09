@@ -1,5 +1,6 @@
 node_modules/
 bundles/
+chrome-logs/
 npm-debug.log
 TAGS
 bundles/
