@@ -1,12 +1,18 @@
+# Spaces in path trick
+nullstring :=
+space := $(nullstring) # a space at the end
+path = $(subst $(space),\ ,$1)
+dot = $(call path,$(CURDIR))
+
 firefox = /Applications/Firefox.app/Contents/MacOS/firefox # open  -n -a firefox --args
 chrome = $(shell which chrome || which chromium || echo  ~/Applications/Chromium.app/Contents/MacOS/Chromium)
-export DYLD_LIBRARY_PATH=$(CURDIR)/root/lib:$$DYLD_LIBRARY_PATH
-build_script = $(CURDIR)/plugin/build.sh
-XPI = $(CURDIR)/plugin/codebendercc.xpi
+export DYLD_LIBRARY_PATH=$(dot)/root/lib:$$DYLD_LIBRARY_PATH
+build_script = $(dot)/plugin/build.sh
+XPI = $(dot)/plugin/codebendercc.xpi
 export CODEBENDER_XPI = $(XPI)
-PLUGIN = $(CURDIR)/plugin/npCodebendercc.so
+PLUGIN = $(dot)/plugin/npCodebendercc.so
 ΤΑRGETS = $(XPI) $(PLUGIN) $(CHROME_ZIP)
-CPP_DIR = $(CURDIR)/plugin/Codebendercc
+CPP_DIR = $(dot)/plugin/Codebendercc
 CPP = $(CPP_DIR)/CodebenderccAPI.cpp $(CPP_DIR)/CodebenderccAPI.h $(CPP_DIR)/CodebenderccAPIJS.cpp $(CPP_DIR)/Codebendercc.cpp $(CPP_DIR)/Codebendercc.h
 
 MOCHA = mocha $(DEBUG)
@@ -24,51 +30,51 @@ MOCHA = mocha $(DEBUG)
 URL = http://localhost:8080/codebender/test/test_download/index.html
 # URL = http://localhost:8080/codebender/test/test_usb/index.html
 
-CHROME_TEST =  $(CURDIR)/test/selenium-test.js
-FIREFOX_TEST =  $(CURDIR)/test/firefox-test.js
-PLUGIN_FILES = $(build_script) $(CPP) $(CURDIR)/plugin/Codebendercc/fake_install.rdf
-CHROME_ZIP = $(CURDIR)/bundles/chrome-extension.zip
+CHROME_TEST =  $(dot)/test/selenium-test.js
+FIREFOX_TEST =  $(dot)/test/firefox-test.js
+PLUGIN_FILES = $(build_script) $(CPP) $(dot)/plugin/Codebendercc/fake_install.rdf
+CHROME_ZIP = $(dot)/bundles/chrome-extension.zip
 
 CLIENT_FILES = \
-	$(CURDIR)/codebender/backend/buffer.js				\
-	$(CURDIR)/codebender/backend/logging.js				\
-	$(CURDIR)/codebender/backend/transaction.js			\
-	$(CURDIR)/codebender/backend/util.js				\
-	$(CURDIR)/codebender/backend/protocols/butterfly.js		\
-	$(CURDIR)/codebender/backend/protocols/serialtransaction.js	\
-	$(CURDIR)/codebender/backend/protocols/stk500.js		\
-	$(CURDIR)/codebender/plugin.js \
-	$(CURDIR)/chrome-extension/client/rpc-client.js			\
-	$(CURDIR)/chrome-extension/common/config.js			\
-	$(CURDIR)/chrome-extension/common/rpc-args.js			\
+	$(dot)/codebender/backend/buffer.js				\
+	$(dot)/codebender/backend/logging.js				\
+	$(dot)/codebender/backend/transaction.js			\
+	$(dot)/codebender/backend/util.js				\
+	$(dot)/codebender/backend/protocols/butterfly.js		\
+	$(dot)/codebender/backend/protocols/serialtransaction.js	\
+	$(dot)/codebender/backend/protocols/stk500.js		\
+	$(dot)/codebender/plugin.js \
+	$(dot)/chrome-extension/client/rpc-client.js			\
+	$(dot)/chrome-extension/common/config.js			\
+	$(dot)/chrome-extension/common/rpc-args.js			\
 
-HOST_FILES = $(CURDIR)/chrome-extension/manifest.json	\
-	$(CURDIR)/chrome-extension/host/rpc-host.js	\
-	$(CURDIR)/chrome-extension/host/background.js	\
-	$(CURDIR)/chrome-extension/host/hostbus.js	\
-	$(CURDIR)/chrome-extension/host/util.js		\
-	$(CURDIR)/chrome-extension/common/config.js	\
-	$(CURDIR)/chrome-extension/common/rpc-args.js
+HOST_FILES = $(dot)/chrome-extension/manifest.json	\
+	$(dot)/chrome-extension/host/rpc-host.js	\
+	$(dot)/chrome-extension/host/background.js	\
+	$(dot)/chrome-extension/host/hostbus.js	\
+	$(dot)/chrome-extension/host/util.js		\
+	$(dot)/chrome-extension/common/config.js	\
+	$(dot)/chrome-extension/common/rpc-args.js
 
 force:;
 
-$(CHROME_ZIP): $(CURDIR)/bundles $(HOST_FILES)
+$(CHROME_ZIP): $(dot)/bundles $(HOST_FILES)
 	@echo  "Zipping: $@"
 	zip $@ $(HOST_FILES)
 chrome-extension:
 
-$(CURDIR)/bundles:
+$(dot)/bundles:
 	mkdir $@
 
-$(CURDIR)/node_modules:
+$(dot)/node_modules:
 	npm install
 
-browserify $(CURDIR)/bundles/chrome-client.js: $(CLIENT_FILES) | $(CURDIR)/node_modules $(CURDIR)/bundles
-	$(CURDIR)/node_modules/.bin/browserify -e $(CURDIR)/codebender/plugin.js | \
-		cat - $(CURDIR)/codebender/compilerflasher.js \
-		> $(CURDIR)/bundles/chrome-client.js
+browserify $(dot)/bundles/chrome-client.js: $(CLIENT_FILES) | $(dot)/node_modules $(dot)/bundles
+	$(dot)/node_modules/.bin/browserify -e $(dot)/codebender/plugin.js | \
+		cat - $(dot)/codebender/compilerflasher.js \
+		> $(dot)/bundles/chrome-client.js
 
-$(CURDIR)/plugin $(CURDIR)/CodebenderChromeDeveloper:
+$(dot)/plugin $(dot)/CodebenderChromeDeveloper:
 	git submodule init
 	git submodule update
 
@@ -89,14 +95,14 @@ test-chrome:
 	$(MOCHA) $(CHROME_TEST)
 
 .PHONY:
-test: $(CURDIR)/bundles/chrome-client.js $(CURDIR)/bundles/firefox-client.js $(XPI) force
-	$(MOCHA) $(CHROME_TEST) | sed 's_http://localhost:8080_$(CURDIR)_g' # $(FIREFOX_TEST)
+test: $(dot)/bundles/chrome-client.js $(dot)/bundles/firefox-client.js $(XPI) force
+	$(MOCHA) $(CHROME_TEST) | sed 's_http://localhost:8080_$(dot)_g' # $(FIREFOX_TEST)
 
 serve: browserify $(CHROME_ZIP)
 	node tools/serve.js
 
 async-serve:
-	node $(CURDIR)/tools/serve.js & \
+	node $(dot)/tools/serve.js & \
 	echo $$! | tee server_pid
 
 kill-server:
@@ -104,13 +110,13 @@ kill-server:
 	rm server_pid
 
 chrome-args = --user-data-dir=/tmp/chromium-user-data					\
---load-extension=$(CURDIR)/CodebenderChromeDeveloper,$(CURDIR)/chrome-extension	\
+--load-extension=$(dot)/CodebenderChromeDeveloper,$(dot)/chrome-extension	\
 --no-first-run,										\
 --no-default-browser-check								\
 --disable-web-security									\
 --no-sandbox										\
 
-chrome-log-dir = $(CURDIR)/chrome-logs
+chrome-log-dir = $(dot)/chrome-logs
 
 chrome-args:
 	@echo $(chrome-args)
@@ -118,12 +124,12 @@ chrome-args:
 $(chrome-log-dir):
 	mkdir $@
 
-run-chrome: $(CURDIR)/bundles/chrome-client.js $(CURDIR)/CodebenederChromeDeveloper | /tmp $(chrome-log-dir)
+run-chrome: $(dot)/bundles/chrome-client.js | $(dot)/CodebenderChromeDeveloper /tmp $(chrome-log-dir)
 	((sleep 3 &&\
 		$(chrome) $(chrome-args) $(URL) chrome://extensions 2> $(chrome-log-dir)/chrome-$(shell date "+%s").log); \
 		rm -rf /tmp/chromium-use2r-data) &
 
-firefox-arch = $(CURDIR)/test/firefox-arch
+firefox-arch = $(dot)/test/firefox-arch
 GET_FF_PROFILES = (find /var/folders -ls | grep  'tmp-[0-9a-zA-Z]*$$') 2> /dev/null | sort -r | awk '{print $$11}'
 FF_PROFILE=$(shell $(GET_FF_PROFILES) | head -1)
 firefox-args = -jsconsole -new-instance -profile "$(FF_PROFILE)" -url "$(URL)"
