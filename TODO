@@ -1,0 +1,3 @@
+Change browserify path
+Pass chrome path (it's in /opt)
+Dont hope to get executables in here or symlinks in vfat

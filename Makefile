@@ -98,7 +98,7 @@ test-chrome:
 test: $(dot)/bundles/chrome-client.js $(dot)/bundles/firefox-client.js $(XPI) force
 	$(MOCHA) $(CHROME_TEST) | sed 's_http://localhost:8080_$(dot)_g' # $(FIREFOX_TEST)
 
-serve: browserify $(CHROME_ZIP)
+serve: browserify
 	node tools/serve.js
 
 async-serve:
