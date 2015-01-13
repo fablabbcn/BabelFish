@@ -22,8 +22,8 @@ function AVR109Transaction () {
 
   this.timeouts = {
     magicBaudConnected: 2000,
-    disconnectPollCount: 10,
-    disconnectPoll: 100,
+    disconnectPollCount: 20,
+    disconnectPoll: 50,
     pollingForDev: 250,
     finishWait: 2000,
     finishTimeout: 2000,
@@ -34,6 +34,22 @@ function AVR109Transaction () {
   this.initialDev = null;
   this.log = log;
   this.magicRetries = 0;
+
+  var oldErrCb = this.errCb,
+      self = this;
+
+  this.errCb = function (varArgs) {
+    // A desperate attempt not to block the device
+    if (self.connectionId) {
+      log.log("Emergency exiting program mode.");
+      self.serial.send(self.connectionId,
+                       [self.AVR.LEAVE_PROGRAM_MODE, self.AVR.EXIT_BOOTLOADER],
+                       function () {});
+    } else {
+      log.log("No connectionid, cannot emergency exit program mode.");
+    }
+    oldErrCb.apply(self, arraify(arguments));
+  };
 }
 
 AVR109Transaction.prototype = new SerialTransaction();
@@ -43,7 +59,8 @@ AVR109Transaction.prototype.writeThenRead = function (data, rcvSize, cb) {
                        expectedBytes: rcvSize,
                        ttl: 500,
                        callback: cb,
-                       timeoutCb: this.errCb.bind(this, 1, "AVR109 failed timeout")});
+                       timeoutCb: this.errCb.bind(this,
+                                                  1, "AVR109 reader failed timeout")});
 };
 
 

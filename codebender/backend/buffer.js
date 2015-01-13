@@ -97,7 +97,7 @@ BufferReader.prototype = {
         this.callback.bind(this,
                            this.buffer.databuffer.slice(0, this.expectedBytes)),
         0);
-      this.buffer.databuffer = this.buffer.databuffer.slice(true, this.expectedBytes);
+      this.buffer.databuffer = this.buffer.databuffer.slice(this.expectedBytes);
       return true;
     } else {
       return false;
@@ -109,7 +109,7 @@ function Buffer (readerClass) {
   this.databuffer = [];
   this.readers = [];
   this.readerClass = readerClass;
-  this.maxBufferSize = 200;
+  this.maxBufferSize = 1000;
 }
 
 Buffer.prototype = {

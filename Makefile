@@ -69,8 +69,10 @@ $(dot)/bundles:
 $(dot)/node_modules:
 	npm install
 
-browserify $(dot)/bundles/chrome-client.js: $(CLIENT_FILES) | $(dot)/node_modules $(dot)/bundles
-	$(dot)/node_modules/.bin/browserify -e $(dot)/codebender/plugin.js | \
+browserify = $(shell which browserify || echo $(dot)/node_modules/.bin/browserify)
+$(browserify): $(dot)/node_modules
+browserify $(dot)/bundles/chrome-client.js: $(CLIENT_FILES) | $(browserify) $(dot)/bundles
+	$(browserify) -e $(dot)/codebender/plugin.js | \
 		cat - $(dot)/codebender/compilerflasher.js \
 		> $(dot)/bundles/chrome-client.js
 
@@ -125,9 +127,8 @@ $(chrome-log-dir):
 	mkdir $@
 
 run-chrome: $(dot)/bundles/chrome-client.js | $(dot)/CodebenderChromeDeveloper /tmp $(chrome-log-dir)
-	((sleep 3 &&\
-		$(chrome) $(chrome-args) $(URL) chrome://extensions 2> $(chrome-log-dir)/chrome-$(shell date "+%s").log); \
-		rm -rf /tmp/chromium-use2r-data) &
+	(sleep 3 &&\
+		$(chrome) $(chrome-args) $(URL) 2> $(chrome-log-dir)/chrome-$(shell date "+%s").log) &
 
 firefox-arch = $(dot)/test/firefox-arch
 GET_FF_PROFILES = (find /var/folders -ls | grep  'tmp-[0-9a-zA-Z]*$$') 2> /dev/null | sort -r | awk '{print $$11}'
