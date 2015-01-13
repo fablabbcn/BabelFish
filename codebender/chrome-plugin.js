@@ -134,7 +134,7 @@ Plugin.prototype = {
     if (!Number.isInteger(this.readingInfo.samultaneousRequests))
       this.readingInfo.samultaneousRequests = 0;
 
-    if (++this.readingInfo.samultaneousRequests > 50) {
+    if (++this.readingInfo.samultaneousRequests > 500) {
       console.log("Too many requests, reading info:",this.readingInfo);
       // The speed of your device is too high for this serial,
       // may I suggest minicom or something. This happens if we
@@ -148,7 +148,7 @@ Plugin.prototype = {
     setTimeout(function () {
       if (self.readingInfo)
         self.readingInfo.samultaneousRequests--;
-    }, 500);
+    }, 1000);
 
     return false;
   },
