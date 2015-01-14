@@ -80,7 +80,7 @@ AVR109Transaction.prototype.magicRetry = function (devName, hexData) {
 AVR109Transaction.prototype.checkDisappearance = function (devName, connectInfo, iniDevices, next) {
   var self = this;
   this.serial.getDevices(function (disDevices) {
-    log.log("To proceed looking for",devName,"in",
+    log.log("To proceed looking for",devName,"not in",
             disDevices.map(function (d) {return d.path;}));
 
     if (disDevices.some(function (d) {return d.path == devName;})){
@@ -160,19 +160,20 @@ AVR109Transaction.prototype.waitForDeviceAndConnectSensible =
 
     self.serial.getDevices(function (newDevices) {
       var newNames = newDevices.map(function (d) {return dev.name;}).sort(),
-          oldNames = disDevices.map(function (d) {return dev.name;}).sort();
+          oldNames = disDevices.map(function (d) {return dev.name;}).sort(),
+          iniNames = iniDevices.map(function (d) {return dev.name;}).sort();
 
-      // Python style zip
-      function zip(arrays) {
-        return arrays[0].map(function(_,i) {
-          return arrays.map(function(array){return array[i];});
-        });
-      }
 
-      var newDev = zip([newNames, oldNames]).filter(function (pair) {
-        return pair[0] != pair[1];
-      })[0];
+      function newName (ar1, ar2) {
+        for (var i=0; i < ar1.length; i++) {
+          if (ar2.indexOf(ar1[i]) == -1) {
+            return ar1[i];
+          }
+        }
+        return null;
+      };
 
+      var newDev = newName(newNames, oldNames) || newName(newNames, iniNames);
       if (newDev) {
         log.log("Aha! new device", newDev[0], "connecting (baud 57600)");
         self.refreshTimeout();
