@@ -2,5 +2,5 @@
 ;;; For more information see (info "(emacs) Directory Variables")
 
 ((nil
-  (compilation-directory . "/Users/drninjabatman/Projects/Codebendercc/BabelFish/")
-  (compile-command . "make run-chrome ")))
+  (compilation-directory . "/home/fakedrake/Projects/BabelFish/")
+  (compile-command . "make browserify")))

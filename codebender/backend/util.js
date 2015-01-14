@@ -75,8 +75,18 @@ function poll (maxRetries, timeout, cb, errCb) {
   });
 }
 
+// Python style zip
+function zip(varArgs) {
+  var arrays = arraify(arguments);
+
+  return arrays[0].map(function(_,i) {
+    return arrays.map(function(array){return array[i];});
+  });
+}
+
 
 module.exports.arraify = arraify;
+module.exports.zip = zip;
 module.exports.deepCopy = deepCopy;
 module.exports.infinitePoll = infinitePoll;
 module.exports.poll = poll;
