@@ -162,7 +162,8 @@ AVR109Transaction.prototype.waitForDeviceAndConnectSensible =
           oldNames = disDevices.map(function (d) {return d.path;}).sort(),
           iniNames = iniDevices.map(function (d) {return d.path;}).sort();
 
-
+      // Wait for anything you have never seen before which on well
+      // functioning systems (not Windows) comes from disDevices
       log.log("Waiting for reapearance");
       log.log("New devs:", newNames);
       log.log("After disconnect:", oldNames);
