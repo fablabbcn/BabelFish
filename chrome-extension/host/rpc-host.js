@@ -163,6 +163,7 @@ RPCHost.prototype = {
 
     ret.sender = sender;
     ret.callbackId = callbackId;
+    ret.originalMethod = methodPath;
     return ret;
   },
 
