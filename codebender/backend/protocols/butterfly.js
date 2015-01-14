@@ -179,10 +179,10 @@ AVR109Transaction.prototype.waitForDeviceAndConnectSensible =
 
       var newDev = newName(newNames, oldNames) || newName(newNames, iniNames);
       if (newDev) {
-        log.log("Aha! new device", newDev[0], "connecting (baud 57600)");
+        log.log("Aha! new device", newDev, "connecting (baud 57600)");
         self.refreshTimeout();
-        self.serial.connect(dev.name, {bitrate: 57600,
-                                       name: newDev[0]}, cb);
+        self.serial.connect(newDev, {bitrate: 57600,
+                                     name: newDev}, cb);
         return;
       }
 
