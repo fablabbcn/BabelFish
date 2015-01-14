@@ -24,7 +24,7 @@ function AVR109Transaction () {
     magicBaudConnected: 2000,
     disconnectPollCount: 30,
     disconnectPoll: 100,
-    pollingForDev: 250,
+    pollingForDev: 500,
     finishWait: 2000,
     finishTimeout: 2000,
     finishPollForDev: 100,
@@ -80,7 +80,7 @@ AVR109Transaction.prototype.magicRetry = function (devName, hexData) {
 AVR109Transaction.prototype.checkDisappearance = function (devName, connectInfo, iniDevices, next) {
   var self = this;
   this.serial.getDevices(function (disDevices) {
-    log.log("Visible devices are now",
+    log.log("To proceed looking for",devName,"in",
             disDevices.map(function (d) {return d.path;}));
 
     if (disDevices.some(function (d) {return d.path == devName;})){
