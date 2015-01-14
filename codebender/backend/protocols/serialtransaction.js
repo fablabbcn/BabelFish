@@ -42,7 +42,7 @@ SerialTransaction.prototype.refreshTimeout = function () {
     clearTimeout(this.timeout);
     this.timeout = null;
   } else {
-    this.timeoutSecs = 5;
+    this.timeoutSecs = 20;
   }
 
   this.timeout = setTimeout(function () {
