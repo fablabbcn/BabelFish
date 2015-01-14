@@ -90,7 +90,7 @@ AVR109Transaction.prototype.checkDisappearance = function (devName, connectInfo,
     }
 
     self.transition(
-      'waitForDeviceAndConnectArduinoIDE',
+      'waitForDeviceAndConnectSensible',
       connectInfo,
       iniDevices,
       disDevices,
