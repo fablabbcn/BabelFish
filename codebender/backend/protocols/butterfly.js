@@ -158,9 +158,9 @@ AVR109Transaction.prototype.waitForDeviceAndConnectSensible =
 
 
     self.serial.getDevices(function (newDevices) {
-      var newNames = newDevices.map(function (d) {return dev.name;}).sort(),
-          oldNames = disDevices.map(function (d) {return dev.name;}).sort(),
-          iniNames = iniDevices.map(function (d) {return dev.name;}).sort();
+      var newNames = newDevices.map(function (d) {return d.name;}).sort(),
+          oldNames = disDevices.map(function (d) {return d.name;}).sort(),
+          iniNames = iniDevices.map(function (d) {return d.name;}).sort();
 
 
       log.log("Waiting for reapearance");
