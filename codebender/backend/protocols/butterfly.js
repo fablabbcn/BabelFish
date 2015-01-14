@@ -192,7 +192,6 @@ AVR109Transaction.prototype.waitForDeviceAndConnectSensible =
 // Poll for the device to reconnect.
 AVR109Transaction.prototype.waitForDeviceAndConnectArduinoIDE =
   function (dev, iniDevices, disDevices, earlyDeadline, finalDeadline, cb) {
-    log.log("Waiting for new device...");
     if (new Date().getTime() > finalDeadline) {
       log.error("Waited too long for for a port to appear");
       return;
@@ -208,6 +207,7 @@ AVR109Transaction.prototype.waitForDeviceAndConnectArduinoIDE =
     self.serial.getDevices(function(newDevices) {
       var newNames = newDevices.map(function (d) {return dev.name;}).sort(),
           oldNames = disDevices.map(function (d) {return dev.name;}).sort();
+      log.log("Waiting for new device:", oldNames, newNames);
       // XXX: arduino ide actually does it like this but it really
       // makes absolutely no sense:
       // oldNames = iniDevices.map(function (d) {return dev.name;}).sort();
