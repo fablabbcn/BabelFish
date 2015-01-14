@@ -147,7 +147,6 @@ AVR109Transaction.prototype.flash = function (devName, hexData) {
 // Poll for the device to reconnect.
 AVR109Transaction.prototype.waitForDeviceAndConnectSensible =
   function(dev, iniDevices, disDevices, earlyDeadline, finalDeadline, cb) {
-    log.log("Waiting for new device...");
     var found = false,
         self = this;
 
@@ -163,6 +162,11 @@ AVR109Transaction.prototype.waitForDeviceAndConnectSensible =
           oldNames = disDevices.map(function (d) {return dev.name;}).sort(),
           iniNames = iniDevices.map(function (d) {return dev.name;}).sort();
 
+
+      log.log("Waiting for reapearance");
+      log.log("New devs:", newNames);
+      log.log("After disconnect:", oldNames);
+      log.log("Initial:", iniNames);
 
       function newName (ar1, ar2) {
         for (var i=0; i < ar1.length; i++) {
