@@ -125,7 +125,8 @@ RPCHost.prototype = {
           var args = Array.prototype.slice.call(arguments),
               msg = {args: argsEncode(args), error: null};
 
-          dbg("RPCHost requesting callback", callbackId, " with args:", args);
+          dbg("RPCHost requesting ", methodPath ,"[",
+              callbackId, "]:", args);
           try {
             sendResp(msg);
             return true;
