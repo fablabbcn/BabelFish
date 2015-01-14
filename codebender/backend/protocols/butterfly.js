@@ -22,8 +22,8 @@ function AVR109Transaction () {
 
   this.timeouts = {
     magicBaudConnected: 2000,
-    disconnectPollCount: 20,
-    disconnectPoll: 50,
+    disconnectPollCount: 30,
+    disconnectPoll: 100,
     pollingForDev: 250,
     finishWait: 2000,
     finishTimeout: 2000,
