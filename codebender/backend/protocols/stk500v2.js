@@ -175,12 +175,13 @@ STK500v2Transaction.prototype.writeThenRead = function (data, cb, retries) {
     reader.buffer.databuffer =
       reader.buffer.databuffer.slice(start + msgLen + 6);
 
-    // Now msg is good.
+    // Now we are good to continue our messaging
+    self.cmdSeq = (self.cmdSeq + 1) & 0xff;
+    log.log("Reader success. Databuffer:",
+            buffer.hexRep(reader.buffer.databuffer));    // Now msg is good.
     // Don't include the packet head and tail
     setTimeout(reader.callback.bind(null, msg), 0);
 
-    // Now we are good to continue our messaging
-    self.cmdSeq = (self.cmdSeq + 1) & 0xff;
     return true;
   }
 
@@ -204,14 +205,14 @@ STK500v2Transaction.prototype.cmd = function (cmd, cb) {
   this.writeThenRead(cmd, cb);
 };
 
-STK500v2Transaction.prototype.flash = function (deviceName, sketchData) {
+STK500v2Transaction.prototype.flash = function (deviceName, sketchData, baudrate) {
   this.sketchData = sketchData;
   var self = this;
   self.destroyOtherConnections(
     deviceName,
     function  () {
       self.serial.connect(deviceName,
-                          {bitrate: 115200, name: deviceName},
+                          {bitrate: baudrate, name: deviceName},
                           self.transitionCb('connectDone', sketchData));
     });
 };
@@ -295,13 +296,13 @@ STK500v2Transaction.prototype.programFlash = function (offset, pgSize) {
       loadAddressMessage = [
         this.STK2.CMD_LOAD_ADDRESS,
         0x80,
-        addressBytes[1],
         addressBytes[0],
+        addressBytes[1],
         0x00],
       programMessage = [
         this.STK2.CMD_PROGRAM_FLASH_ISP,
-        sizeBytes[1],
         sizeBytes[0],
+        sizeBytes[1],
         memMode | 0x80,
         delay,
         loadpageLoCmd,
@@ -312,6 +313,10 @@ STK500v2Transaction.prototype.programFlash = function (offset, pgSize) {
   self.writeThenRead(loadAddressMessage, function(reponse) {
     self.writeThenRead(programMessage, function(response) {
       // Program the next section
+      if (response[0] != 0x13 || response[1] != 0){
+        self.errCb(1, "Error in response while programming");
+        return;
+      }
       self.transition('programFlash', offset + pgSize, pgSize);
     });
   });
@@ -321,7 +326,9 @@ STK500v2Transaction.prototype.doneProgramming = function (cid) {
   var self = this;
 
   self.writeThenRead([0x11, 0x01, 0x01], function (data) {
-    setTimeout(self.finishCallback, 1000);
+    setTimeout(function () {
+      self.cleanup(self.finishCallback);
+    }, 1000);
   });
 };
 
