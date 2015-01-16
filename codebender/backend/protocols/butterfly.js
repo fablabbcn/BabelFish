@@ -137,9 +137,8 @@ AVR109Transaction.prototype.magicBaudReset = function (devName, hexData) {
   });
 };
 
-AVR109Transaction.prototype.flash = function (devName, hexData, baudrate) {
+AVR109Transaction.prototype.flash = function (devName, hexData) {
   this.refreshTimeout();
-  this.baudrate = baudrate;
   this.sketchData = hexData;
   this.destroyOtherConnections(
     devName,
@@ -184,7 +183,7 @@ AVR109Transaction.prototype.waitForDeviceAndConnectSensible =
       if (newDev) {
         log.log("Aha! new device", newDev, "connecting (baud 57600)");
         self.refreshTimeout();
-        self.serial.connect(newDev, {bitrate: self.baudrate,
+        self.serial.connect(newDev, {bitrate: self.config.baudrate,
                                      name: newDev}, cb);
         return;
       }
@@ -209,7 +208,7 @@ AVR109Transaction.prototype.waitForDeviceAndConnectArduinoIDE =
         self = this,
         success = function (dev) {
           self.refreshTimeout();
-          self.serial.connect(dev, {bitrate: self.baudrate,
+          self.serial.connect(dev, {bitrate: self.config.baudrate,
                                     name: dev}, cb);
         };
     self.serial.getDevices(function(newDevices) {

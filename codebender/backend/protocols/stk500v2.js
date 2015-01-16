@@ -212,7 +212,7 @@ STK500v2Transaction.prototype.cmd = function (cmd, cb) {
   this.writeThenRead(buf, cb);
 };
 
-STK500v2Transaction.prototype.flash = function (deviceName, sketchData, baudrate) {
+STK500v2Transaction.prototype.flash = function (deviceName, sketchData) {
   this.sketchData = sketchData;
 
   log.log("Will be sending sketch:", buffer.hexRep(sketchData));
@@ -221,7 +221,7 @@ STK500v2Transaction.prototype.flash = function (deviceName, sketchData, baudrate
     deviceName,
     function  () {
       self.serial.connect(deviceName,
-                          {bitrate: baudrate, name: deviceName},
+                          {bitrate: self.config.baudrate, name: deviceName},
                           self.transitionCb('connectDone', sketchData));
     });
 };

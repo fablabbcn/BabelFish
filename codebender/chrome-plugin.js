@@ -217,6 +217,13 @@ Plugin.prototype = {
 
     var from = null,
         self = this,
+        config = {
+          maxsize: Number(maxsize),
+          protocol: protocol,
+          disableFlushing: disable_flushing,
+          speed: Number(speed),
+          mcu: mcu
+        },
         finishCallback = function () {
           var pluginReturnValue = 0;
           cb(from, pluginReturnValue);
@@ -227,10 +234,11 @@ Plugin.prototype = {
           self.transaction = null;
         };
 
+    // XXX: Wait for it to finish
     if(self.transaction)
       self.transaction.errCb(1, "Trying to restart flashing");
 
-    self.transaction = new protocols[protocol](finishCallback, errorCallback),
+    self.transaction = new protocols[protocol](config, finishCallback, errorCallback),
     setTimeout(function () {
       dbg("Code length", code.length, typeof code,
           "Protocol:", protocols,
@@ -242,7 +250,7 @@ Plugin.prototype = {
         code = Array.prototype.slice.call(code);
       }
 
-      self.transaction.flash(device, code, Number(speed));
+      self.transaction.flash(device, code);
     }, 0);
   },
 

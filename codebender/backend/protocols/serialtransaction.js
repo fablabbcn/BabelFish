@@ -5,9 +5,10 @@ var _create_chrome_client = require('./../../../chrome-extension/client/rpc-clie
     MemoryOperations = require('./memops'),
     buffer = require("./../buffer.js");
 
-function SerialTransaction (finishCallback, errorCallback) {
+function SerialTransaction (config, finishCallback, errorCallback) {
   Transaction.apply(this, arraify(arguments, 2));
 
+  this.config = config;
   this.init(finishCallback, errorCallback);
 }
 

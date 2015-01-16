@@ -23,7 +23,7 @@ function STK500Transaction () {
     SW_VER_MINOR: 0x82,
     SW_VER_MAJOR: 0x81
   };
-  this.pageSize = 128;
+  this.pageSize = 256;
   this.log = log;
   this.maxMessageRetries = 4;
 }
@@ -83,7 +83,7 @@ STK500Transaction.prototype.cmd = function (cmd, cb) {
   this.writeThenRead(cmd, cb);
 };
 
-STK500Transaction.prototype.flash = function (deviceName, sketchData, baudrate) {
+STK500Transaction.prototype.flash = function (deviceName, sketchData) {
   this.refreshTimeout();
   this.sketchData = sketchData;
   var self = this;
@@ -91,7 +91,7 @@ STK500Transaction.prototype.flash = function (deviceName, sketchData, baudrate) 
     deviceName,
     function  () {
       self.serial.connect(deviceName,
-                          {bitrate: baudrate, name: deviceName},
+                          {bitrate: self.config.baudrate, name: deviceName},
                           self.transitionCb('connectDone', sketchData));
     });
 };
