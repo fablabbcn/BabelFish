@@ -83,7 +83,7 @@ STK500Transaction.prototype.cmd = function (cmd, cb) {
   this.writeThenRead(cmd, cb);
 };
 
-STK500Transaction.prototype.flash = function (deviceName, sketchData) {
+STK500Transaction.prototype.flash = function (deviceName, sketchData, baudrate) {
   this.refreshTimeout();
   this.sketchData = sketchData;
   var self = this;
@@ -91,7 +91,7 @@ STK500Transaction.prototype.flash = function (deviceName, sketchData) {
     deviceName,
     function  () {
       self.serial.connect(deviceName,
-                          {bitrate: 115200, name: deviceName},
+                          {bitrate: baudrate, name: deviceName},
                           self.transitionCb('connectDone', sketchData));
     });
 };

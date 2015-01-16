@@ -242,7 +242,7 @@ Plugin.prototype = {
         code = Array.prototype.slice.call(code);
       }
 
-      self.transaction.flash(device, code);
+      self.transaction.flash(device, code, Number(speed));
     }, 0);
   },
 

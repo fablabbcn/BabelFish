@@ -185,7 +185,7 @@ STK500v2Transaction.prototype.writeThenRead = function (data, cb, retries) {
     return true;
   }
 
-  log.log("Sending:", message);
+  log.log("Sending:", buffer.hexRep(message));
   this.writeThenRead_({outgoingMsg: message,
                        modifyDatabuffer: modifyDatabuffer,
                        callback: cb,
@@ -202,11 +202,20 @@ STK500v2Transaction.prototype.writeThenRead = function (data, cb, retries) {
 // Cb should have the 'state' format, ie function (ok, data)
 STK500v2Transaction.prototype.cmd = function (cmd, cb) {
   // Always get a 4byte answer
-  this.writeThenRead(cmd, cb);
+  if (cmd.length != 4) {
+    this.errCb(1, "Tried to send command with bad size (", cmd.length, "!= 4)");
+    return;
+  }
+
+  var buf = [this.STK2.CMD_SPI_MULTI, 0x4, 0x4, 0x0]
+        .concat(cmd);
+  this.writeThenRead(buf, cb);
 };
 
 STK500v2Transaction.prototype.flash = function (deviceName, sketchData, baudrate) {
   this.sketchData = sketchData;
+
+  log.log("Will be sending sketch:", buffer.hexRep(sketchData));
   var self = this;
   self.destroyOtherConnections(
     deviceName,
@@ -254,24 +263,42 @@ STK500v2Transaction.prototype.signedOn  = function (data) {
 
   // Found in avrdude.conf
   var timeout = 200,
+      stabDelay = 0x64,
       cmdExecDelay = 25,
       syncHLoops = 32,
       byteDelay = 0,
       pollValue = 0x53,
       pollIndex = 3,
-      pgmEnable1 = 0xac,
-      pgmEnable2 = 0x53;
+      pgmEnable = [0xac, 0x53, 0x00, 0x00],
+      nextStep = self.transitionCb("programFlash", 0, 256);
+  // nextStep = self.transitionCb("preProgramHack");
+
+
 
   self.writeThenRead([self.STK2.CMD_ENTER_PROGMODE_ISP,
                       timeout,
+                      stabDelay,     //Check
                       cmdExecDelay,
                       syncHLoops,
                       byteDelay,
                       pollValue,
-                      pollIndex,
-                      pgmEnable1, pgmEnable2,
-                      0x00, 0x0c],
-                     self.transitionCb("programFlash", 0, 128));
+                      pollIndex].concat(pgmEnable),
+                     nextStep);
+};
+
+// Note: This is some commands that avrdude sends to the device. Found
+// them out by sniffing the transaction, couldn't find which code
+// sends them. They dont seem to be necessary but keep them around.
+STK500v2Transaction.prototype.preProgramHack = function () {
+  this.cmdChain([
+    [0x30, 0x00, 0x00, 0x00],
+    [0x30, 0x00, 0x01, 0x00],
+    [0x30, 0x00, 0x02, 0x00],
+    [0xa0, 0x0f, 0xfc, 0x00],
+    [0xa0, 0x0f, 0xfd, 0x00],
+    [0xa0, 0x0f, 0xfe, 0x00],
+    [0xa0, 0x0f, 0xff, 0x00]
+  ], this.transitionCb("programFlash", 0, 256));
 };
 
 STK500v2Transaction.prototype.programFlash = function (offset, pgSize) {
@@ -286,28 +313,30 @@ STK500v2Transaction.prototype.programFlash = function (offset, pgSize) {
 
   var self = this,
       payload = this.padOrSlice(data, offset, pgSize),
-      addressBytes = buffer.storeAsTwoBytes(offset / 2),
+      addressBytes = buffer.storeAsNBytes(4, offset / 2),
       sizeBytes = buffer.storeAsTwoBytes(pgSize),
-      memMode = 0x31,
+      memMode = 0xc1,
       delay = 10,
       loadpageLoCmd = 0x40,
       writepageCmd = 0x4c,
-      avrOpReadLo = 0x20,
-      loadAddressMessage = [
-        this.STK2.CMD_LOAD_ADDRESS,
-        0x80,
-        addressBytes[0],
-        addressBytes[1],
-        0x00],
+      avrOpReadLo = 0x20;
+
+  addressBytes[0] |= 0x80;      // We use high addresses only
+
+  // The load address message is optional, the device can increment
+  // and assume correct positions but just to be sure.
+  var loadAddressMessage = [this.STK2.CMD_LOAD_ADDRESS]
+        .concat(addressBytes),
       programMessage = [
         this.STK2.CMD_PROGRAM_FLASH_ISP,
         sizeBytes[0],
         sizeBytes[1],
-        memMode | 0x80,
+        memMode,
         delay,
         loadpageLoCmd,
         writepageCmd,
-        0x00, 0x00              // Readback
+        avrOpReadLo,
+        0x00, 0x00,              // Readback
       ].concat(payload);
 
   self.writeThenRead(loadAddressMessage, function(reponse) {

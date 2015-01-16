@@ -2,6 +2,16 @@ var arraify = require('./util').arraify,
     Log = require('./logging').Log,
     log = new Log('Buffer');
 
+function storeAsNBytes(bytes, n) {
+  var ret = [];
+  for (var i=0; i < bytes; i++) {
+    ret.push(n>>(8*i) & 0xff);
+  }
+
+  // Little endian
+  return ret.reverse();
+}
+
 function storeAsTwoBytes(n) {
   var lo = (n & 0x00FF);
   var hi = (n & 0xFF00) >> 8;
@@ -14,8 +24,9 @@ function hexRep(intArray) {
   var buf = "[";
   var sep = "";
   for (var i = 0; i < intArray.length; ++i) {
-    buf += (sep + "0x" + intArray[i].toString(16));
-    sep = ",";
+    var hex = intArray[i].toString(16);
+    hex = hex.length < 2 ? "0" + hex : hex;
+    buf += (" " + hex);;
   }
   buf += "]";
   return buf;
@@ -152,7 +163,7 @@ Buffer.prototype = {
   read: function (maxBytes, callback) {
     var len =this.databuffer.length,
         accum = this.databuffer.splice(0, maxBytes);
-    log.log("Reading from byffer [", maxBytes, "/", len,"]",  accum);
+    log.log("Reading from byffer [", maxBytes, "/", len,"]",  hexRep(accum));
     setTimeout(function () {
       callback({bytesRead: accum.length, data: accum});
     }, 0);
@@ -177,7 +188,7 @@ Buffer.prototype = {
 
   // Dump the entire databuffer
   drain: function(callback) {
-    log.log("Draining bytes: ", this.databuffer);
+    log.log("Draining bytes: ", hexRep(this.databuffer));
     // Clean up readers
     this.readers.slice().forEach(function (r) {
       self.removeReader(r);
@@ -190,7 +201,7 @@ Buffer.prototype = {
   },
 
   cleanup: function (callback) {
-    log.log("Cleaning everything of buffer.", this.databuffer);
+    log.log("Cleaning everything of buffer.", hexRep(this.databuffer));
     this.readers.slice().forEach(this.removeReader.bind(this));
 
     // Because the above is nasty, `undefined` tokens may survive in
@@ -212,4 +223,5 @@ module.exports.Buffer = Buffer;
 module.exports.hexRep = hexRep;
 module.exports.bufToBin = bufToBin;
 module.exports.storeAsTwoBytes = storeAsTwoBytes;
+module.exports.storeAsNBytes = storeAsNBytes;
 module.exports.binToBuf = binToBuf;

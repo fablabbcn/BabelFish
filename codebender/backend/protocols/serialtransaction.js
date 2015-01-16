@@ -266,4 +266,12 @@ SerialTransaction.prototype.onOffDTR = function (cb) {
   }, 0);
 };
 
+SerialTransaction.prototype.cmdChain = function (chain, cb) {
+  if (chain.length == 0) {
+    cb();
+    return;
+  }
+  this.cmd(chain.shift(), this.cmdChain.bind(this, chain, cb));
+};
+
 module.exports = SerialTransaction;
