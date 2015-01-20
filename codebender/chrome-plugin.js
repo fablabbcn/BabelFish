@@ -2,7 +2,8 @@
 
 var protocols = require('./backend/protocols').protocols,
     util = require('./backend/util'),
-    _create_hex_parser = require('./backend/hexparser');
+    _create_hex_parser = require('./backend/hexparser'),
+    avrdudeconf = require('./backend/avrdudeconf');
 
 var dbg = util.dbg;
 
@@ -227,7 +228,8 @@ Plugin.prototype = {
           protocol: protocol,
           disableFlushing: disable_flushing && disable_flushing != "false",
           speed: Number(speed),
-          mcu: mcu
+          mcu: mcu,
+          avrdude: avrdudeconf.getMCUConf(mcu)
         },
         finishCallback = function () {
           var pluginReturnValue = 0;

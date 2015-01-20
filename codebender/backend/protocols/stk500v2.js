@@ -72,7 +72,6 @@ function STK500v2Transaction () {
     TOKEN: 0x0E
   };
 
-  this.pageSize = 128;
   this.log = log;
   this.cmdSeq = 1;
 }
@@ -270,7 +269,8 @@ STK500v2Transaction.prototype.signedOn  = function (data) {
       pollValue = 0x53,
       pollIndex = 3,
       pgmEnable = [0xac, 0x53, 0x00, 0x00],
-      nextStep = self.transitionCb("programFlash", 0, 256);
+      nextStep = self.transitionCb("programFlash", 0,
+                                   this.config.avrdude.memory.flash.page_size);
   // nextStep = self.transitionCb("preProgramHack");
 
 

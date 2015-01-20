@@ -156,7 +156,9 @@ STK500Transaction.prototype.enteredProgmode = function (data) {
 
 STK500Transaction.prototype.readSignature = function (data) {
   log.log("Signature:", buffer.hexRep(data));
-  this.transition('programFlash', 0, this.pageSize,
+  var offset = 0;
+  this.transition('programFlash', offset,
+                  this.config.avrdude.memory.flash.page_size,
                   this.transitionCb('doneProgramming'));
 };
 

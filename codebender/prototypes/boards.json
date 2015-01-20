@@ -3,7 +3,7 @@
   "upload": {
     "protocol": "arduino",
     "maximum_size": "32256",
-    "speed": "115200x"
+    "speed": "115200"
   },
   "bootloader": {
     "low_fuses": "0xff",
