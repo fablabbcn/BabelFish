@@ -221,7 +221,7 @@ STK500v2Transaction.prototype.flash = function (deviceName, sketchData) {
     deviceName,
     function  () {
       self.serial.connect(deviceName,
-                          {bitrate: self.config.baudrate, name: deviceName},
+                          {bitrate: self.config.speed, name: deviceName},
                           self.transitionCb('connectDone', sketchData));
     });
 };

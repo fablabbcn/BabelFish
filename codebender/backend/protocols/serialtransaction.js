@@ -119,12 +119,14 @@ SerialTransaction.prototype.writeThenRead_ = function (info) {
   this.serial.send(this.connectionId, outgoingBinary, function(writeArg) {
     if (!writeArg) self.errCb(1, "Connection lost");
 
-    self.serial.flush(self.connectionId, function (ok) {
-      if (!ok) {
-        self.errCb(1,'Failed to flush');
-        return;
-      }
-    });
+    if (!self.config.disableFlushing)
+      self.serial.flush(self.connectionId, function (ok) {
+        if (!ok) {
+          self.errCb(1,'Failed to flush');
+          return;
+        }
+      });
+
     self.buffer.readAsync(info);
   });
 };

@@ -86,12 +86,13 @@ STK500Transaction.prototype.cmd = function (cmd, cb) {
 STK500Transaction.prototype.flash = function (deviceName, sketchData) {
   this.refreshTimeout();
   this.sketchData = sketchData;
+  log.log("Flashing. Config is:", this.config);
   var self = this;
   self.destroyOtherConnections(
     deviceName,
-    function  () {
+    function () {
       self.serial.connect(deviceName,
-                          {bitrate: self.config.baudrate, name: deviceName},
+                          {bitrate: self.config.speed, name: deviceName},
                           self.transitionCb('connectDone', sketchData));
     });
 };
@@ -118,7 +119,7 @@ STK500Transaction.prototype.connectDone = function (hexCode, connectArg) {
   }
 
   this.connectionId = connectArg.connectionId;
-  log.log("Connected to board. ID: " + connectArg.connectionId);
+  log.log("Connected to board:", connectArg);
   this.buffer.drain(function () {
     self.onOffDTR(function () {
       self.writeThenRead([self.STK.GET_SYNC, self.STK.CRC_EOP],

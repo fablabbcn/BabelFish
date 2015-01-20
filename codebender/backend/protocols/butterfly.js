@@ -183,7 +183,7 @@ AVR109Transaction.prototype.waitForDeviceAndConnectSensible =
       if (newDev) {
         log.log("Aha! new device", newDev, "connecting (baud 57600)");
         self.refreshTimeout();
-        self.serial.connect(newDev, {bitrate: self.config.baudrate,
+        self.serial.connect(newDev, {bitrate: self.config.speed,
                                      name: newDev}, cb);
         return;
       }
@@ -208,7 +208,7 @@ AVR109Transaction.prototype.waitForDeviceAndConnectArduinoIDE =
         self = this,
         success = function (dev) {
           self.refreshTimeout();
-          self.serial.connect(dev, {bitrate: self.config.baudrate,
+          self.serial.connect(dev, {bitrate: self.config.speed,
                                     name: dev}, cb);
         };
     self.serial.getDevices(function(newDevices) {
@@ -339,10 +339,10 @@ AVR109Transaction.prototype.programFlash = function (offset, length) {
         this.AVR.WRITE, sizeBytes[0], sizeBytes[1], this.AVR.TYPE_FLASH ]
         .concat(payload);
 
-  this.writeThenRead(programMessage, 1, function(resp) {
-    // XXX: check respeonse.
-    self.transition('programFlash', offset + length, length);
-  });
+  this.writeThenRead(programMessage, 1,
+                     // XXX: check respeonse.
+                     self.transitionCb('programFlash', offset + length, length)
+                    );
 };
 
 module.exports.AVR109Transaction = AVR109Transaction;
