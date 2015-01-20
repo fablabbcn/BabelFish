@@ -174,22 +174,23 @@ if (!window.chrome) {
         return callback;
 
       callback.rpcErrorHandler = this.customErrorHandler;
-      var ret = function (resp) {
-        // Ignore free resoponses
-        if (!resp)
-          return true;
+      var self = this,
+          ret = function (resp) {
+            // Ignore free resoponses
+            if (!resp)
+              return true;
 
-        // Raise an error if the server reports one.
-        if (resp.error) {
-          self.errorHandler("RPC call failed:" + resp.error, callback);
-        } else {
-          // If there is a callback call it.
-          if (callback) {
-            return callback.apply(null, argsDecode(resp.args));
-          }
-        }
-        return true;
-      };
+            // Raise an error if the server reports one.
+            if (resp.error) {
+              self.errorHandler("RPC call failed:" + resp.error, callback);
+            } else {
+              // If there is a callback call it.
+              if (callback) {
+                return callback.apply(null, argsDecode(resp.args));
+              }
+            }
+            return true;
+          };
 
       ret.callbackId = callback.callbackId;
       return ret;
@@ -246,10 +247,10 @@ if (!window.chrome) {
   window.extentionAvailable = true;
   try {
     Object.getOwnPropertyNames(config.methods).forEach(function (m) {
-        console.log("Registering client for chrome.", m);
-        chrome[m] = new RPCClient(config, m);
-      }
-    );
+      console.log("Registering client for chrome.", m);
+      chrome[m] = new RPCClient(config, m);
+    }
+                                                      );
   }
   catch (err) {
     console.error(err.message);
