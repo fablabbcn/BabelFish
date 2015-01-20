@@ -215,12 +215,17 @@ Plugin.prototype = {
                    mcu,
                    cb) {
 
+    if (code.length > maxsize) {
+      cb(1, "Program too large");
+      return;
+    }
+
     var from = null,
         self = this,
         config = {
           maxsize: Number(maxsize),
           protocol: protocol,
-          disableFlushing: disable_flushing,
+          disableFlushing: disable_flushing && disable_flushing != "false",
           speed: Number(speed),
           mcu: mcu
         },
