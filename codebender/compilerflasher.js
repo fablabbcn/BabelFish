@@ -7,7 +7,10 @@ compilerflasher = function(lf){
     this.load_files = lf;
     this.loaded_elements = [];
 
-    this.minVersion = "1.6.0.8";
+    this.minVersion = {
+        CodebenderPlugin: "1.6.0.8",
+        BabelFish: "0.0.0.1"
+    };
 
     var that = this;
 
@@ -311,37 +314,38 @@ compilerflasher = function(lf){
                     clearInterval(window.plugin_init_interval);
 
                     pl.plugin_initialized = true;
-                    pl.plugin_version = pl.codebender_plugin.version;
-                    window.plugin_version = pl.plugin_version;
-                    url = "http\x3A\x2F\x2Ftsiknas.codebender.cc\x2Futilities\x2Flogdb\x2F35\x2FPLUGIN_META";
-                    url = url.replace("PLUGIN_META", JSON.stringify({ "plugin" : true, "version": pl.plugin_version}) );
-                    $.get(url);
+                    setTimeout(function () {
+                        pl.plugin_version = pl.codebender_plugin.version;
+                        window.plugin_version = pl.plugin_version;
+                        url = "{{  url('CodebenderUtilitiesBundle_logdb', {actionid : 35, meta : "PLUGIN_META"}) }}";
+                        url = url.replace("PLUGIN_META", JSON.stringify({ "plugin" : true, "version": pl.plugin_version}) );
+                        $.get(url);
 
-                    pl.validateVersion(that.minVersion);
-                    if (typeof pl.codebender_plugin.setErrorCallback !== 'undefined')
-                        pl.codebender_plugin.setErrorCallback(pl.plugin_error_logger);
+                        pl.validateVersion(that.minVersion);
+                        if (typeof pl.codebender_plugin.setErrorCallback !== 'undefined')
+                            pl.codebender_plugin.setErrorCallback(pl.plugin_error_logger);
 
-                    if (typeof pl.codebender_plugin.init !== 'undefined')
-                    {
-                        pl.codebender_plugin.init();
-                        if (typeof pl.codebender_plugin.instance_id !== 'undefined') {
-                            pl.tabID = parseInt(pl.codebender_plugin.instance_id);
-                        }
-                    }
-
-                    if (typeof pl.codebender_plugin.closeTab !== 'undefined')
-                    {
-                        $( window ).unload(function ()
+                        if (typeof pl.codebender_plugin.init !== 'undefined')
                         {
-                            pl.codebender_plugin.closeTab();
-                            pl.codebender_plugin.deleteMap();
-                        });
-                    }
-                    else
-                    {
-                        pl.disconnect();
-                    }
+                            pl.codebender_plugin.init();
+                            if (typeof pl.codebender_plugin.instance_id !== 'undefined') {
+                                pl.tabID = parseInt(pl.codebender_plugin.instance_id);
+                            }
+                        }
 
+                        if (typeof pl.codebender_plugin.closeTab !== 'undefined')
+                        {
+                            $( window ).unload(function ()
+                            {
+                                pl.codebender_plugin.closeTab();
+                                pl.codebender_plugin.deleteMap();
+                            });
+                        }
+                        else
+                        {
+                            pl.disconnect();
+                        }
+                    }, 100);
                 }
             }, 100);
         }
@@ -390,7 +394,16 @@ compilerflasher = function(lf){
 
         this.validateVersion = function(version)
         {
-            if (this.comparePluginVersions(this.parseVersionString(this.codebender_plugin.version), this.parseVersionString(version)) < 0)
+			var minimumVersion;
+            if (window.chrome)
+            {
+                minimumVersion = version.BabelFish;
+            }
+            else
+            {
+                minimumVersion = version.CodebenderPlugin;
+            }
+            if (this.comparePluginVersions(this.parseVersionString(this.codebender_plugin.version), this.parseVersionString(minimumVersion)) < 0)
             {
                 var alert = this.browserSpecificPluginInstall("You need to update the Codebender Plugin. ");
                 this.owner.setOperationOutput(alert);
