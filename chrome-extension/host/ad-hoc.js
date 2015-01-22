@@ -10,3 +10,8 @@ chrome.serial.onReceiveError.forceDispatch = function (info) {
       cb(info);
     });
 };
+
+chrome.runtime.getManifestAsync = function (cb) {
+    var manifest = chrome.runtime.getManifest();
+    cb(manifest.version);
+};
