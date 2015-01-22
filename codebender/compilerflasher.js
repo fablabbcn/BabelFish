@@ -313,39 +313,47 @@ compilerflasher = function(lf){
                 {
                     clearInterval(window.plugin_init_interval);
 
-                    setTimeout(function () {
-                    	pl.plugin_initialized = true;
-                        pl.plugin_version = pl.codebender_plugin.version;
-                        window.plugin_version = pl.plugin_version;
-                        url = "http\x3A\x2F\x2Ftsiknas.codebender.cc\x2Futilities\x2Flogdb\x2F35\x2FPLUGIN_META";
-                        url = url.replace("PLUGIN_META", JSON.stringify({ "plugin" : true, "version": pl.plugin_version}) );
-                        $.get(url);
-
-                        pl.validateVersion(that.minVersion);
-                        if (typeof pl.codebender_plugin.setErrorCallback !== 'undefined')
-                            pl.codebender_plugin.setErrorCallback(pl.plugin_error_logger);
-
-                        if (typeof pl.codebender_plugin.init !== 'undefined')
+                    window.initializationInterval = setInterval(function () {
+                        if (pl.plugin_version !== undefined)
                         {
-                            pl.codebender_plugin.init();
-                            if (typeof pl.codebender_plugin.instance_id !== 'undefined') {
-                                pl.tabID = parseInt(pl.codebender_plugin.instance_id);
+                            clearInterval(window.initializationInterval);
+                            pl.plugin_initialized = true;
+                            pl.plugin_version = pl.codebender_plugin.version;
+                            window.plugin_version = pl.plugin_version;
+                            url = "http\x3A\x2F\x2Ftsiknas.codebender.cc\x2Futilities\x2Flogdb\x2F35\x2FPLUGIN_META";
+                            url = url.replace("PLUGIN_META", JSON.stringify({
+                                "plugin": true,
+                                "version": pl.plugin_version
+                            }));
+                            $.get(url);
+
+                            pl.validateVersion(that.minVersion);
+                            if (typeof pl.codebender_plugin.setErrorCallback !== 'undefined')
+                                pl.codebender_plugin.setErrorCallback(pl.plugin_error_logger);
+
+                            if (typeof pl.codebender_plugin.init !== 'undefined')
+                            {
+                                pl.codebender_plugin.init();
+                                if (typeof pl.codebender_plugin.instance_id !== 'undefined')
+                                {
+                                    pl.tabID = parseInt(pl.codebender_plugin.instance_id);
+                                }
+                            }
+
+                            if (typeof pl.codebender_plugin.closeTab !== 'undefined')
+                            {
+                                $(window).unload(function ()
+                                {
+                                    pl.codebender_plugin.closeTab();
+                                    pl.codebender_plugin.deleteMap();
+                                });
+                            }
+                            else
+                            {
+                                pl.disconnect();
                             }
                         }
-
-                        if (typeof pl.codebender_plugin.closeTab !== 'undefined')
-                        {
-                            $( window ).unload(function ()
-                            {
-                                pl.codebender_plugin.closeTab();
-                                pl.codebender_plugin.deleteMap();
-                            });
-                        }
-                        else
-                        {
-                            pl.disconnect();
-                        }
-                    }, 500);
+                    }, 100);
                 }
             }, 100);
         }
