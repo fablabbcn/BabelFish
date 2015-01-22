@@ -14,10 +14,10 @@ chrome.serial.onReceiveError.forceDispatch = function (info) {
 chrome.runtime.getManifestAsync = function (cb) {
     var manifest = chrome.runtime.getManifest();
     var manifestInterval = setInterval(function () {
-        if (manifestInterval)
+        if (manifest)
         {
             clearInterval(manifestInterval);
             cb(manifest.version);
         }
-    })
+    });
 };
