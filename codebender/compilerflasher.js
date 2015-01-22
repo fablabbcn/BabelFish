@@ -314,7 +314,7 @@ compilerflasher = function(lf){
                     clearInterval(window.plugin_init_interval);
 
                     window.initializationInterval = setInterval(function () {
-                        if (pl.plugin_version !== undefined)
+                        if (pl.codebender_plugin.version)
                         {
                             clearInterval(window.initializationInterval);
                             pl.plugin_initialized = true;
@@ -692,7 +692,7 @@ compilerflasher = function(lf){
         }
 
         this.scan = function() {
-                        window.hasPerm = this.codebender_plugin.setCallback(function (from, output) {
+            this.codebender_plugin.setCallback(function (from, output) {
                 if (output == "disconnect") {
                     compilerflasher.pluginHandler.disconnect(true);
                 } else
@@ -700,13 +700,13 @@ compilerflasher = function(lf){
                     compilerflasher.eventManager.fire("plugin_notification", output);
                     compilerflasher.setOperationOutput(output);
                 }
+            }, function (hasPerm) {
+                window.hasPerm = hasPerm;
+                if (window.hasPerm !== undefined && !window.hasPerm) {
+                    compilerflasher.setOperationOutput("You need to grant permissions to the Codebender extension.");
+                    compilerflasher.eventManager.fire('plugin_notification', "You need to grant permissions to the Codebender extension.");
+                }
             });
-
-            if (window.hasPerm !== undefined && !window.hasPerm) {
-                compilerflasher.setOperationOutput("You need to grant permissions to the Codebender extension.");
-                compilerflasher.eventManager.fire('plugin_notification', "You need to grant permissions to the Codebender extension.");
-            }
-
 
             this.getFire();
             var pl = this;

@@ -13,6 +13,7 @@ function Plugin() {
   dbg("Initializing plugin.");
   this.serial = chrome.serial;
   var self = this;
+
   chrome.runtime.getManifestAsync(function (version) {
     self.version = version;
   });
