@@ -72,8 +72,7 @@ $(dot)/node_modules:
 browserify = $(shell which browserify || echo $(dot)/node_modules/.bin/browserify)
 $(browserify): $(dot)/node_modules
 browserify $(dot)/bundles/chrome-client.js: $(CLIENT_FILES) | $(browserify) $(dot)/bundles
-	$(browserify) -e $(dot)/codebender/plugin.js | \
-		cat - $(dot)/codebender/compilerflasher.js \
+	$(browserify) -e $(dot)/codebender/plugin.js \
 		> $(dot)/bundles/chrome-client.js
 
 $(dot)/plugin $(dot)/CodebenderChromeDeveloper:
