@@ -345,7 +345,7 @@ compilerflasher = function(lf){
                         {
                             pl.disconnect();
                         }
-                    }, 100);
+                    }, 200);
                 }
             }, 100);
         }
