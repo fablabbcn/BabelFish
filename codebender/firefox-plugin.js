@@ -63,6 +63,8 @@ function CodebenderPlugin () {
   this.availablePorts = this.availablePortsCb;
   this.getFlashResult = this.getFlashResultCb;
   this.probeUSB = this.probeUSBCb;
+  this.setCallback = this.setCallbackCb;
+  this.setErrorCallback = this.setErrorCallbackCb;
 };
 
 if (typeof Object.create !== 'function') {
@@ -82,25 +84,36 @@ CodebenderPlugin.prototype.getPortsCb = function (cb) {
   }, 50);
 };
 
-CodebenderPlugin.prototype.availablePortsCb  = function (cb) {
+CodebenderPlugin.prototype.availablePortsCb = function (cb) {
   var ports = this.element_.availablePorts();
   setTimeout(function () {
     cb(ports);
   }, 50);
 };
 
-CodebenderPlugin.prototype.getFlashResultCb  = function (cb) {
+CodebenderPlugin.prototype.getFlashResultCb = function (cb) {
   var result = this.element_.getFlashResult();
   setTimeout(function () {
     cb(result);
   }, 50);
 };
 
-CodebenderPlugin.prototype.probeUSBCb  = function (cb) {
+CodebenderPlugin.prototype.probeUSBCb = function (cb) {
   var result = this.element_.probeUSB();
   setTimeout(function () {
     cb(result);
   }, 50);
+};
+
+CodebenderPlugin.prototype.setCallbackCb = function (cb, cbRet) {
+  var res = this.element_.setCallback(cb);
+  setTimeout(function () {
+    cbRet(res);
+  }, 50);
+};
+
+CodebenderPlugin.prototype.setErrorCallbackCb = function (cb) {
+  var res = this.element_.setErrorCallback(cb);
 };
 
 module.exports = CodebenderPlugin;
