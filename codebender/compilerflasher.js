@@ -317,7 +317,7 @@ compilerflasher = function(lf){
                     setTimeout(function () {
                         pl.plugin_version = pl.codebender_plugin.version;
                         window.plugin_version = pl.plugin_version;
-                        url = "{{  url('CodebenderUtilitiesBundle_logdb', {actionid : 35, meta : "PLUGIN_META"}) }}";
+                        url = "http\x3A\x2F\x2Ftsiknas.codebender.cc\x2Futilities\x2Flogdb\x2F35\x2FPLUGIN_META";
                         url = url.replace("PLUGIN_META", JSON.stringify({ "plugin" : true, "version": pl.plugin_version}) );
                         $.get(url);
 
