@@ -41,7 +41,7 @@ var config = {
                    cleaner: 'onAlarm.removeListener'}]
     },
     runtime: {
-      methods: ['getPlatformInfo'],
+      methods: ['getPlatformInfo', 'getManifestAsync'],
       listeners: [{starter: 'onLaunched.addListener',
                    cleaner: 'onLaunched.removeListener'}]
     }

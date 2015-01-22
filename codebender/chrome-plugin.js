@@ -12,7 +12,10 @@ dbg("Looks like we are on chrome.");
 function Plugin() {
   dbg("Initializing plugin.");
   this.serial = chrome.serial;
-  this.version = "1.6.0.8";
+  var self = this;
+  chrome.runtime.getManifestAsync(function (version) {
+    self.version = version;
+  });
   // this.instance_id = window.plugins_initialized++;
 
   this.bufferSize = 100;
