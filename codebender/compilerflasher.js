@@ -313,8 +313,8 @@ compilerflasher = function(lf){
                 {
                     clearInterval(window.plugin_init_interval);
 
-                    pl.plugin_initialized = true;
                     setTimeout(function () {
+                    	pl.plugin_initialized = true;
                         pl.plugin_version = pl.codebender_plugin.version;
                         window.plugin_version = pl.plugin_version;
                         url = "http\x3A\x2F\x2Ftsiknas.codebender.cc\x2Futilities\x2Flogdb\x2F35\x2FPLUGIN_META";
