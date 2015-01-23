@@ -313,10 +313,10 @@ compilerflasher = function(lf){
                 {
                     clearInterval(window.plugin_init_interval);
 
-                    window.initializationInterval = setInterval(function () {
+                    var initializationInterval = setInterval(function () {
                         if (typeof pl.codebender_plugin.version === 'string')
                         {
-                            clearInterval(window.initializationInterval);
+                            clearInterval(initializationInterval);
                             pl.plugin_initialized = true;
                             pl.plugin_version = pl.codebender_plugin.version;
                             window.plugin_version = pl.plugin_version;
