@@ -15,6 +15,7 @@ function Plugin() {
   this.serial = chrome.serial;
   var self = this;
 
+  this.version = null;
   chrome.runtime.getManifestAsync(function (version) {
     self.version = version;
   });
