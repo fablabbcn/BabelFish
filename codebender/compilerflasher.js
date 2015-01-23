@@ -314,7 +314,7 @@ compilerflasher = function(lf){
                     clearInterval(window.plugin_init_interval);
 
                     window.initializationInterval = setInterval(function () {
-                        if (pl.codebender_plugin.version)
+                        if (typeof pl.codebender_plugin.version === 'string')
                         {
                             clearInterval(window.initializationInterval);
                             pl.plugin_initialized = true;
