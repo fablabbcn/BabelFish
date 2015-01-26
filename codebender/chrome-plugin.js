@@ -364,6 +364,7 @@ Plugin.prototype = {
   },
 
   init: function (cb) {
+    var self = this;
     // Constructor did everything.
     chrome.runtime.getManifestAsync(function (manifest) {
       self.version = manifest.version;
