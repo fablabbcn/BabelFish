@@ -1,3 +1,54 @@
+$(document).ready(function () {
+    clearInterval(window.which_browser_interval);
+    window.which_browser_interval = window.setInterval(function ()
+    {
+        if (typeof WhichBrowser !== 'undefined')
+        {
+            window.Browsers = new WhichBrowser();
+            window.clearInterval(window.which_browser_interval);
+
+            window.osBrowserIsSupported = function(){
+                if(Browsers.isType("desktop"))
+                {
+                    var osSupported = Browsers.isOs('Mac OS X') ||
+                        Browsers.isOs('Windows') ||
+                        Browsers.isOs('Unix') ||
+                        Browsers.isOs('FreeBSD') ||
+                        Browsers.isOs('OpenBSD') ||
+                        Browsers.isOs('NetBSD') ||
+                        Browsers.isOs('Solaris') ||
+                        Browsers.isOs('Linux') ||
+                        Browsers.isOs('Debian') ||
+                        Browsers.isOs('Fedora') ||
+                        Browsers.isOs('Gentoo') ||
+                        Browsers.isOs('gNewSense') ||
+                        Browsers.isOs('Kubuntu') ||
+                        Browsers.isOs('Mandriva') ||
+                        Browsers.isOs('Mageia') ||
+                        Browsers.isOs('Red Hat') ||
+                        Browsers.isOs('Slackware') ||
+                        Browsers.isOs('SUSE') ||
+                        Browsers.isOs('Turbolinux') ||
+                        Browsers.isOs('Ubuntu');
+
+                    var browserSupported = Browsers.isBrowser('Firefox') ||
+                        Browsers.isBrowser('Chrome', '>=', '39') ||
+                        Browsers.isBrowser('Chromium', '>=', '39');
+
+                    if(osSupported && browserSupported)
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
+        }
+
+    }, 100);
+});
+
 compilerflasher = function(lf){
 
     this.boards_list = [];
@@ -305,7 +356,6 @@ compilerflasher = function(lf){
             $.get(url);
             this.owner.setOperationOutput("<i class='icon-spinner icon-spin'></i>  Initializing Plugin... Make sure that you allow plugin execution on your browser. <a href='http://codebender.uservoice.com/knowledgebase/topics/57328-plugin'>More Info</a>");
             this.owner.eventManager.fire("plugin_notification", "<i class='icon-spinner icon-spin'></i>  Initializing Plugin... Make sure that you allow plugin execution on your browser. <a href='http://codebender.uservoice.com/knowledgebase/topics/57328-plugin'>More Info</a>");
-            $("body").append('<object id="plugin0" type="application/x-codebendercc" width="0" height="0" xmlns="http://www.w3.org/1999/html"></object>');
 
             var pl = this;
             window.plugin_init_interval = setInterval(function(){
@@ -315,13 +365,13 @@ compilerflasher = function(lf){
 
                     if (typeof pl.codebender_plugin.init !== 'undefined')
                     {
-                        pl.codebender_plugin.init(function (version) {
-                            if (pl.codebender_plugin.instance_id != 'undefined') {
+                        pl.codebender_plugin.init(function () {
+                            if (typeof pl.codebender_plugin.instance_id !== 'undefined') {
                                 pl.tabID = parseInt(pl.codebender_plugin.instance_id);
                             }
 
                             pl.plugin_initialized = true;
-                            pl.plugin_version = version;
+                            pl.plugin_version = pl.codebender_plugin.version;
                             window.plugin_version = pl.plugin_version;
                             url = "http\x3A\x2F\x2Ftsiknas.codebender.cc\x2Futilities\x2Flogdb\x2F35\x2FPLUGIN_META";
                             url = url.replace("PLUGIN_META", JSON.stringify({ "plugin" : true, "version": pl.codebender_plugin.version}) );
