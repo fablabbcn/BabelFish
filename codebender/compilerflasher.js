@@ -943,7 +943,7 @@ compilerflasher = function(lf){
         }
 
         this.serialSend = function() {
-            if (this.codebender_plugin.version <= "1.6.0.8")
+            if (!window.chrome && this.codebender_plugin.version <= "1.6.0.8")
                 this.codebender_plugin.serialWrite($("#text2send").val());
             else
                 this.codebender_plugin.serialWrite($("#text2send").val(), this.serialMonitorPort);
