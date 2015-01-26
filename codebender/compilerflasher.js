@@ -300,12 +300,12 @@ compilerflasher = function(lf){
 
         this.runPlugin = function()
         {
-            url = "http\x3A\x2F\x2Ftsiknas.codebender.cc\x2Futilities\x2Flogdb\x2F35\x2FPLUGIN_META";
+            url = url = "http\x3A\x2F\x2Ftsiknas.codebender.cc\x2Futilities\x2Flogdb\x2F35\x2FPLUGIN_META";
             url = url.replace("PLUGIN_META", JSON.stringify({ "plugin" : true, "message": "Found on navigator plugins."} ));
             $.get(url);
             this.owner.setOperationOutput("<i class='icon-spinner icon-spin'></i>  Initializing Plugin... Make sure that you allow plugin execution on your browser. <a href='http://codebender.uservoice.com/knowledgebase/topics/57328-plugin'>More Info</a>");
             this.owner.eventManager.fire("plugin_notification", "<i class='icon-spinner icon-spin'></i>  Initializing Plugin... Make sure that you allow plugin execution on your browser. <a href='http://codebender.uservoice.com/knowledgebase/topics/57328-plugin'>More Info</a>");
-            // $("body").append('<object id="plugin0" type="application/x-codebendercc" width="0" height="0" xmlns="http://www.w3.org/1999/html"></object>');
+            $("body").append('<object id="plugin0" type="application/x-codebendercc" width="0" height="0" xmlns="http://www.w3.org/1999/html"></object>');
 
             var pl = this;
             window.plugin_init_interval = setInterval(function(){
@@ -313,36 +313,27 @@ compilerflasher = function(lf){
                 {
                     clearInterval(window.plugin_init_interval);
 
-                    var initializationInterval = setInterval(function () {
-                        if (pl.codebender_plugin.version !== null)
-                        {
-                            clearInterval(initializationInterval);
+                    if (typeof pl.codebender_plugin.init !== 'undefined')
+                    {
+                        pl.codebender_plugin.init(function (version) {
+                            if (pl.codebender_plugin.instance_id != 'undefined') {
+                                pl.tabID = parseInt(pl.codebender_plugin.instance_id);
+                            }
+
                             pl.plugin_initialized = true;
-                            pl.plugin_version = pl.codebender_plugin.version;
+                            pl.plugin_version = version;
                             window.plugin_version = pl.plugin_version;
                             url = "http\x3A\x2F\x2Ftsiknas.codebender.cc\x2Futilities\x2Flogdb\x2F35\x2FPLUGIN_META";
-                            url = url.replace("PLUGIN_META", JSON.stringify({
-                                "plugin": true,
-                                "version": pl.plugin_version
-                            }));
+                            url = url.replace("PLUGIN_META", JSON.stringify({ "plugin" : true, "version": pl.codebender_plugin.version}) );
                             $.get(url);
 
                             pl.validateVersion(that.minVersion);
                             if (typeof pl.codebender_plugin.setErrorCallback !== 'undefined')
                                 pl.codebender_plugin.setErrorCallback(pl.plugin_error_logger);
 
-                            if (typeof pl.codebender_plugin.init !== 'undefined')
-                            {
-                                pl.codebender_plugin.init();
-                                if (typeof pl.codebender_plugin.instance_id !== 'undefined')
-                                {
-                                    pl.tabID = parseInt(pl.codebender_plugin.instance_id);
-                                }
-                            }
-
                             if (typeof pl.codebender_plugin.closeTab !== 'undefined')
                             {
-                                $(window).unload(function ()
+                                $( window ).unload(function ()
                                 {
                                     pl.codebender_plugin.closeTab();
                                     pl.codebender_plugin.deleteMap();
@@ -352,8 +343,8 @@ compilerflasher = function(lf){
                             {
                                 pl.disconnect();
                             }
-                        }
-                    }, 100);
+                        });
+                    }
                 }
             }, 100);
         }
@@ -1254,6 +1245,7 @@ compilerflasher = function(lf){
         $.post("http\x3A\x2F\x2Ftsiknas.codebender.cc\x2Futilities\x2Fcompile\x2F", payload, function (data) {
             try{
                 var obj = jQuery.parseJSON(data);
+                console.log(obj);
                 if (obj.success == 0) {
                     cb.setOperationOutput("Verification failed.");
                     cb.eventManager.fire('hex_failed', obj.message);
