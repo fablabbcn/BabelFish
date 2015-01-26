@@ -15,9 +15,6 @@ function Plugin() {
   var self = this;
 
   this.version = null;
-  chrome.runtime.getManifestAsync(function (version) {
-    self.version = version;
-  });
   // this.instance_id = window.plugins_initialized++;
 
   this.bufferSize = 100;
@@ -364,8 +361,12 @@ Plugin.prototype = {
     self.disconnectCallback(null, 'disconnect');
   },
 
-  init: function () {
+  init: function (cb) {
     // Constructor did everything.
+    chrome.runtime.getManifestAsync(function (manifest) {
+      self.version = manifest.version;
+      cb();
+    });
   },
 
   saveToHex: function (strData) {
