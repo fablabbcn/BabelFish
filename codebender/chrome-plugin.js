@@ -219,7 +219,7 @@ Plugin.prototype = {
                    cb) {
 
     if (code.length > maxsize) {
-      cb(1, "Program too large");
+      cb(1, "Program too large (" + code.length + ">"+ maxsize + ")");
       return;
     }
 
@@ -238,7 +238,11 @@ Plugin.prototype = {
           cb(from, pluginReturnValue);
           self.transaction = null;
         },
+
         errorCallback = function (id, msg) {
+          setTimeout(function () {
+            self.errorCallback("", msg, self.errorFlag);
+          });
           cb(from, id);
           self.transaction = null;
         };
