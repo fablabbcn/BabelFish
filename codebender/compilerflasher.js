@@ -733,21 +733,21 @@ compilerflasher = function(lf){
         }
 
         this.scan = function() {
-            this.codebender_plugin.setCallback(function (from, output) {
+            window.hasPerm = document.getElementById('plugin0').setCallback(function (from, output) {
                 if (output == "disconnect") {
+
                     compilerflasher.pluginHandler.disconnect(true);
                 } else
                 {
                     compilerflasher.eventManager.fire("plugin_notification", output);
                     compilerflasher.setOperationOutput(output);
                 }
-            }, function (hasPerm) {
-                window.hasPerm = hasPerm;
-                if (window.hasPerm !== undefined && !window.hasPerm) {
-                    compilerflasher.setOperationOutput("You need to grant permissions to the Codebender extension.");
-                    compilerflasher.eventManager.fire('plugin_notification', "You need to grant permissions to the Codebender extension.");
-                }
             });
+
+            if (!window.hasPerm) {
+                compilerflasher.setOperationOutput("You need to grant permissions to the Codebender extension.");
+                compilerflasher.eventManager.fire('plugin_notification', "You need to grant permissions to the Codebender extension.");
+            }
 
             this.getFire();
             var pl = this;
