@@ -63,8 +63,7 @@ function CodebenderPlugin () {
   this.availablePorts = this.availablePortsCb;
   this.getFlashResult = this.getFlashResultCb;
   this.probeUSB = this.probeUSBCb;
-  this.setCallback = this.setCallbackCb;
-  this.setErrorCallback = this.setErrorCallbackCb;
+  this.init = this.initCb;
 };
 
 if (typeof Object.create !== 'function') {
@@ -105,15 +104,11 @@ CodebenderPlugin.prototype.probeUSBCb = function (cb) {
   });
 };
 
-CodebenderPlugin.prototype.setCallbackCb = function (cb, cbRet) {
-  var res = this.element_.setCallback(cb);
+CodebenderPlugin.prototype.initCb = function (cb) {
+  this.element_.init();
   setTimeout(function () {
-    cbRet(res);
+    cb();
   });
-};
-
-CodebenderPlugin.prototype.setErrorCallbackCb = function (cb) {
-  this.element_.setErrorCallback(cb);
 };
 
 module.exports = CodebenderPlugin;
