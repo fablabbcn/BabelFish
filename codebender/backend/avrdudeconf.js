@@ -3,6 +3,8 @@ var parts = require('./parts.min'),
 
 function getMCUConf (mcu) {
   if (!_conf) {
+    _conf = {};
+
     Object.getOwnPropertyNames(parts).forEach(function (pn) {
       _conf[parts[pn].AVRPart.toLowerCase()] = parts[pn];
     });

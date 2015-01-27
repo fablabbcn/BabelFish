@@ -317,7 +317,7 @@ AVR109Transaction.prototype.prepareToProgramFlash = function () {
         this.AVR.SET_ADDRESS, addressBytes[1], addressBytes[0]];
 
   this.writeThenRead(loadAddressMessage, 1, function(response) {
-    self.transition('programFlash', 0, self.avrdude.memory.flash.page_size);
+    self.transition('programFlash', 0, self.config.avrdude.memory.flash.page_size);
   });
 };
 

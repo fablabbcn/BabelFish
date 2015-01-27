@@ -408,10 +408,12 @@ Plugin.prototype = {
   setCallback: function (cb) {
     // Compilerflasher uses this callback to disconnect from serial monitor
     this.disconnectCallback = cb;
+    return true;
   },
 
   setErrorCallback: function (cb) {
     this.errorCallback = cb;
+    return true;
   },
 
   // Dummies for plugin garbage collection.
