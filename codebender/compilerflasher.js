@@ -733,7 +733,7 @@ compilerflasher = function(lf){
         }
 
         this.scan = function() {
-            window.hasPerm = document.getElementById('plugin0').setCallback(function (from, output) {
+            window.hasPerm = this.codebender_plugin.setCallback(function (from, output) {
                 if (output == "disconnect") {
 
                     compilerflasher.pluginHandler.disconnect(true);
