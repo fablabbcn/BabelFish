@@ -281,20 +281,20 @@ compilerflasher = function(lf){
 
                 if((Browsers.isOs('Mac OS X') ||  Browsers.isOs('Windows')))
                 {
-                    this.owner.setOperationOutput('<i class="icon-warning-sign"></i> To program your Arduino from your browser, please use <a href="http://www.google.com/chrome/" target="_blank">Google Chrome</a> or <a href="http://www.mozilla.org/en-US/firefox/" target="_blank">Mozilla Firefox</a>.');
-                    this.owner.eventManager.fire('plugin_notification', '<i class="icon-warning-sign"></i> To program your Arduino from your browser, please use <a href="http://www.google.com/chrome/" target="_blank">Google Chrome</a> or <a href="http://www.mozilla.org/en-US/firefox/" target="_blank">Mozilla Firefox</a>.')
+                    this.owner.setOperationOutput('<i class="icon-warning-sign"></i> To program your Arduino from your browser, please use <a href="http://www.google.com/chrome/" target="_blank">Google Chrome (version 39 or newer)</a> or <a href="http://www.mozilla.org/en-US/firefox/" target="_blank">Mozilla Firefox</a>.');
+                    this.owner.eventManager.fire('plugin_notification', '<i class="icon-warning-sign"></i> To program your Arduino from your browser, please use <a href="http://www.google.com/chrome/" target="_blank">Google Chrome (version 39 or newer)</a> or <a href="http://www.mozilla.org/en-US/firefox/" target="_blank">Mozilla Firefox</a>.')
                 }
                 else if ((Browsers.isOs('Unix') || Browsers.isOs('FreeBSD') || Browsers.isOs('OpenBSD') || Browsers.isOs('NetBSD') || Browsers.isOs('Solaris') || Browsers.isOs('Linux') ||
                         Browsers.isOs('Debian') || Browsers.isOs('Fedora') || Browsers.isOs('Gentoo') || Browsers.isOs('gNewSense') || Browsers.isOs('Kubuntu') || Browsers.isOs('Mandriva') ||
                         Browsers.isOs('Mageia') || Browsers.isOs('Red Hat') || Browsers.isOs('Slackware') || Browsers.isOs('SUSE') || Browsers.isOs('Turbolinux') || Browsers.isOs('Ubuntu')))
                 {
-                    this.owner.setOperationOutput('<i class="icon-warning-sign"></i> To program your Arduino from your browser, please use <a href="http://www.google.com/chrome/" target="_blank">Google Chrome</a> or <a href="http://www.mozilla.org/en-US/firefox/" target="_blank">Mozilla Firefox</a>.');
-                    this.owner.eventManager.fire('plugin_notification', '<i class="icon-warning-sign"></i> To program your Arduino from your browser, please use <a href="http://www.google.com/chrome/" target="_blank">Google Chrome</a> or <a href="http://www.mozilla.org/en-US/firefox/" target="_blank">Mozilla Firefox</a>.');
+                    this.owner.setOperationOutput('<i class="icon-warning-sign"></i> To program your Arduino from your browser, please use <a href="http://www.google.com/chrome/" target="_blank">Google Chrome (version 39 or newer)</a> or <a href="http://www.mozilla.org/en-US/firefox/" target="_blank">Mozilla Firefox</a>.');
+                    this.owner.eventManager.fire('plugin_notification', '<i class="icon-warning-sign"></i> To program your Arduino from your browser, please use <a href="http://www.google.com/chrome/" target="_blank">Google Chrome (version 39 or newer)</a> or <a href="http://www.mozilla.org/en-US/firefox/" target="_blank">Mozilla Firefox</a>.');
                 }
                 else
                 {
-                    this.owner.setOperationOutput('<i class="icon-warning-sign"></i> To program your Arduino from your browser, please use <a href="http://www.google.com/chrome/" target="_blank">Google Chrome</a> or <a href="http://www.mozilla.org/en-US/firefox/" target="_blank">Mozilla Firefox</a> from Windows, Mac or Linux.');
-                    this.owner.eventManager.fire('plugin_notification','<i class="icon-warning-sign"></i> To program your Arduino from your browser, please use <a href="http://www.google.com/chrome/" target="_blank">Google Chrome</a> or <a href="http://www.mozilla.org/en-US/firefox/" target="_blank">Mozilla Firefox</a> from Windows, Mac or Linux.');
+                    this.owner.setOperationOutput('<i class="icon-warning-sign"></i> To program your Arduino from your browser, please use <a href="http://www.google.com/chrome/" target="_blank">Google Chrome (version 39 or newer)</a> or <a href="http://www.mozilla.org/en-US/firefox/" target="_blank">Mozilla Firefox</a> from Windows, Mac or Linux.');
+                    this.owner.eventManager.fire('plugin_notification','<i class="icon-warning-sign"></i> To program your Arduino from your browser, please use <a href="http://www.google.com/chrome/" target="_blank">Google Chrome (version 39 or newer)</a> or <a href="http://www.mozilla.org/en-US/firefox/" target="_blank">Mozilla Firefox</a> from Windows, Mac or Linux.');
                 }
             }
             else
@@ -582,7 +582,7 @@ compilerflasher = function(lf){
                 }
             }else
             {
-                if(typeof programmer == "undefined")
+                if(programmer === "")
                 {
                     this.owner.setOperationOutput("The selected device needs a programmer, and none was selected. Operation Aborted.");
                     this.owner.eventManager.fire('flash_failed', "Could not connect to selected port. Make sure your board is properly connected.");
