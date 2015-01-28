@@ -1,3 +1,54 @@
+$(document).ready(function () {
+    clearInterval(window.which_browser_interval);
+    window.which_browser_interval = window.setInterval(function ()
+    {
+        if (typeof WhichBrowser !== 'undefined')
+        {
+            window.Browsers = new WhichBrowser();
+            window.clearInterval(window.which_browser_interval);
+
+            window.osBrowserIsSupported = function(){
+                if(Browsers.isType("desktop"))
+                {
+                    var osSupported = Browsers.isOs('Mac OS X') ||
+                        Browsers.isOs('Windows') ||
+                        Browsers.isOs('Unix') ||
+                        Browsers.isOs('FreeBSD') ||
+                        Browsers.isOs('OpenBSD') ||
+                        Browsers.isOs('NetBSD') ||
+                        Browsers.isOs('Solaris') ||
+                        Browsers.isOs('Linux') ||
+                        Browsers.isOs('Debian') ||
+                        Browsers.isOs('Fedora') ||
+                        Browsers.isOs('Gentoo') ||
+                        Browsers.isOs('gNewSense') ||
+                        Browsers.isOs('Kubuntu') ||
+                        Browsers.isOs('Mandriva') ||
+                        Browsers.isOs('Mageia') ||
+                        Browsers.isOs('Red Hat') ||
+                        Browsers.isOs('Slackware') ||
+                        Browsers.isOs('SUSE') ||
+                        Browsers.isOs('Turbolinux') ||
+                        Browsers.isOs('Ubuntu');
+
+                    var browserSupported = Browsers.isBrowser('Firefox') ||
+                        Browsers.isBrowser('Chrome', '>=', '39') ||
+                        Browsers.isBrowser('Chromium', '>=', '39');
+
+                    if(osSupported && browserSupported)
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
+        }
+
+    }, 100);
+});
+
 compilerflasher = function(lf){
 
     this.boards_list = [];
@@ -7,7 +58,10 @@ compilerflasher = function(lf){
     this.load_files = lf;
     this.loaded_elements = [];
 
-    this.minVersion = "1.6.0.8";
+    this.minVersion = {
+        CodebenderPlugin: "1.6.0.8",
+        BabelFish: "0.0.0.1"
+    };
 
     var that = this;
 
@@ -227,20 +281,20 @@ compilerflasher = function(lf){
 
                 if((Browsers.isOs('Mac OS X') ||  Browsers.isOs('Windows')))
                 {
-                    this.owner.setOperationOutput('<i class="icon-warning-sign"></i> To program your Arduino from your browser, please use <a href="http://www.google.com/chrome/" target="_blank">Google Chrome</a> or <a href="http://www.mozilla.org/en-US/firefox/" target="_blank">Mozilla Firefox</a>.');
-                    this.owner.eventManager.fire('plugin_notification', '<i class="icon-warning-sign"></i> To program your Arduino from your browser, please use <a href="http://www.google.com/chrome/" target="_blank">Google Chrome</a> or <a href="http://www.mozilla.org/en-US/firefox/" target="_blank">Mozilla Firefox</a>.')
+                    this.owner.setOperationOutput('<i class="icon-warning-sign"></i> To program your Arduino from your browser, please use <a href="http://www.google.com/chrome/" target="_blank">Google Chrome (version 39 or newer)</a> or <a href="http://www.mozilla.org/en-US/firefox/" target="_blank">Mozilla Firefox</a>.');
+                    this.owner.eventManager.fire('plugin_notification', '<i class="icon-warning-sign"></i> To program your Arduino from your browser, please use <a href="http://www.google.com/chrome/" target="_blank">Google Chrome (version 39 or newer)</a> or <a href="http://www.mozilla.org/en-US/firefox/" target="_blank">Mozilla Firefox</a>.')
                 }
                 else if ((Browsers.isOs('Unix') || Browsers.isOs('FreeBSD') || Browsers.isOs('OpenBSD') || Browsers.isOs('NetBSD') || Browsers.isOs('Solaris') || Browsers.isOs('Linux') ||
                         Browsers.isOs('Debian') || Browsers.isOs('Fedora') || Browsers.isOs('Gentoo') || Browsers.isOs('gNewSense') || Browsers.isOs('Kubuntu') || Browsers.isOs('Mandriva') ||
                         Browsers.isOs('Mageia') || Browsers.isOs('Red Hat') || Browsers.isOs('Slackware') || Browsers.isOs('SUSE') || Browsers.isOs('Turbolinux') || Browsers.isOs('Ubuntu')))
                 {
-                    this.owner.setOperationOutput('<i class="icon-warning-sign"></i> To program your Arduino from your browser, please use <a href="http://www.google.com/chrome/" target="_blank">Google Chrome</a> or <a href="http://www.mozilla.org/en-US/firefox/" target="_blank">Mozilla Firefox</a>.');
-                    this.owner.eventManager.fire('plugin_notification', '<i class="icon-warning-sign"></i> To program your Arduino from your browser, please use <a href="http://www.google.com/chrome/" target="_blank">Google Chrome</a> or <a href="http://www.mozilla.org/en-US/firefox/" target="_blank">Mozilla Firefox</a>.');
+                    this.owner.setOperationOutput('<i class="icon-warning-sign"></i> To program your Arduino from your browser, please use <a href="http://www.google.com/chrome/" target="_blank">Google Chrome (version 39 or newer)</a> or <a href="http://www.mozilla.org/en-US/firefox/" target="_blank">Mozilla Firefox</a>.');
+                    this.owner.eventManager.fire('plugin_notification', '<i class="icon-warning-sign"></i> To program your Arduino from your browser, please use <a href="http://www.google.com/chrome/" target="_blank">Google Chrome (version 39 or newer)</a> or <a href="http://www.mozilla.org/en-US/firefox/" target="_blank">Mozilla Firefox</a>.');
                 }
                 else
                 {
-                    this.owner.setOperationOutput('<i class="icon-warning-sign"></i> To program your Arduino from your browser, please use <a href="http://www.google.com/chrome/" target="_blank">Google Chrome</a> or <a href="http://www.mozilla.org/en-US/firefox/" target="_blank">Mozilla Firefox</a> from Windows, Mac or Linux.');
-                    this.owner.eventManager.fire('plugin_notification','<i class="icon-warning-sign"></i> To program your Arduino from your browser, please use <a href="http://www.google.com/chrome/" target="_blank">Google Chrome</a> or <a href="http://www.mozilla.org/en-US/firefox/" target="_blank">Mozilla Firefox</a> from Windows, Mac or Linux.');
+                    this.owner.setOperationOutput('<i class="icon-warning-sign"></i> To program your Arduino from your browser, please use <a href="http://www.google.com/chrome/" target="_blank">Google Chrome (version 39 or newer)</a> or <a href="http://www.mozilla.org/en-US/firefox/" target="_blank">Mozilla Firefox</a> from Windows, Mac or Linux.');
+                    this.owner.eventManager.fire('plugin_notification','<i class="icon-warning-sign"></i> To program your Arduino from your browser, please use <a href="http://www.google.com/chrome/" target="_blank">Google Chrome (version 39 or newer)</a> or <a href="http://www.mozilla.org/en-US/firefox/" target="_blank">Mozilla Firefox</a> from Windows, Mac or Linux.');
                 }
             }
             else
@@ -297,12 +351,11 @@ compilerflasher = function(lf){
 
         this.runPlugin = function()
         {
-            url = "http\x3A\x2F\x2Ftsiknas.codebender.cc\x2Futilities\x2Flogdb\x2F35\x2FPLUGIN_META";
+            url = url = "http\x3A\x2F\x2Ftsiknas.codebender.cc\x2Futilities\x2Flogdb\x2F35\x2FPLUGIN_META";
             url = url.replace("PLUGIN_META", JSON.stringify({ "plugin" : true, "message": "Found on navigator plugins."} ));
             $.get(url);
             this.owner.setOperationOutput("<i class='icon-spinner icon-spin'></i>  Initializing Plugin... Make sure that you allow plugin execution on your browser. <a href='http://codebender.uservoice.com/knowledgebase/topics/57328-plugin'>More Info</a>");
             this.owner.eventManager.fire("plugin_notification", "<i class='icon-spinner icon-spin'></i>  Initializing Plugin... Make sure that you allow plugin execution on your browser. <a href='http://codebender.uservoice.com/knowledgebase/topics/57328-plugin'>More Info</a>");
-            // $("body").append('<object id="plugin0" type="application/x-codebendercc" width="0" height="0" xmlns="http://www.w3.org/1999/html"></object>');
 
             var pl = this;
             window.plugin_init_interval = setInterval(function(){
@@ -310,38 +363,38 @@ compilerflasher = function(lf){
                 {
                     clearInterval(window.plugin_init_interval);
 
-                    pl.plugin_initialized = true;
-                    pl.plugin_version = pl.codebender_plugin.version;
-                    window.plugin_version = pl.plugin_version;
-                    url = "http\x3A\x2F\x2Ftsiknas.codebender.cc\x2Futilities\x2Flogdb\x2F35\x2FPLUGIN_META";
-                    url = url.replace("PLUGIN_META", JSON.stringify({ "plugin" : true, "version": pl.plugin_version}) );
-                    $.get(url);
-
-                    pl.validateVersion(that.minVersion);
-                    if (typeof pl.codebender_plugin.setErrorCallback !== 'undefined')
-                        pl.codebender_plugin.setErrorCallback(pl.plugin_error_logger);
-
                     if (typeof pl.codebender_plugin.init !== 'undefined')
                     {
-                        pl.codebender_plugin.init();
-                        if (typeof pl.codebender_plugin.instance_id !== 'undefined') {
-                            pl.tabID = parseInt(pl.codebender_plugin.instance_id);
-                        }
-                    }
+                        pl.codebender_plugin.init(function () {
+                            if (typeof pl.codebender_plugin.instance_id !== 'undefined') {
+                                pl.tabID = parseInt(pl.codebender_plugin.instance_id);
+                            }
 
-                    if (typeof pl.codebender_plugin.closeTab !== 'undefined')
-                    {
-                        $( window ).unload(function ()
-                        {
-                            pl.codebender_plugin.closeTab();
-                            pl.codebender_plugin.deleteMap();
+                            pl.plugin_initialized = true;
+                            pl.plugin_version = pl.codebender_plugin.version;
+                            window.plugin_version = pl.plugin_version;
+                            url = "http\x3A\x2F\x2Ftsiknas.codebender.cc\x2Futilities\x2Flogdb\x2F35\x2FPLUGIN_META";
+                            url = url.replace("PLUGIN_META", JSON.stringify({ "plugin" : true, "version": pl.codebender_plugin.version}) );
+                            $.get(url);
+
+                            pl.validateVersion(that.minVersion);
+                            if (typeof pl.codebender_plugin.setErrorCallback !== 'undefined')
+                                pl.codebender_plugin.setErrorCallback(pl.plugin_error_logger);
+
+                            if (typeof pl.codebender_plugin.closeTab !== 'undefined')
+                            {
+                                $( window ).unload(function ()
+                                {
+                                    pl.codebender_plugin.closeTab();
+                                    pl.codebender_plugin.deleteMap();
+                                });
+                            }
+                            else
+                            {
+                                pl.disconnect();
+                            }
                         });
                     }
-                    else
-                    {
-                        pl.disconnect();
-                    }
-
                 }
             }, 100);
         }
@@ -390,7 +443,16 @@ compilerflasher = function(lf){
 
         this.validateVersion = function(version)
         {
-            if (this.comparePluginVersions(this.parseVersionString(this.codebender_plugin.version), this.parseVersionString(version)) < 0)
+			var minimumVersion;
+            if (window.chrome)
+            {
+                minimumVersion = version.BabelFish;
+            }
+            else
+            {
+                minimumVersion = version.CodebenderPlugin;
+            }
+            if (this.comparePluginVersions(this.parseVersionString(this.codebender_plugin.version), this.parseVersionString(minimumVersion)) < 0)
             {
                 var alert = this.browserSpecificPluginInstall("You need to update the Codebender Plugin. ");
                 this.owner.setOperationOutput(alert);
@@ -520,7 +582,7 @@ compilerflasher = function(lf){
                 }
             }else
             {
-                if(typeof programmer == "undefined")
+                if(programmer === "")
                 {
                     this.owner.setOperationOutput("The selected device needs a programmer, and none was selected. Operation Aborted.");
                     this.owner.eventManager.fire('flash_failed', "Could not connect to selected port. Make sure your board is properly connected.");
@@ -671,8 +733,9 @@ compilerflasher = function(lf){
         }
 
         this.scan = function() {
-                        window.hasPerm = this.codebender_plugin.setCallback(function (from, output) {
+            window.hasPerm = this.codebender_plugin.setCallback(function (from, output) {
                 if (output == "disconnect") {
+
                     compilerflasher.pluginHandler.disconnect(true);
                 } else
                 {
@@ -681,11 +744,10 @@ compilerflasher = function(lf){
                 }
             });
 
-            if (window.hasPerm !== undefined && !window.hasPerm) {
+            if (!window.hasPerm) {
                 compilerflasher.setOperationOutput("You need to grant permissions to the Codebender extension.");
                 compilerflasher.eventManager.fire('plugin_notification', "You need to grant permissions to the Codebender extension.");
             }
-
 
             this.getFire();
             var pl = this;
@@ -881,7 +943,7 @@ compilerflasher = function(lf){
         }
 
         this.serialSend = function() {
-            if (this.codebender_plugin.version <= "1.6.0.8")
+            if (!window.chrome && this.codebender_plugin.version <= "1.6.0.8")
                 this.codebender_plugin.serialWrite($("#text2send").val());
             else
                 this.codebender_plugin.serialWrite($("#text2send").val(), this.serialMonitorPort);
@@ -1233,6 +1295,7 @@ compilerflasher = function(lf){
         $.post("http\x3A\x2F\x2Ftsiknas.codebender.cc\x2Futilities\x2Fcompile\x2F", payload, function (data) {
             try{
                 var obj = jQuery.parseJSON(data);
+                console.log(obj);
                 if (obj.success == 0) {
                     cb.setOperationOutput("Verification failed.");
                     cb.eventManager.fire('hex_failed', obj.message);

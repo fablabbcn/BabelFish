@@ -5,7 +5,8 @@ var SerialTransaction = require('./serialtransaction'),
     log = new Log('STK500v2'),
     arraify = require('./../util').arraify,
     zip = require('./../util').zip,
-    buffer = require("./../buffer.js");
+    buffer = require("./../buffer"),
+    errno = require("./../errno");
 
 
 // The workflow is such (see pinocc.io for details):
@@ -193,7 +194,7 @@ STK500v2Transaction.prototype.writeThenRead = function (data, cb, retries) {
                          if (retries > 0)
                            self.writeThenRead(data, cb, retries-1);
                          else
-                           self.errCb(1, "STKv2 reader timed out");
+                           self.errCb(errno.READER_TIMEOUT, "STKv2 reader timed out");
                        }});
 };
 
@@ -202,7 +203,7 @@ STK500v2Transaction.prototype.writeThenRead = function (data, cb, retries) {
 STK500v2Transaction.prototype.cmd = function (cmd, cb) {
   // Always get a 4byte answer
   if (cmd.length != 4) {
-    this.errCb(1, "Tried to send command with bad size (", cmd.length, "!= 4)");
+    this.errCb(errno.COMMAND_SIZE_FAIL, "Tried to send command with bad size (", cmd.length, "!= 4)");
     return;
   }
 
@@ -229,7 +230,7 @@ STK500v2Transaction.prototype.connectDone = function (hexCode, connectArg) {
   if (typeof(connectArg) == "undefined" ||
       typeof(connectArg.connectionId) == "undefined" ||
       connectArg.connectionId == -1) {
-    this.errCb(1, "Bad connectionId / Couldn't connect to board");
+    this.errCb(errno.CONNECTION_FAIL, "Bad connectionId / Couldn't connect to board");
     return;
   }
 
@@ -256,7 +257,7 @@ STK500v2Transaction.prototype.signedOn  = function (data) {
   ],
       self = this;
   if(zip(expectedData, data.slice(0,3)).some(function (d) {return d[0] != d[1];})){
-    this.errCb(1, "Error signing on to device:"+data.slice(0,3)+"!="+expectedData);
+    this.errCb(errno.SIGN_ON_FAIL, "Error signing on to device:"+data.slice(0,3)+"!="+expectedData);
     return;
   }
 
@@ -343,7 +344,7 @@ STK500v2Transaction.prototype.programFlash = function (offset, pgSize) {
     self.writeThenRead(programMessage, function(response) {
       // Program the next section
       if (response[0] != 0x13 || response[1] != 0){
-        self.errCb(1, "Error in response while programming");
+        self.errCb(errno.BAD_RESPONSE, "Error in response while programming");
         return;
       }
       self.transition('programFlash', offset + pgSize, pgSize);

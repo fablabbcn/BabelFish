@@ -3,7 +3,8 @@ var _create_chrome_client = require('./../../../chrome-extension/client/rpc-clie
     arraify = require('./../util').arraify,
     forEachWithCallback = require('./../util').forEachWithCallback,
     MemoryOperations = require('./memops'),
-    buffer = require("./../buffer.js");
+    buffer = require("./../buffer"),
+    errno = require("./../errno");
 
 function SerialTransaction (config, finishCallback, errorCallback) {
   Transaction.apply(this, arraify(arguments, 2));
@@ -47,7 +48,7 @@ SerialTransaction.prototype.refreshTimeout = function () {
   }
 
   this.timeout = setTimeout(function () {
-    self.errCb(1, "No communication with device for over ", self.timeoutSecs, "s");
+    self.errCb(errno.IDLE_HOST, "No communication with device for over ", self.timeoutSecs, "s");
   }, this.timeoutSecs * 1000);
 };
 
@@ -100,7 +101,8 @@ SerialTransaction.prototype.cleanup = function (callback) {
 // callback is what to do with the data
 SerialTransaction.prototype.writeThenRead_ = function (info) {
   if (this.previousErrors.length > 0) {
-    this.errCb(1, "Transaction was stopped with errors but continues to run");
+    this.errCb(errno.ZOMBIE_TRANSACTION,
+               "Transaction was stopped with errors but continues to run");
     return;
   }
 
@@ -115,7 +117,7 @@ SerialTransaction.prototype.writeThenRead_ = function (info) {
   }
 
   this.log.log("Writing: " + buffer.hexRep(info.outgoingMsg));
-  this.justWrite(info.outgoingMsg, function (info) {
+  this.justWrite(info.outgoingMsg, function () {
     self.buffer.readAsync(info);
   });
 };
@@ -126,17 +128,19 @@ SerialTransaction.prototype.justWrite = function (data, cb) {
       self = this;
 
   this.serial.send(this.connectionId, dataBuf, function(writeArg) {
-    if (!writeArg) self.errCb(1, "Connection lost");
+    if (!writeArg) self.errCb(errno.CONNECTION_LOST, "Connection lost");
 
     if (!self.config.disableFlushing)
       self.serial.flush(self.connectionId, function (ok) {
         if (!ok) {
-          self.errCb(1,'Failed to flush');
+          self.errCb(errno.FLUSH_FAIL,'Failed to flush');
           return;
         }
-      });
 
-    self.buffer.readAsync(info);
+        cb();
+      });
+    else
+      cb();
   });
 };
 
@@ -145,7 +149,7 @@ SerialTransaction.prototype.readToBuffer = function (readArg) {
     return true;
   }
 
-  this.buffer.write(readArg, this.errCb.bind(this, 1));
+  this.buffer.write(readArg, this.errCb.bind(this, errno.BUFFER_WRITE_FAIL));
 
   // Note that in BabelFish this does not ensure that the listener
   // stops.
@@ -229,7 +233,7 @@ SerialTransaction.prototype.destroyOtherConnections = function (name, cb) {
           self.log.log("Closing connection ", c.connectionId);
           self.serial.disconnect(c.connectionId, function (ok) {
             if (!ok) {
-              self.errCb("Failed to close connection ", c.connectionId);
+              self.errCb(errno.FORCE_DISCONNECT_FAIL, "Failed to close connection ", c.connectionId);
             } else {
               self.log.log('Destroying connection:', c.connectionId);
               self.serial.onReceiveError.forceDispatch(
@@ -254,7 +258,7 @@ SerialTransaction.prototype.onOffDTR = function (cb) {
       self.connectionId, {dtr: before, rts: before},
       function (ok) {
         if (!ok) {
-          self.errCb(1, "Couldn't send DTR");
+          self.errCb(self.DTR_RTS_FAIL, "Couldn't send DTR");
           return;
         }
         setTimeout(function() {
@@ -263,7 +267,7 @@ SerialTransaction.prototype.onOffDTR = function (cb) {
             function(ok) {
               self.log.log("Raised DTR/RTS, done: ", ok);
               if (!ok) {
-                self.errCb(1,"Failed to set flags");
+                self.errCb(errno.DTR_RTS_FAIL,"Failed to set flags");
                 return;
               }
 

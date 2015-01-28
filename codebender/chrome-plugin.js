@@ -13,7 +13,9 @@ dbg("Looks like we are on chrome.");
 function Plugin() {
   dbg("Initializing plugin.");
   this.serial = chrome.serial;
-  this.version = "1.6.0.8";
+  var self = this;
+
+  this.version = null;
   // this.instance_id = window.plugins_initialized++;
 
   this.bufferSize = 100;
@@ -217,7 +219,7 @@ Plugin.prototype = {
                    cb) {
 
     if (code.length > maxsize) {
-      cb(1, "Program too large");
+      cb(1, "Program too large (" + code.length + ">"+ maxsize + ")");
       return;
     }
 
@@ -236,7 +238,11 @@ Plugin.prototype = {
           cb(from, pluginReturnValue);
           self.transaction = null;
         },
+
         errorCallback = function (id, msg) {
+          setTimeout(function () {
+            self.errorCallback("", msg, self.errorFlag);
+          });
           cb(from, id);
           self.transaction = null;
         };
@@ -361,8 +367,13 @@ Plugin.prototype = {
     self.disconnectCallback(null, 'disconnect');
   },
 
-  init: function () {
+  init: function (cb) {
+    var self = this;
     // Constructor did everything.
+    chrome.runtime.getManifestAsync(function (manifest) {
+      self.version = manifest.version;
+      cb();
+    });
   },
 
   saveToHex: function (strData) {
@@ -397,10 +408,12 @@ Plugin.prototype = {
   setCallback: function (cb) {
     // Compilerflasher uses this callback to disconnect from serial monitor
     this.disconnectCallback = cb;
+    return true;
   },
 
   setErrorCallback: function (cb) {
     this.errorCallback = cb;
+    return true;
   },
 
   // Dummies for plugin garbage collection.

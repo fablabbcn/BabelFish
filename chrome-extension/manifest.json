@@ -1,8 +1,13 @@
 {
-    "name": "babel-fish",
+    "name": "BabelFish",
     "version": "0.1",
     "manifest_version": 2,
-    "description": "Serial for codebender.",
+    "minimum_chrome_version": "38",
+    "author": "Codebender.cc",
+    "icons": {"16": "logo16.png",
+              "48": "logo48.png",
+              "128": "logo128.png"},
+    "description": "Serial for codebender and the rest of the world.",
     "app": {
 	"background": {
 	    "page": "background.html"
@@ -12,7 +17,7 @@
 	"matches": [
             "http://localhost:8080/*",
             "http://staging.codebender.cc/*",
-            "https://staging.codebender.cc/*"
+            "https://staging.codebender.cc/*",
             "http://codebender.cc/*",
             "https://codebender.cc/*"
 	],
@@ -25,7 +30,7 @@
         "http://localhost:8080/*",
         "http://localhost/*",
         "http://staging.codebender.cc/*",
-        "https://staging.codebender.cc/*"
+        "https://staging.codebender.cc/*",
         "http://codebender.cc/*",
         "https://codebender.cc/*"
     ]

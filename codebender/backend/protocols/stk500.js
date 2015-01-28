@@ -2,7 +2,8 @@ var SerialTransaction = require('./serialtransaction'),
     Log = require('./../logging').Log,
     log = new Log('STK500'),
     arraify = require('./../util').arraify,
-    buffer = require("./../buffer.js");
+    buffer = require("./../buffer.js"),
+    errno = require("./../errno");
 
 function STK500Transaction () {
   SerialTransaction.apply(this, arraify(arguments));
@@ -61,7 +62,7 @@ STK500Transaction.prototype.writeThenRead = function (data, cb, _retryCnt) {
   function retryThenErrcb () {
     // When we fail retry
     if (_retryCnt == 0) {
-      self.errCb(1, "STK read timed out");
+      self.errCb(errno.READER_TIMEOUT, "STK read timed out");
     }
 
     self.buffer.drain(function () {
@@ -95,9 +96,7 @@ STK500Transaction.prototype.flash = function (deviceName, sketchData) {
     function () {
       self.serial.connect(deviceName,
                           {bitrate: self.config.speed, name: deviceName},
-                          self.transitionCb(
-                            'megaHack',
-                            self.transitionCb('connectDone', sketchData)));
+                          self.transitionCb('connectDone', sketchData));
     });
 };
 
@@ -112,31 +111,28 @@ STK500Transaction.prototype.eraseThenFlash  = function (deviceName, sketchData, 
   });
 };
 
-// Silence the device with megahack/sync
-STK500Transaction.prototype.megaHack = function (cb) {
-  if (this.connectionId)
-    this.justWrite([self.STK.GET_SYNC, self.STK.CRC_EOP], cb);
-};
-
 STK500Transaction.prototype.connectDone = function (hexCode, connectArg) {
   var self = this;
 
   if (typeof(connectArg) == "undefined" ||
       typeof(connectArg.connectionId) == "undefined" ||
       connectArg.connectionId == -1) {
-    this.errCb(1, "Bad connectionId / Couldn't connect to board");
+    this.errCb(errno.CONNECTION_FAIL, "Bad connectionId / Couldn't connect to board");
     return;
   }
 
   this.connectionId = connectArg.connectionId;
   log.log("Connected to board:", connectArg);
-  this.buffer.drain(function () {
-    self.onOffDTR(function () {
-      self.writeThenRead([self.STK.GET_SYNC, self.STK.CRC_EOP],
-                         self.transitionCb('inSyncWithBoard'));
+  if (connectArg.connectionId)
+    // Mega hack
+    this.justWrite([this.STK.GET_SYNC, this.STK.CRC_EOP], function () {
+      self.buffer.drain(function () {
+        self.onOffDTR(function () {
+          self.writeThenRead([self.STK.GET_SYNC, self.STK.CRC_EOP],
+                             self.transitionCb('inSyncWithBoard'));
+        });
+      });
     });
-  });
-
 };
 STK500Transaction.prototype.inSyncWithBoard = function (data) {
   this.inSync_ = true;

@@ -17,6 +17,9 @@ var config = {
       methods: ['local.get', 'local.set'],
       listeners: [{starter: 'onChanged.addListener',
                    cleaner: 'onChanged.removeListener'}]
+    },
+    runtime: {
+      methods: ['getManifestAsync']
     }
   }
 },

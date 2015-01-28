@@ -3,7 +3,8 @@ var SerialTransaction = require('./serialtransaction'),
     log = new Log('avr109'),
     arraify = require('./../util').arraify,
     poll = require('./../util').poll,
-    buffer = require("./../buffer");
+    buffer = require("./../buffer"),
+    errno = require("./../errno");
 
 function AVR109Transaction () {
   SerialTransaction.apply(this, arraify(arguments));
@@ -60,7 +61,8 @@ AVR109Transaction.prototype.writeThenRead = function (data, rcvSize, cb) {
                        ttl: 500,
                        callback: cb,
                        timeoutCb: this.errCb.bind(this,
-                                                  1, "AVR109 reader failed timeout")});
+                                                  errno.READER_TIMEOUT,
+                                                  "AVR109 reader failed timeout")});
 };
 
 
@@ -113,7 +115,8 @@ AVR109Transaction.prototype.magicBaudReset = function (devName, hexData) {
       log.log("Made sentinel connection: (baud: 1200)", connectInfo,
               "waiting", self.timeouts.magicBaudConnected, "ms");
       if (!connectInfo) {
-        self.errCb(1, "Failed to connect with magic baud 1200");
+        self.errCb(errno.LEONARDO_MAGIC_CONNECT_FAIL,
+                   "Failed to connect with magic baud 1200");
         return;
       }
 
@@ -129,7 +132,7 @@ AVR109Transaction.prototype.magicBaudReset = function (devName, hexData) {
                                    devName, connectInfo, iniDevices),
                  self.transitionCb('magicRetry', devName, hexData));
           } else {
-            self.errCb(1, "Failed to disconnect from " + devName);
+            self.errCb(erron.LEONARDO_MAGIC_DISCONNECT_FAIL, "Failed to disconnect from " + devName);
           }
         });
       }, self.timeouts.magicBaudConnected);
@@ -287,7 +290,8 @@ AVR109Transaction.prototype.programmingDone = function () {
 AVR109Transaction.prototype.pollForInitialDevice = function (deadline, cb) {
   var self = this;
   if ((new Date().getTime()) > deadline) {
-    self.errCb(1, "Waited too long for device ", self.initialDev, " after flashing");
+    self.errCb(errno.LEONARDO_RECONNECT_TIMEOUT,
+               "Waited too long for device ", self.initialDev, " after flashing");
     return;
   }
 
@@ -317,7 +321,7 @@ AVR109Transaction.prototype.prepareToProgramFlash = function () {
         this.AVR.SET_ADDRESS, addressBytes[1], addressBytes[0]];
 
   this.writeThenRead(loadAddressMessage, 1, function(response) {
-    self.transition('programFlash', 0, self.avrdude.memory.flash.page_size);
+    self.transition('programFlash', 0, self.config.avrdude.memory.flash.page_size);
   });
 };
 
