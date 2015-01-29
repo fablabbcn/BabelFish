@@ -197,18 +197,18 @@ Plugin.prototype = {
     });
   },
 
-  doflashWithProgrammer: function (device, code, maxsize, string,
+  flashWithProgrammer: function (device, code, maxsize, string,
                                    programmerData, mcu, flash_callback) {
-    throw Error("Not implemented");
+    console.error("Not implemented");
   },
 
-  doFlashbootloader: function (device, protocol, speed, force,
+  flashbootloader: function (device, protocol, speed, force,
                                delay, high_fuses, low_fuses,
                                extended_fuses, unlock_bits, mcu,
                                cb) {
     // Validate the data
     // Async run doFlashWithProgrammer
-    throw Error("Not implemeted");
+    console.error("Not implemeted");
   },
 
   flash: function (device,
