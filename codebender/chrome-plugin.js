@@ -295,8 +295,12 @@ Plugin.prototype = {
       this.serial.getDevices(function (devs) {
         var devUniquify = {};
 
-        devs.sort().reverse().forEach(function (d) {
-          devUniquify[d.path.replace("/dev/tty.", "/dev/cu.")] = d;
+        devs.forEach(function (d) {
+          // On macs we have duplicate devs with s/cu/tty/.
+          var trueDevName = d.path.replace("/dev/tty.", "/dev/cu.");
+          if (!devUniquify[trueDevName] ||
+              d.path == trueDevName)
+            devUniquify[trueDevName] = d;
         });
 
         self._cachedPorts = Object
