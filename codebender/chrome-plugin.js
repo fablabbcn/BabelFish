@@ -241,7 +241,7 @@ Plugin.prototype = {
 
         errorCallback = function (id, msg) {
           setTimeout(function () {
-            self.errorCallback("", msg, self.errorFlag);
+            self.errorCallback("", msg, id);
           });
           cb(from, id);
           self.transaction = null;
@@ -264,7 +264,7 @@ Plugin.prototype = {
       }
 
       self.transaction.flash(device, code);
-    }, 0);
+    });
   },
 
   flashWithProgrammer: function (selectedPort,
