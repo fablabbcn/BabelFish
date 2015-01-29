@@ -63,6 +63,7 @@ STK500Transaction.prototype.writeThenRead = function (data, cb, _retryCnt) {
     // When we fail retry
     if (_retryCnt == 0) {
       self.errCb(errno.READER_TIMEOUT, "STK read timed out");
+      return;
     }
 
     self.buffer.drain(function () {

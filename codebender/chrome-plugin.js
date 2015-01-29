@@ -288,20 +288,32 @@ Plugin.prototype = {
   // XXX: this is abused by compilerflasher
   cachingGetDevices: function (cb) {
     var self = this;
-
+    // ULTRAHACK: If we are spammed with requests for ports
+    // provide a cached version of reality updating every
+    // second. This is temporaray code.
     if (!self._cachedPorts) {
       this.serial.getDevices(function (devs) {
-        // ULTRAHACK: If we are spammed with requests for ports
-        // provide a cached version of reality updating every
-        // second. This is temporaray code.
-        self._cachedPorts = devs;
+        var devUniquify = {};
+
+        devs.sort().reverse().forEach(function (d) {
+          devUniquify[d.path.replace("/dev/tty.", "/dev/cu.")] = d;
+        });
+
+        self._cachedPorts = Object
+          .getOwnPropertyNames(devUniquify)
+          .map(function (k) {
+            return devUniquify[k];
+          });
         cb(self._cachedPorts);
 
         // Clean cache in a sec
         setTimeout(function () {self._cachedPorts = null;}, 1000);
       });
-    } else
-      cb(self._cachedPorts);
+
+      return;
+    }
+
+    cb(self._cachedPorts);
   },
 
   availablePorts: function (cb) {
