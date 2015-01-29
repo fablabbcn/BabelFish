@@ -15,6 +15,8 @@ function Plugin() {
   this.serial = chrome.serial;
   var self = this;
 
+  // Inclusive range of return values that are logged as wanrings.
+  this.warningReturnValueRange = [20500, 21000];
   this.version = null;
   // this.instance_id = window.plugins_initialized++;
 
@@ -241,15 +243,20 @@ Plugin.prototype = {
 
         errorCallback = function (id, msg) {
           setTimeout(function () {
-            self.errorCallback("", msg, id);
+            // Error callback accepts (from, message, status (0->error, 1->warning))
+            // Make this always be an error
+            var warnOrError = (id >= self.warningReturnValueRange[0] &&
+                               id <= self.warningReturnValueRange[1]) ? 1: 0;
+
+            self.errorCallback("extension-client", msg, warnOrError);
           });
           cb(from, id);
           self.transaction = null;
         };
 
-    // XXX: Wait for it to finish
+    // XXX: Wait for it to finish?
     if(self.transaction)
-      self.transaction.errCb(1, "Trying to restart flashing");
+      self.transaction.cleanup();
 
     self.transaction = new protocols[protocol](config, finishCallback, errorCallback),
     setTimeout(function () {
