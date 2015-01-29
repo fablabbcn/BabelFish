@@ -144,7 +144,7 @@ Plugin.prototype = {
       // The speed of your device is too high for this serial,
       // may I suggest minicom or something. This happens if we
       // have more than 3 x 10 rps
-      returnCb(3005);
+      returnCb(20010);
       this.disconnect();
       return true;
     }
