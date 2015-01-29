@@ -659,7 +659,7 @@ compilerflasher = function(lf){
       {
         if(Browsers.isBrowser("Chrome") || Browsers.isBrowser("Chromium"))
         {
-          alert += "<a onclick='compilerflasher.pluginHandler.addTo(\"Chrome\")' href='https://chrome.google.com/webstore/detail/codebendercc-extension/fkjidelplakiboijmadcpcbpboihkmee' target='_blank'>Add to Chrome</a>";
+          alert += "<a onclick='compilerflasher.pluginHandler.addTo(\"Chrome\")' href='https://chrome.google.com/webstore/detail/babelfish/magknjdfniglanojbpadmpjlglepnlko' target='_blank'>Add to Chrome</a>";
         }
         else if(Browsers.isBrowser("Firefox"))
         {
