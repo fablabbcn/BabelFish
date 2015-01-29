@@ -1,7 +1,7 @@
 // File: /chrome-extension/common/config.js
 
 var config = {
-  extensionId: "emkdlimhllpafhceedllklcaogghkadf",
+  extensionId: "magknjdfniglanojbpadmpjlglepnlko",
   methods: {
     serial: {
       methods: ['getDevices', 'send', 'connect', 'disconnect', 'setControlSignals', 'getControlSignals', 'getConnections', 'flush', 'onReceiveError.forceDispatch'],
@@ -68,7 +68,8 @@ function updateExtensionId (urls, set) {
   }
 }
 
-updateExtensionId(matchUrls);
+if (!config.extnensionId || window.codebenderDeveloperMode)
+  updateExtensionId(matchUrls);
 
 try {
   module.exports = config;
