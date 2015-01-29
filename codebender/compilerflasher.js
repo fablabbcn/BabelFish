@@ -165,6 +165,14 @@ compilerflasher = function(lf){
 
     this.doflashBootloader = function(programmer, board)
     {
+      // Remove when BabelFish implements programmers
+      if (window.chrome)
+      {
+        this.setOperationOutput("Programmers are not supported by the BabelFish extention yet.");
+        this.eventManager.fire('flash_failed', "Programmers are not supported by the BabelFish extention yet.");
+        return;
+      }
+
       this.codebender_plugin.flashBootloader(
         (this.portslist.selectedIndex == -1 || programmer['communication'] != 'serial')?'':this.portslist.options[this.portslist.selectedIndex].text,
         programmer['protocol'],
