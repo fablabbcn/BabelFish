@@ -168,8 +168,8 @@ compilerflasher = function(lf){
       // Remove when BabelFish implements programmers
       if (window.chrome)
       {
-        this.setOperationOutput("Programmers are not supported by the BabelFish extention yet.");
-        this.eventManager.fire('flash_failed', "Programmers are not supported by the BabelFish extention yet.");
+        this.owner.setOperationOutput("Programmers are not supported by the BabelFish extention yet.");
+        this.owner.eventManager.fire('flash_failed', "Programmers are not supported by the BabelFish extention yet.");
         return;
       }
 
