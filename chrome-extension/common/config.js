@@ -18,15 +18,6 @@ var config = {
       listeners: [{starter: 'onChanged.addListener',
                    cleaner: 'onChanged.removeListener'}]
     },
-    syncFileSystem: {
-      methods: ['requestFileSystem'],
-      listeners: []
-    },
-    alarms: {
-      methods: ['clear', 'create', 'getAll'],
-      listeners: [{starter: 'onAlarm.addListener',
-                   cleaner: 'onAlarm.removeListener'}]
-    },
     runtime: {
       methods: ['getPlatformInfo', 'getManifestAsync'],
       listeners: [{starter: 'onLaunched.addListener',
@@ -79,7 +70,10 @@ function updateExtensionId (urls, set) {
   }
 }
 
-updateExtensionId(matchUrls);
+// If the codebender developer extension is available it means we
+// can't trust the id from the config object and need to update it.
+if (window.codebenderChromeDeveleoperMode)
+  updateExtensionId(matchUrls);
 
 try {
   module.exports = config;
