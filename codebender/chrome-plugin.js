@@ -3,7 +3,8 @@
 var protocols = require('./backend/protocols').protocols,
     util = require('./backend/util'),
     _create_hex_parser = require('./backend/hexparser'),
-    avrdudeconf = require('./backend/avrdudeconf');
+    avrdudeconf = require('./backend/avrdudeconf'),
+    errno = require('./backend/errno');
 
 var dbg = util.dbg;
 
@@ -144,7 +145,7 @@ Plugin.prototype = {
       // The speed of your device is too high for this serial,
       // may I suggest minicom or something. This happens if we
       // have more than 3 x 10 rps
-      returnCb(20010);
+      returnCb(errno.SPAMMING_DEVICE);
       this.disconnect();
       return true;
     }
