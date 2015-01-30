@@ -104,8 +104,7 @@ SerialTransaction.prototype.writeThenRead_ = function (info) {
     return;
   }
 
-  var outgoingBinary = buffer.binToBuf(info.outgoingMsg),
-      self = this;
+  var self = this;
 
   self.refreshTimeout();
   if (!self.registeredBufferListener){
@@ -116,7 +115,17 @@ SerialTransaction.prototype.writeThenRead_ = function (info) {
   }
 
   this.log.log("Writing: " + buffer.hexRep(info.outgoingMsg));
-  this.serial.send(this.connectionId, outgoingBinary, function(writeArg) {
+  this.justWrite(info.outgoingMsg, function (info) {
+    self.buffer.readAsync(info);
+  });
+};
+
+
+SerialTransaction.prototype.justWrite = function (data, cb) {
+  var dataBuf = buffer.binToBuf(data),
+      self = this;
+
+  this.serial.send(this.connectionId, dataBuf, function(writeArg) {
     if (!writeArg) self.errCb(1, "Connection lost");
 
     if (!self.config.disableFlushing)

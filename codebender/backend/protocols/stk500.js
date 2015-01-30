@@ -70,11 +70,13 @@ STK500Transaction.prototype.writeThenRead = function (data, cb, _retryCnt) {
     });
   }
 
-  this.writeThenRead_({outgoingMsg: data,
-                       modifyDatabuffer: modifyDatabuffer,
-                       callback: cb,
-                       ttl: 500,
-                       timeoutCb: retryThenErrcb});
+  this.writeThenRead_({
+    outgoingMsg: data,
+    modifyDatabuffer: modifyDatabuffer,
+    callback: cb,
+    ttl: 500,
+    willRetry: true,
+    timeoutCb: retryThenErrcb});
 };
 
 // Cb should have the 'state' format, ie function (data)
@@ -93,7 +95,9 @@ STK500Transaction.prototype.flash = function (deviceName, sketchData) {
     function () {
       self.serial.connect(deviceName,
                           {bitrate: self.config.speed, name: deviceName},
-                          self.transitionCb('connectDone', sketchData));
+                          self.transitionCb(
+                            'megaHack',
+                            self.transitionCb('connectDone', sketchData)));
     });
 };
 
@@ -106,6 +110,12 @@ STK500Transaction.prototype.eraseThenFlash  = function (deviceName, sketchData, 
     if (!dontFlash)
       self.transition('flash', deviceName, sketchData);
   });
+};
+
+// Silence the device with megahack/sync
+STK500Transaction.prototype.megaHack = function (cb) {
+  if (this.connectionId)
+    this.justWrite([self.STK.GET_SYNC, self.STK.CRC_EOP], cb);
 };
 
 STK500Transaction.prototype.connectDone = function (hexCode, connectArg) {
