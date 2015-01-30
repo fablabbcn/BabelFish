@@ -203,7 +203,7 @@ Plugin.prototype = {
     console.error("Not implemented");
   },
 
-  flashbootloader: function (device, protocol, speed, force,
+  flashBootloader: function (device, protocol, speed, force,
                                delay, high_fuses, low_fuses,
                                extended_fuses, unlock_bits, mcu,
                                cb) {

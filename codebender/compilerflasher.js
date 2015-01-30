@@ -165,6 +165,14 @@ compilerflasher = function(lf){
 
     this.doflashBootloader = function(programmer, board)
     {
+      // Remove when BabelFish implements programmers
+      if (window.chrome)
+      {
+        this.owner.setOperationOutput("Programmers are not supported by the BabelFish extention yet.");
+        this.owner.eventManager.fire('flash_failed', "Programmers are not supported by the BabelFish extention yet.");
+        return;
+      }
+
       this.codebender_plugin.flashBootloader(
         (this.portslist.selectedIndex == -1 || programmer['communication'] != 'serial')?'':this.portslist.options[this.portslist.selectedIndex].text,
         programmer['protocol'],
@@ -651,7 +659,7 @@ compilerflasher = function(lf){
       {
         if(Browsers.isBrowser("Chrome") || Browsers.isBrowser("Chromium"))
         {
-          alert += "<a onclick='compilerflasher.pluginHandler.addTo(\"Chrome\")' href='https://chrome.google.com/webstore/detail/codebendercc-extension/fkjidelplakiboijmadcpcbpboihkmee' target='_blank'>Add to Chrome</a>";
+          alert += "<a onclick='compilerflasher.pluginHandler.addTo(\"Chrome\")' href='https://chrome.google.com/webstore/detail/babelfish/magknjdfniglanojbpadmpjlglepnlko' target='_blank'>Add to Chrome</a>";
         }
         else if(Browsers.isBrowser("Firefox"))
         {
