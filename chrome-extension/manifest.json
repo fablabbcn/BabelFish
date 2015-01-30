@@ -1,6 +1,6 @@
 {
     "name": "babel-fish",
-    "version": "0.1",
+    "version": "0.0.0.1",
     "manifest_version": 2,
     "description": "Serial for codebender.",
     "app": {

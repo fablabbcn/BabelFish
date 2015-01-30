@@ -63,6 +63,7 @@ function CodebenderPlugin () {
   this.availablePorts = this.availablePortsCb;
   this.getFlashResult = this.getFlashResultCb;
   this.probeUSB = this.probeUSBCb;
+  this.init = this.initCb;
 };
 
 if (typeof Object.create !== 'function') {
@@ -79,28 +80,35 @@ CodebenderPlugin.prototype.getPortsCb = function (cb) {
   var ports = this.element_.getPorts();
   setTimeout(function () {
     cb(ports);
-  }, 50);
+  });
 };
 
-CodebenderPlugin.prototype.availablePortsCb  = function (cb) {
+CodebenderPlugin.prototype.availablePortsCb = function (cb) {
   var ports = this.element_.availablePorts();
   setTimeout(function () {
     cb(ports);
-  }, 50);
+  });
 };
 
-CodebenderPlugin.prototype.getFlashResultCb  = function (cb) {
+CodebenderPlugin.prototype.getFlashResultCb = function (cb) {
   var result = this.element_.getFlashResult();
   setTimeout(function () {
     cb(result);
-  }, 50);
+  });
 };
 
-CodebenderPlugin.prototype.probeUSBCb  = function (cb) {
+CodebenderPlugin.prototype.probeUSBCb = function (cb) {
   var result = this.element_.probeUSB();
   setTimeout(function () {
     cb(result);
-  }, 50);
+  });
+};
+
+CodebenderPlugin.prototype.initCb = function (cb) {
+  this.element_.init();
+  setTimeout(function () {
+    cb();
+  });
 };
 
 module.exports = CodebenderPlugin;

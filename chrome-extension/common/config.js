@@ -17,6 +17,20 @@ var config = {
       methods: ['local.get', 'local.set'],
       listeners: [{starter: 'onChanged.addListener',
                    cleaner: 'onChanged.removeListener'}]
+    },
+    syncFileSystem: {
+      methods: ['requestFileSystem'],
+      listeners: []
+    },
+    alarms: {
+      methods: ['clear', 'create', 'getAll'],
+      listeners: [{starter: 'onAlarm.addListener',
+                   cleaner: 'onAlarm.removeListener'}]
+    },
+    runtime: {
+      methods: ['getPlatformInfo', 'getManifestAsync'],
+      listeners: [{starter: 'onLaunched.addListener',
+                   cleaner: 'onLaunched.removeListener'}]
     }
   }
 },
