@@ -1,4 +1,5 @@
 # Spaces in path trick
+developer = "true"
 nullstring :=
 space := $(nullstring) # a space at the end
 path = $(subst $(space),\ ,$1)
@@ -34,6 +35,10 @@ CHROME_TEST =  $(dot)/test/selenium-test.js
 FIREFOX_TEST =  $(dot)/test/firefox-test.js
 PLUGIN_FILES = $(build_script) $(CPP) $(dot)/plugin/Codebendercc/fake_install.rdf
 CHROME_ZIP = $(dot)/bundles/chrome-extension.zip
+
+ifneq ($(developer),)
+DEV_FILES = $(dot)/chrome-extension/common/developer.js
+endif
 
 CLIENT_FILES = \
 	$(dot)/codebender/backend/buffer.js				\
@@ -73,7 +78,7 @@ browserify = $(shell which browserify || echo $(dot)/node_modules/.bin/browserif
 $(browserify): $(dot)/node_modules
 browserify $(dot)/bundles/chrome-client.js: $(CLIENT_FILES) | $(browserify) $(dot)/bundles
 	$(browserify) -e $(dot)/codebender/plugin.js | \
-		cat - $(dot)/codebender/compilerflasher.js \
+		cat $(DEV_FILES) - $(dot)/codebender/compilerflasher.js \
 		> $(dot)/bundles/chrome-client.js
 
 $(dot)/plugin $(dot)/CodebenderChromeDeveloper:
