@@ -1,0 +1,130 @@
+* Bad error message on spamming
+
+  - I managed to recreate the spam by lowering the spam threshold.
+  - The messages on the excel do not correspond to the ones on
+    compilerflasher.js. The excel may need to become deprecated.
+
+* UNO doesn't flash
+
+  When flashing is interrupted for any reason and the connection close
+  is delayed after closing the tx led is on and after a while mac says
+  the device is using up too much power and that I should unplug
+  it. For this to work you need to flash a sketch that sais "hello
+  world" every second and the host should talk only once to the device
+  and then freeze for 20s until the disconnect.
+
+* USB programmers
+
+  There are basically 3 USB programmers
+
+  - usbtiny
+  - stk500v2 over USB
+  - usbasp
+
+  And then there is AVRISP and Arduino as ISP that use the serial so
+  there is a small overhead for that but it is not USB.
+
+** USBASP
+
+   Uses the control method to communicate.
+
+   - Opening is the same as stk500v2 only without the configuration
+     step.
+   - Initialization sends functions:
+     - USBASP_FUNC_GETCAPABILITIES
+     - USBASP_FUNC_SETISPSCK ~ see code for details
+     - USBASP_FUNC_ENABLEPROG
+   - Chip erase just sends the correct cmd given by avrdude.conf
+   - Cmd is the function USBASP_FUNC_TRANSMIT with the command
+   - Close sends with function USBASP_FUNC_DISCONNECT and then usb_close
+   - Page write sets address USBASP_FUNC_SETLONGADDRESS and writes to
+     flash with USBASP_FUNC_WRITEFLASH with cmd:
+
+     #+BEGIN_EXAMPLE
+
+    cmd[0] = address & 0xFF;
+    cmd[1] = address >> 8;
+    cmd[2] = page_size & 0xFF;
+    cmd[3] = (blockflags & 0x0F) + ((page_size & 0xF00) >> 4); //TP: Mega128 fix
+     #+END_EXAMPLE
+
+** Stk500v2 over serial
+
+   Avrdude uses a kind of OO serial device abstraction that looks like so
+
+   #+BEGIN_EXAMPLE
+struct serial_device usb_serdev_frame =
+{
+  .open = usbdev_open,
+  .close = usbdev_close,
+  .send = usbdev_send,
+  .recv = usbdev_recv_frame,
+  .drain = usbdev_drain,
+  .flags = SERDEV_FL_NONE,
+};
+
+   #+END_EXAMPLE
+
+*** Open
+    The interesting code is
+
+    #+BEGIN_EXAMPLE
+   ...
+   usb_init();
+
+   usb_find_busses();
+   usb_find_devices();
+   ...
+    #+END_EXAMPLE
+
+    Then for each dev of each bus try to open a dev. If you succeed
+    configure it and claim the interface.
+
+*** Send
+
+    Use bulk write to send with this interface.
+
+*** Receive
+
+    in the mkII case we use frames and we are talking bulk reads, we
+    keep reading until we gat a short packet.
+
+    In any other case we use bulk read again but we honor the number of
+    bytes requested by the transaction
+
+*** Close
+
+    - usb_release_inteface
+    - usb_reset :: sometimes the device stalls on second opening.
+    - usb_close
+
+*** Drain
+
+    Bulk read some bytes.
+
+** Usbtiny
+
+   Usbtiny also uses control messages and sends avt_ops with cmd.
+
+   - Initialize sets sck and sends USBTINY_POWERUP fn with period to
+     sck and RESET_HIGH. Then PGM_ENABLE avr_op. Will probably have to
+     strace this one.
+   - Chip erase sends the avr_op chip erase
+   - Cmd is some control transfer
+   - Open run usb_open
+   - Close runs usb_close
+   - Paged write
+     #+BEGIN_EXAMPLE
+
+    if (usb_out(pgm,
+		USBTINY_FLASH_WRITE,       // Flash or EEPROM
+		delay=0,          // How much to wait between each byte
+		addr,           // Address in memory
+		m->buf + addr,  // Pointer to data
+		chunk,          // Number of bytes to write
+		32 * PDATA(pgm)->sck_period + delay  // each byte gets turned into a
+	                             // 4-byte SPI cmd  usb_out() multiplies
+	                             // this per byte. Then add the cmd-delay
+		) < 0) {
+     #+END_EXAMPLE
+   - usb_out directly maps it's arguments to usb_control_msg
