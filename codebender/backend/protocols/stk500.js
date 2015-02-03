@@ -95,9 +95,7 @@ STK500Transaction.prototype.flash = function (deviceName, sketchData) {
     function () {
       self.serial.connect(deviceName,
                           {bitrate: self.config.speed, name: deviceName},
-                          self.transitionCb(
-                            'megaHack',
-                            self.transitionCb('connectDone', sketchData)));
+                          self.transitionCb('connectDone', sketchData));
     });
 };
 
@@ -113,9 +111,14 @@ STK500Transaction.prototype.eraseThenFlash  = function (deviceName, sketchData, 
 };
 
 // Silence the device with megahack/sync
-STK500Transaction.prototype.megaHack = function (cb) {
-  if (this.connectionId)
-    this.justWrite([self.STK.GET_SYNC, self.STK.CRC_EOP], cb);
+STK500Transaction.prototype.megaHack = function (hexCode, connectArg) {
+  var self = this;
+  if (connectArg && connectArg.connectionId) {
+    this.connectionId = connectArg.connectionId;
+    this.justWrite([self.STK.GET_SYNC, self.STK.CRC_EOP],
+                   self.transitionCb('connectDone', hexCode, connectArg));
+  } else
+    this.errCb(1, "Connection failed");
 };
 
 STK500Transaction.prototype.connectDone = function (hexCode, connectArg) {

@@ -115,7 +115,7 @@ SerialTransaction.prototype.writeThenRead_ = function (info) {
   }
 
   this.log.log("Writing: " + buffer.hexRep(info.outgoingMsg));
-  this.justWrite(info.outgoingMsg, function (info) {
+  this.justWrite(info.outgoingMsg, function () {
     self.buffer.readAsync(info);
   });
 };
@@ -134,9 +134,11 @@ SerialTransaction.prototype.justWrite = function (data, cb) {
           self.errCb(1,'Failed to flush');
           return;
         }
-      });
 
-    self.buffer.readAsync(info);
+        cb();
+      });
+    else
+      cb();
   });
 };
 
