@@ -112,6 +112,17 @@ STK500Transaction.prototype.eraseThenFlash  = function (deviceName, sketchData, 
   });
 };
 
+// Silence the device with megahack/sync
+STK500Transaction.prototype.megaHack = function (hexCode, connectArg) {
+  var self = this;
+  if (connectArg && connectArg.connectionId) {
+    this.connectionId = connectArg.connectionId;
+    this.justWrite([self.STK.GET_SYNC, self.STK.CRC_EOP],
+                   self.transitionCb('connectDone', hexCode, connectArg));
+  } else
+    this.errCb(1, "Connection failed");
+};
+
 STK500Transaction.prototype.connectDone = function (hexCode, connectArg) {
   var self = this;
 

@@ -1,6 +1,6 @@
 {
-    "name": "BabelFish",
-    "version": "0.1",
+    "name": "babel-fish",
+    "version": "0.0.0.1",
     "manifest_version": 2,
     "minimum_chrome_version": "38",
     "author": "Codebender.cc",

@@ -26,12 +26,11 @@ function customFlashSelectedPort () {
 
     var board = {
       upload: {
-        disbale_flushing: undefined,
-        maximum_size: 4096,
+        maximum_size:32256,
         protocol: protocol,
-        speed: 112500},
+        speed: 115200},
       build: {
-        mcu: undefined
+        mcu: "atmega328p"
       }
     },
         flash_args = [
