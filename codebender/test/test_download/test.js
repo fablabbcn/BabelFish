@@ -29,7 +29,7 @@ function customFlashSelectedPort () {
         disbale_flushing: undefined,
         maximum_size: 4096,
         protocol: protocol,
-        speed: 112500},
+        speed: 115200},
       build: {
         mcu: undefined
       }
