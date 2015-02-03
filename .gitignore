@@ -4,3 +4,5 @@ chrome-logs/
 npm-debug.log
 TAGS
 bundles/
+*.zip
+*.tmp

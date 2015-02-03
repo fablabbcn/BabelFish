@@ -58,7 +58,7 @@ if (!window.chrome) {
     // Each port is bound to a callback id
     this.ports = {};
 
-    console.log("Contacting host on id:", this.config.id);
+    console.log("Contacting host on id:", this.config.extensionId);
   }
 
   ClientBus.prototype = {
