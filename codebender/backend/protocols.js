@@ -1,7 +1,7 @@
 var Stk500 = require('./protocols/stk500').STK500Transaction;
 var Stk500v2 = require('./protocols/stk500v2').STK500v2Transaction;
 var Avr109 = require('./protocols/butterfly').AVR109Transaction;
-var USBTiny = require('./protocols/usbtinye').USBTinyTransaction;
+var USBTiny = require('./protocols/usbtiny').USBTinyTransaction;
 
 module.exports.protocols = {
   stk500v2: Stk500v2,
