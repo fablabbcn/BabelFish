@@ -1,1 +1,1 @@
-// Non dev mode
+// Dev mode disabled

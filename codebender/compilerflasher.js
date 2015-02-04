@@ -143,7 +143,7 @@ compilerflasher = function(lf){
         this.clickedPort = function()
         {
             var port = $("#cb_cf_ports").val();
-            url = "http\x3A\x2F\x2Flocalhost\x2Fapp_dev.php\x2Futilities\x2Flogdb\x2F43\x2FCLICK_PORT_META";
+            url = "http\x3A\x2F\x2Flocalhost\x2Futilities\x2Flogdb\x2F43\x2FCLICK_PORT_META";
             url = url.replace("CLICK_PORT_META", JSON.stringify({ "selectedPort": port, "tabID": this.tabID } ));
             $.get(url);
         }
@@ -166,7 +166,7 @@ compilerflasher = function(lf){
             this.oldPort = newPort;
 
             if (oldPort != newPort) {
-                url = "http\x3A\x2F\x2Flocalhost\x2Fapp_dev.php\x2Futilities\x2Flogdb\x2F38\x2FSAVEPORTMETA";
+                url = "http\x3A\x2F\x2Flocalhost\x2Futilities\x2Flogdb\x2F38\x2FSAVEPORTMETA";
                 url = url.replace("SAVEPORTMETA", JSON.stringify({ "oldPort":oldPort, "newPort": newPort, "tabID": this.tabID } ));
                 $.get(url);
             }
@@ -232,7 +232,7 @@ compilerflasher = function(lf){
                 location = window.location.origin;
             if (location.indexOf("codebender.cc") != -1 && !window.osBrowserIsSupported() )
             {
-                url = "http\x3A\x2F\x2Flocalhost\x2Fapp_dev.php\x2Futilities\x2Flogdb\x2F35\x2FPLUGIN_META";
+                url = "http\x3A\x2F\x2Flocalhost\x2Futilities\x2Flogdb\x2F35\x2FPLUGIN_META";
                 url = url.replace("PLUGIN_META", JSON.stringify({ "plugin" : false, "message": "Unsupported OS/browser combination."} ));
                 $.get(url);
 
@@ -288,7 +288,7 @@ compilerflasher = function(lf){
                     this.owner.setOperationOutput(alert);
                     this.owner.eventManager.fire('plugin_notification', alert);
 
-                    url = "http\x3A\x2F\x2Flocalhost\x2Fapp_dev.php\x2Futilities\x2Flogdb\x2F35\x2FPLUGIN_META";
+                    url = "http\x3A\x2F\x2Flocalhost\x2Futilities\x2Flogdb\x2F35\x2FPLUGIN_META";
                     url = url.replace("PLUGIN_META", JSON.stringify({ "plugin" : false, "message": "Not on navigator plugins."} ));
                     $.get(url);
                     var pl = this;
@@ -323,7 +323,7 @@ compilerflasher = function(lf){
 
         this.runPlugin = function()
         {
-            url = "http\x3A\x2F\x2Flocalhost\x2Fapp_dev.php\x2Futilities\x2Flogdb\x2F35\x2FPLUGIN_META";
+            url = "http\x3A\x2F\x2Flocalhost\x2Futilities\x2Flogdb\x2F35\x2FPLUGIN_META";
             url = url.replace("PLUGIN_META", JSON.stringify({ "plugin" : true, "message": "Found on navigator plugins."} ));
             $.get(url);
             this.owner.setOperationOutput("<i class='icon-spinner icon-spin'></i>  Initializing Plugin... Make sure that you allow plugin execution on your browser. <a href='http://codebender.uservoice.com/knowledgebase/topics/57328-plugin'>More Info</a>");
@@ -345,7 +345,7 @@ compilerflasher = function(lf){
                             pl.plugin_initialized = true;
                             pl.plugin_version = pl.codebender_plugin.version;
                             window.plugin_version = pl.plugin_version;
-                            url = "http\x3A\x2F\x2Flocalhost\x2Fapp_dev.php\x2Futilities\x2Flogdb\x2F35\x2FPLUGIN_META";
+                            url = "http\x3A\x2F\x2Flocalhost\x2Futilities\x2Flogdb\x2F35\x2FPLUGIN_META";
                             url = url.replace("PLUGIN_META", JSON.stringify({ "plugin" : true, "version": pl.codebender_plugin.version}) );
                             $.get(url);
 
@@ -429,7 +429,7 @@ compilerflasher = function(lf){
                 var alert = this.browserSpecificPluginInstall("You need to update the Codebender Plugin. ");
                 this.owner.setOperationOutput(alert);
                 this.owner.eventManager.fire('plugin_notification', alert);
-                url = "http\x3A\x2F\x2Flocalhost\x2Fapp_dev.php\x2Futilities\x2Flogdb\x2F27\x2FPLUGIN_META";
+                url = "http\x3A\x2F\x2Flocalhost\x2Futilities\x2Flogdb\x2F27\x2FPLUGIN_META";
                 url = url.replace("PLUGIN_META", JSON.stringify({ "success": true, "plugin" : false, "alert" : "You need to update the Codebender Plugin."}) );
                 $.get(url);
                 clearInterval(window.PluginLoggingInterval);
@@ -437,7 +437,7 @@ compilerflasher = function(lf){
                 var alert = this.browserSpecificPluginInstall("To program your Arduino from your browser, install the Codebender Plugin. ");
                 this.owner.setOperationOutput(alert);
                 this.owner.eventManager.fire('plugin_notification', alert);
-                url = "http\x3A\x2F\x2Flocalhost\x2Fapp_dev.php\x2Futilities\x2Flogdb\x2F27\x2FPLUGIN_META";
+                url = "http\x3A\x2F\x2Flocalhost\x2Futilities\x2Flogdb\x2F27\x2FPLUGIN_META";
                 url = url.replace("PLUGIN_META", JSON.stringify({ "success": true, "plugin" : false, "alert" : "To program your Arduino from your browser, install the Codebender Plugin."}) );
                 $.get(url);
                 clearInterval(window.PluginLoggingInterval);
@@ -466,7 +466,7 @@ compilerflasher = function(lf){
                 {
                     if(typeof(pl.codebender_plugin.probeUSB) === "undefined")
                     {
-                        url = "http\x3A\x2F\x2Flocalhost\x2Fapp_dev.php\x2Futilities\x2Flogdb\x2F34\x2FPLUGIN_META";
+                        url = "http\x3A\x2F\x2Flocalhost\x2Futilities\x2Flogdb\x2F34\x2FPLUGIN_META";
                         url = url.replace("PLUGIN_META", JSON.stringify({ "message" : "Non catchable plugin crash.", "version": (window.plugin_version === 'undefined' || window.plugin_version === null) ? "undefined" : window.plugin_version,
                             "OS": { "name": (typeof Browsers.os.name === 'undefined') ? 'undefined' : Browsers.os.name,
                                 "url":  window.location.pathname,
@@ -485,7 +485,7 @@ compilerflasher = function(lf){
                             $("#cb_cf_ports  > option").each(function(index) {
                                 ports[index] = (this.text);
                             });
-                            var url = "http\x3A\x2F\x2Flocalhost\x2Fapp_dev.php\x2Futilities\x2Flogdb\x2F36\x2FPLUGIN_META";
+                            var url = "http\x3A\x2F\x2Flocalhost\x2Futilities\x2Flogdb\x2F36\x2FPLUGIN_META";
                             url = url.replace("PLUGIN_META", JSON.stringify({ "success": true, "plugin" : true, "version": pl.codebender_plugin.version, "ports" : ports}) );
                             $.get(url);
                         }
@@ -504,10 +504,10 @@ compilerflasher = function(lf){
                                     });
 
                                     pl.codebender_plugin.probeUSB(function (result) {
-                                        var url = "http\x3A\x2F\x2Flocalhost\x2Fapp_dev.php\x2Futilities\x2Flogdb\x2F36\x2FPLUGIN_META";
+                                        var url = "http\x3A\x2F\x2Flocalhost\x2Futilities\x2Flogdb\x2F36\x2FPLUGIN_META";
                                         url = url.replace("PLUGIN_META", JSON.stringify({ "success": true, "plugin" : true, "version": pl.codebender_plugin.version, "tabID": pl.tabID, "serialLibPorts" : ports, "probeUSBports" : result}) );
                                         $.get(url);
-                                        var url = "http\x3A\x2F\x2Flocalhost\x2Fapp_dev.php\x2Futilities\x2Flogdb\x2F74\x2FPLUGIN_META";
+                                        var url = "http\x3A\x2F\x2Flocalhost\x2Futilities\x2Flogdb\x2F74\x2FPLUGIN_META";
                                         url = url.replace("PLUGIN_META", JSON.stringify({ "success": true, "plugin" : true, "version": pl.codebender_plugin.version, "tabID": pl.tabID, "jsonPorts" : parsedList}) );
                                         $.get(url);
                                     });
@@ -520,7 +520,7 @@ compilerflasher = function(lf){
                 }
                 catch(err)
                 {
-                    url = "http\x3A\x2F\x2Flocalhost\x2Fapp_dev.php\x2Futilities\x2Flogdb\x2F27\x2FPLUGIN_META";
+                    url = "http\x3A\x2F\x2Flocalhost\x2Futilities\x2Flogdb\x2F27\x2FPLUGIN_META";
                     url = url.replace("PLUGIN_META", JSON.stringify({ "success" : false, "error" : err }) );
                     $.get(url);
                 }
@@ -529,7 +529,7 @@ compilerflasher = function(lf){
 
         this.canBurnBootloader = function(programmer)
         {
-            if (typeof this.portslist.options[this.portslist.selectedIndex] === 'undefined' && programmer['communication'] == 'serial') {
+            if (this.portslist.options[this.portslist.selectedIndex].value == '' && programmer['communication'] == 'serial') {
                 return false;
             }
             else
@@ -603,7 +603,7 @@ compilerflasher = function(lf){
 
             if(location.indexOf("codebender.cc") == -1)
             {
-                alert+= '<a target="_blank" href = "http\x3A\x2F\x2Flocalhost\x2Fapp_dev.php\x2Fstatic\x2Fplugin" >Learn more.</a>';
+                alert+= '<a target="_blank" href = "http\x3A\x2F\x2Flocalhost\x2Fstatic\x2Fplugin" >Learn more.</a>';
             }
             else
             {
@@ -622,7 +622,7 @@ compilerflasher = function(lf){
 
         this.addTo = function(where, pluginUrl)
         {
-            url = "http\x3A\x2F\x2Flocalhost\x2Fapp_dev.php\x2Futilities\x2Flogdb\x2F45\x2FADD_TO_META";
+            url = "http\x3A\x2F\x2Flocalhost\x2Futilities\x2Flogdb\x2F45\x2FADD_TO_META";
             url = url.replace("ADD_TO_META", JSON.stringify({ "where": where} ));
             if (typeof (pluginUrl) === 'undefined')
                 $.get(url);
@@ -740,7 +740,7 @@ compilerflasher = function(lf){
         this.connect = function() {
             speed = $("#cb_cf_baud_rates option:selected").val();
             if (this.connected == false) {
-                var url = "http\x3A\x2F\x2Flocalhost\x2Fapp_dev.php\x2Futilities\x2Flogdb\x2F18\x2FSERIAL_MONITOR_META";
+                var url = "http\x3A\x2F\x2Flocalhost\x2Futilities\x2Flogdb\x2F18\x2FSERIAL_MONITOR_META";
                 url = url.replace("SERIAL_MONITOR_META", JSON.stringify({ "baudrate" : speed, "port": $("#cb_cf_ports").val(), "tabID": this.tabID }) );
                 $.get(url);
                 if ($("#cb_cf_ports").val() != null && $("#cb_cf_ports").val() != "") {
@@ -761,7 +761,7 @@ compilerflasher = function(lf){
                                 pl.serialHudAppendString(line);
                             },
                             function (from, line){
-                                var url = "http\x3A\x2F\x2Flocalhost\x2Fapp_dev.php\x2Futilities\x2Flogdb\x2F69\x2FPLUGIN_SERIAL_MONITOR_RETVAL_META";
+                                var url = "http\x3A\x2F\x2Flocalhost\x2Futilities\x2Flogdb\x2F69\x2FPLUGIN_SERIAL_MONITOR_RETVAL_META";
                                 url = url.replace("PLUGIN_SERIAL_MONITOR_RETVAL_META", JSON.stringify({ "retVal" : line , "version": (window.plugin_version === 'undefined' || window.plugin_version === null) ? "undefined" : window.plugin_version,
                                     "url":  window.location.pathname,
                                     "OS": { "name": (typeof Browsers.os.name === 'undefined') ? 'undefined' : Browsers.os.name,
@@ -829,7 +829,7 @@ compilerflasher = function(lf){
             if (this.connected == true) {
                 if(notified == false)
                 {
-                    var url = "http\x3A\x2F\x2Flocalhost\x2Fapp_dev.php\x2Futilities\x2Flogdb\x2F59\x2FSERIAL_MONITOR_DISC_META";
+                    var url = "http\x3A\x2F\x2Flocalhost\x2Futilities\x2Flogdb\x2F59\x2FSERIAL_MONITOR_DISC_META";
                     url = url.replace("SERIAL_MONITOR_DISC_META", JSON.stringify({ "baudrate" : $("#cb_cf_baud_rates option:selected").val(), "port": _that.serialMonitorPort, "tabID": this.tabID }));
                     $.get(url);
                 }
@@ -919,7 +919,7 @@ compilerflasher = function(lf){
         this.plugin_error_logger = function(from, msg, status){
             if(typeof status == 'undefined' || status == 0)
             {
-                var url = "http\x3A\x2F\x2Flocalhost\x2Fapp_dev.php\x2Futilities\x2Flogdb\x2F34\x2FPLUGIN_ERROR_META";
+                var url = "http\x3A\x2F\x2Flocalhost\x2Futilities\x2Flogdb\x2F34\x2FPLUGIN_ERROR_META";
                 url = url.replace("PLUGIN_ERROR_META", JSON.stringify({ "message" : msg , "version": (window.plugin_version === 'undefined' || window.plugin_version === null) ? "undefined" : window.plugin_version,
                     "url":  window.location.pathname,
                     "tabID": _that.tabID,
@@ -930,7 +930,7 @@ compilerflasher = function(lf){
             }
             else if(status ==1)
             {
-                var url = "http\x3A\x2F\x2Flocalhost\x2Fapp_dev.php\x2Futilities\x2Flogdb\x2F55\x2FPLUGIN_WARNING_META";
+                var url = "http\x3A\x2F\x2Flocalhost\x2Futilities\x2Flogdb\x2F55\x2FPLUGIN_WARNING_META";
                 url = url.replace("PLUGIN_WARNING_META", JSON.stringify({ "message" : msg , "version": (window.plugin_version === 'undefined' || window.plugin_version === null) ? "undefined" : window.plugin_version,
                     "url":  window.location.pathname,
                     "tabID": _that.tabID,
@@ -963,7 +963,7 @@ compilerflasher = function(lf){
                 .attr('disabled', 'disabled')
                 .click(function(){cb.clickedBoard()})
                 .change(function(){cb.saveBoard()});
-        $.getJSON("http\x3A\x2F\x2Flocalhost\x2Fapp_dev.php\x2Fboard\x2Flistboards", function(data){boardsListCallback(data)});
+        $.getJSON("http\x3A\x2F\x2Flocalhost\x2Fboard\x2Flistboards", function(data){boardsListCallback(data)});
         this.loaded_elements.push("cb_cf_boards");
     }
     if($("select#cb_cf_ports").length > 0)
@@ -990,7 +990,7 @@ compilerflasher = function(lf){
                 .attr('disabled', 'disabled')
                 .click(function(){cb.clickedProgrammer()})
                 .change(function(){cb.saveProgrammer()});
-        $.getJSON("http\x3A\x2F\x2Flocalhost\x2Fapp_dev.php\x2Fboard\x2Fprogrammers", function (data)
+        $.getJSON("http\x3A\x2F\x2Flocalhost\x2Fboard\x2Fprogrammers", function (data)
         {
             programmersListCallback(data)
         });
@@ -1064,7 +1064,7 @@ compilerflasher = function(lf){
         this.selectedBoard = this.boards_list[$("#cb_cf_boards").prop("selectedIndex")];
 
         var newBoard = this.selectedBoard.name;
-        url = "http\x3A\x2F\x2Flocalhost\x2Fapp_dev.php\x2Futilities\x2Flogdb\x2F37\x2FSAVEBOARDMETA";
+        url = "http\x3A\x2F\x2Flocalhost\x2Futilities\x2Flogdb\x2F37\x2FSAVEBOARDMETA";
         url = url.replace("SAVEBOARDMETA", JSON.stringify({ "oldBoard":oldBoard, "newBoard":newBoard, "tabID": this.pluginHandler.tabID } ));
         $.get(url);
     };
@@ -1109,7 +1109,7 @@ compilerflasher = function(lf){
         this.selectedProgrammer = this.programmers_list[$("#cb_cf_programmers").prop("selectedIndex")];
 
         var newProgrammer = this.selectedProgrammer.name;
-        url = "http\x3A\x2F\x2Flocalhost\x2Fapp_dev.php\x2Futilities\x2Flogdb\x2F39\x2FSAVEPROGRAMMERMETA";
+        url = "http\x3A\x2F\x2Flocalhost\x2Futilities\x2Flogdb\x2F39\x2FSAVEPROGRAMMERMETA";
         url = url.replace("SAVEPROGRAMMERMETA", JSON.stringify({ "oldProgrammer":oldProgrammer, "newProgrammer":newProgrammer, "tabID": this.pluginHandler.tabID } ));
         $.get(url);
 
@@ -1167,7 +1167,7 @@ compilerflasher = function(lf){
     this.clickedBoard = function()
     {
         var board = $("#cb_cf_boards option:selected").text();
-        url = "http\x3A\x2F\x2Flocalhost\x2Fapp_dev.php\x2Futilities\x2Flogdb\x2F42\x2FCLICK_BOARD_META";
+        url = "http\x3A\x2F\x2Flocalhost\x2Futilities\x2Flogdb\x2F42\x2FCLICK_BOARD_META";
         url = url.replace("CLICK_BOARD_META", JSON.stringify({ "selectedBoard": board, "tabID": this.pluginHandler.tabID} ));
         $.get(url);
     }
@@ -1175,7 +1175,7 @@ compilerflasher = function(lf){
     this.clickedProgrammer = function()
     {
         var programmer = $("#cb_cf_programmers option:selected").text();
-        url = "http\x3A\x2F\x2Flocalhost\x2Fapp_dev.php\x2Futilities\x2Flogdb\x2F44\x2FCLICK_PROGRAMMER_META";
+        url = "http\x3A\x2F\x2Flocalhost\x2Futilities\x2Flogdb\x2F44\x2FCLICK_PROGRAMMER_META";
         url = url.replace("CLICK_PROGRAMMER_META", JSON.stringify({ "selectedProgrammer": programmer, "tabID": this.pluginHandler.tabID} ));
         $.get(url);
     }
@@ -1230,7 +1230,7 @@ compilerflasher = function(lf){
             if (progress != 0 && (progress > -1 || progress < -23) && progress != -30 && progress != -55 && progress != -56 && progress != -57)
             {
                 compilerflasher.pluginHandler.codebender_plugin.getFlashResult(function (result) {
-                    url = "\x2Fapp_dev.php\x2Futilities\x2Flogdb\x2F51\x2FPLUGIN_RESULT_META";
+                    url = "\x2Futilities\x2Flogdb\x2F51\x2FPLUGIN_RESULT_META";
                     url = url.replace("PLUGIN_RESULT_META", JSON.stringify({
                         "version": compilerflasher.pluginHandler.codebender_plugin.version,
                         "retVal": progress,
@@ -1246,7 +1246,7 @@ compilerflasher = function(lf){
             compilerflasher.setOperationOutput("Upload successful!");
         }
 
-        var url = "http\x3A\x2F\x2Flocalhost\x2Fapp_dev.php\x2Futilities\x2Fflash\x2FERROR_CODE";
+        var url = "http\x3A\x2F\x2Flocalhost\x2Futilities\x2Fflash\x2FERROR_CODE";
         url = url.replace('ERROR_CODE', progress+'&'+that.pluginHandler.tabID);
         $.get(url);
 
@@ -1258,7 +1258,7 @@ compilerflasher = function(lf){
         this.eventManager.fire('pre_hex');
         var payload = this.generate_payload("hex");
         var cb = this;
-        $.post("http\x3A\x2F\x2Flocalhost\x2Fapp_dev.php\x2Futilities\x2Fcompile\x2F", payload, function (data) {
+        $.post("http\x3A\x2F\x2Flocalhost\x2Futilities\x2Fcompile\x2F", payload, function (data) {
             try{
                 var obj = jQuery.parseJSON(data);
                 if (obj.success == 0) {
@@ -1311,7 +1311,7 @@ compilerflasher = function(lf){
     this.usbflash = function()
     {
 
-        url = "http\x3A\x2F\x2Flocalhost\x2Fapp_dev.php\x2Futilities\x2Flogdb\x2F40\x2FRUN_BUTTON_META";
+        url = "http\x3A\x2F\x2Flocalhost\x2Futilities\x2Flogdb\x2F40\x2FRUN_BUTTON_META";
         url = url.replace("RUN_BUTTON_META", JSON.stringify({ "port":$("#cb_cf_ports").val(), "board":$("#cb_cf_boards option:selected").text(), "programmer":$("#cb_cf_programmers option:selected").text(), "tabID": this.pluginHandler.tabID } ));
         $.get(url);
 
@@ -1367,7 +1367,7 @@ compilerflasher = function(lf){
 
     this.usbflashWithProgrammer = function()
     {
-        url = "http\x3A\x2F\x2Flocalhost\x2Fapp_dev.php\x2Futilities\x2Flogdb\x2F41\x2FRUN_WITH_PROG_BUTTON_META";
+        url = "http\x3A\x2F\x2Flocalhost\x2Futilities\x2Flogdb\x2F41\x2FRUN_WITH_PROG_BUTTON_META";
         url = url.replace("RUN_WITH_PROG_BUTTON_META", JSON.stringify({ "port":$("#cb_cf_ports").val(), "board":$("#cb_cf_boards option:selected").text(), "programmer":$("#cb_cf_programmers option:selected").text(), "tabID": this.pluginHandler.tabID } ));
         $.get(url);
 
@@ -1416,7 +1416,7 @@ compilerflasher = function(lf){
     this.getbin = function(callback) {
         var payload = this.generate_payload("binary");
         var cb = this;
-        $.post("http\x3A\x2F\x2Flocalhost\x2Fapp_dev.php\x2Futilities\x2Fcompile\x2F", payload, function (data) {
+        $.post("http\x3A\x2F\x2Flocalhost\x2Futilities\x2Fcompile\x2F", payload, function (data) {
             try{
                 var obj = jQuery.parseJSON(data);
                 callback(obj);
@@ -1435,7 +1435,7 @@ compilerflasher = function(lf){
     this.verify =  function() {
 
         var board = $("#cb_cf_boards option:selected").text();
-        url = "http\x3A\x2F\x2Flocalhost\x2Fapp_dev.php\x2Futilities\x2Flogdb\x2F47\x2FVERIFY_META";
+        url = "http\x3A\x2F\x2Flocalhost\x2Futilities\x2Flogdb\x2F47\x2FVERIFY_META";
         url = url.replace("VERIFY_META", JSON.stringify({ "selectedBoard": board, "tabID": this.pluginHandler.tabID} ));
         $.get(url);
 
@@ -1462,7 +1462,7 @@ compilerflasher = function(lf){
 
         if(this.pluginHandler.canBurnBootloader(this.selectedProgrammer))
         {
-            var url = "http\x3A\x2F\x2Flocalhost\x2Fapp_dev.php\x2Futilities\x2Flogdb\x2F25\x2FUPLOAD_BOOTLOADER_META";
+            var url = "http\x3A\x2F\x2Flocalhost\x2Futilities\x2Flogdb\x2F25\x2FUPLOAD_BOOTLOADER_META";
             url = url.replace("UPLOAD_BOOTLOADER_META", JSON.stringify({ "programmer" : $('#programmer option:selected').val(),
                 "board" : $('#cb_cf_boards option:selected').val(), "port" : $('#cb_cf_ports option:selected').val(),
                 "bootloader_file" : ((typeof this.selectedBoard['bootloader']['file']) === "undefined") ? "undefined" : this.selectedBoard['bootloader']['file'] }) );
@@ -1588,21 +1588,21 @@ function logging()
     var payload = generate_payload("binary", true);
 
 
-    $.post("\x2Fapp_dev.php\x2Futilities\x2Fcompile\x2F", payload, function (data) {
+    $.post("\x2Futilities\x2Fcompile\x2F", payload, function (data) {
         var obj = jQuery.parseJSON(data);
 
     });
 }
 
 window.flashing_errors =
-  {
-    1:"Could not connect to your device. Make sure that you have connected it properly, that you have selected the correct settings (device type and port) and try again.",
-    256:"Could not connect to your device. Make sure that you have connected it properly, that you have selected the correct settings (device type and port) and try again.",
-    259:"Could not program your device, the process timed out. Make sure that you have connected it properly, that you have selected the correct settings (device type and port) and try again.",
-    "-1":"Couldn’t find an Arduino on the selected port. If you are using Leonardo check that you have the correct port selected. If it is correct, try pressing the board’s reset button after initiating the upload",
-    "-2":"There was a problem programming your Arduino. If you are using a non-English Windows version, or username please contact us.",
-    "-204":"Could not program your device, the process timed out. Make sure that you have connected it properly, that you have selected the correct settings (device type and port) and try again.",
-    "-22":"The selected port seems to be in use. Please check your board connection, and make sure that you are not using it from some other application, you don't have an open serial monitor.",
+    {
+        1:"Could not connect to your device. Make sure that you have connected it properly, that you have selected the correct settings (device type and port) and try again.",
+        256:"Could not connect to your device. Make sure that you have connected it properly, that you have selected the correct settings (device type and port) and try again.",
+        259:"Could not program your device, the process timed out. Make sure that you have connected it properly, that you have selected the correct settings (device type and port) and try again.",
+        "-1":"Couldn’t find an Arduino on the selected port. If you are using Leonardo check that you have the correct port selected. If it is correct, try pressing the board’s reset button after initiating the upload",
+        "-2":"There was a problem programming your Arduino. If you are using a non-English Windows version, or username please contact us.",
+        "-204":"Could not program your device, the process timed out. Make sure that you have connected it properly, that you have selected the correct settings (device type and port) and try again.",
+        "-22":"The selected port seems to be in use. Please check your board connection, and make sure that you are not using it from some other application, you don't have an open serial monitor.",
         "-23":"Another flashing process is still active. Please wait until it is done and try again.",
         "-55":"The specified port might not be available. Please check if it is used by another application. If the problem persists, unplug your device and plug it again.",
         "-56":"The specified port is in use or you do not have enough permissions to use the device. Please check if it is used by another application or correct its permissions.",

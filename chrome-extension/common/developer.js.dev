@@ -39,4 +39,4 @@ function updateExtensionId (urls, config) {
   }
 }
 
-window.codebenderChromeDeveleoperMode = true;
+window.codebenderChromeDeveloperMode = true;

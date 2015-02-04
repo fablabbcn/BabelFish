@@ -30,9 +30,9 @@ store-zip: $(CHROME_ZIP)
 
 # Remove the abuility for anyone to use developer.js
 .PHONY:
-disable-dev-mode:
+enable-dev-mode:
 	cp $(DEV_FILE).dev $(DEV_FILE)
 
 .PHONY:
-enable-dev-mode:
+disable-dev-mode:
 	cp $(DEV_FILE).nodev $(DEV_FILE)
