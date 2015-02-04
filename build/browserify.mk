@@ -19,5 +19,5 @@ browserify = $(shell which browserify || echo $(dot)/node_modules/.bin/browserif
 $(browserify): $(dot)/node_modules
 browserify $(dot)/bundles/chrome-client.js: $(CLIENT_FILES) | $(browserify) $(dot)/bundles
 	$(browserify) -e $(dot)/codebender/plugin.js | \
-		cat $(DEV_FILE) - $(dot)/codebender/compilerflasher.js \
+		cat $(DEV_FILE) - $(dot)/codebender/ad-hoc-changes.js $(dot)/codebender/compilerflasher.js \
 		> $(dot)/bundles/chrome-client.js
