@@ -6,7 +6,12 @@ HOST_FILES = $(dot)/chrome-extension/manifest.json	\
 	$(dot)/chrome-extension/host/hostbus.js		\
 	$(dot)/chrome-extension/host/util.js		\
 	$(dot)/chrome-extension/common/config.js	\
-	$(dot)/chrome-extension/common/rpc-args.js
+	$(dot)/chrome-extension/common/rpc-args.js	\
+	$(dot)/chrome-extension/app-page/index.html
+
+HOST_META = $(dot)/chrome-extension/logo128.png \
+	$(dot)/chrome-extension/logo16.png	\
+	$(dot)/chrome-extension/logo48.png
 
 ifneq ($(extension-developer),false)
 DEV_FILE = $(dot)/chrome-extension/common/developer.js
@@ -15,7 +20,8 @@ extension-version = $(shell sed -n  's/.*"version"[\t ]*:[\t ]*"\(.*\)"[\t ]*,.*
 CHROME_ZIP = $(dot)/bundles/chrome-extension-$(extension-version).zip
 
 $(CHROME_ZIP): $(HOST_FILES)
-	zip $@ $(HOST_FILES)
+	cd $(dot)/chrome-extension && \
+	zip $@ $(shell echo $(HOST_FILES) $(HOST_META) | sed 's_$(dot)/chrome-extension/__g')
 	@echo "Created zip: $@"
 
 store-zip: $(CHROME_ZIP)
