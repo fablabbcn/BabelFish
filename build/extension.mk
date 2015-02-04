@@ -20,18 +20,19 @@ extension-version = $(shell sed -n  's/.*"version"[\t ]*:[\t ]*"\(.*\)"[\t ]*,.*
 CHROME_ZIP = $(dot)/bundles/chrome-extension-$(extension-version).zip
 
 $(CHROME_ZIP): $(HOST_FILES)
+	$(MAKE) disable-dev-mode
 	cd $(dot)/chrome-extension && \
 	zip $@ $(shell echo $(DEV_FILE) $(HOST_FILES) $(HOST_META) | sed 's_$(dot)/chrome-extension/__g')
 	@echo "Created zip: $@"
+	$(MAKE) enable-dev-mode
 
 store-zip: $(CHROME_ZIP)
 
-# Remove the a bility for anyone to use developer.js
+# Remove the abuility for anyone to use developer.js
 .PHONY:
-extension-no-dev-mode:
-	mv $(DEV_FILE) $(DEV_FILE).tmp
-	echo "// Non dev mode" > $(DEV_FILE)
+disable-dev-mode:
+	cp $(DEV_FILE).dev $(DEV_FILE)
 
 .PHONY:
-extension-dev-mode:
-	mv $(DEV_FILE).tmp $(DEV_FILE)
+enable-dev-mode:
+	cp $(DEV_FILE).nodev $(DEV_FILE)
