@@ -1,8 +1,9 @@
 # Chrome extension related targets
 extension-developer=true
 HOST_FILES = $(dot)/chrome-extension/manifest.json	\
+	$(dot)/chrome-extension/background.html		\
+	$(dot)/chrome-extension/background.js		\
 	$(dot)/chrome-extension/host/rpc-host.js	\
-	$(dot)/chrome-extension/host/background.js	\
 	$(dot)/chrome-extension/host/hostbus.js		\
 	$(dot)/chrome-extension/host/util.js		\
 	$(dot)/chrome-extension/common/config.js	\
