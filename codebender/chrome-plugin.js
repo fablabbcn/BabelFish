@@ -77,10 +77,16 @@ Plugin.prototype = {
       // - More than 3 of this are running simultaneously
       // - More than 10 sonsecutive buffer overflows occur
       this.readingInfo.handler = function (readArg) {
-        if (!self.readingInfo || !readArg) {
-          console.warn("Bad reading info or read arg. Tends to correct itself.");
+        if (!self.readingInfo) {
+          console.warn("Recovering from a spamming device.");
           return;
         }
+
+        if (!readArg) {
+          console.warn("Bad readArg from serial monitor.");
+          return;
+        }
+
         if (readArg.connectionId != connectionId)
           return;
 
@@ -140,13 +146,13 @@ Plugin.prototype = {
     if (!Number.isInteger(this.readingInfo.samultaneousRequests))
       this.readingInfo.samultaneousRequests = 0;
 
-    if (++this.readingInfo.samultaneousRequests > 500) {
+    if (++this.readingInfo.samultaneousRequests > 50) {
       console.log("Too many requests, reading info:",this.readingInfo);
       // The speed of your device is too high for this serial,
       // may I suggest minicom or something. This happens if we
       // have more than 3 x 10 rps
-      returnCb(errno.SPAMMING_DEVICE);
       this.disconnect();
+      returnCb(errno.SPAMMING_DEVICE);
       return true;
     }
 
