@@ -92,7 +92,14 @@ document.getElementById('monitor').innerHTML = "Connect";
 document.getElementById('monitor').onclick = startMonitor;
 
 function populateConnections() {
-  var cnxul = document.getElementById('connections');
+  var cnxul = document.getElementById('connections'),
+      devMsg;
+  if (window.codebenderChromeDeveloperMode)
+    devMsg = "Developer Mode!";
+  else
+    devMsg = "NON Developer Mode!";
+
+  document.getElementById('title').innerHTML = devMsg;
 
   cf.pluginHandler.codebender_plugin.serial.getConnections(function (cnxs) {
     cnxul.innerHTML = "";
