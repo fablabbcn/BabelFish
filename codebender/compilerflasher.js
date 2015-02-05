@@ -1598,7 +1598,6 @@ window.flashing_errors =
     {
         1:"Could not connect to your device. Make sure that you have connected it properly, that you have selected the correct settings (device type and port) and try again.",
         256:"Could not connect to your device. Make sure that you have connected it properly, that you have selected the correct settings (device type and port) and try again.",
-        259:"Could not program your device, the process timed out. Make sure that you have connected it properly, that you have selected the correct settings (device type and port) and try again.",
         "-1":"Couldn’t find an Arduino on the selected port. If you are using Leonardo check that you have the correct port selected. If it is correct, try pressing the board’s reset button after initiating the upload",
         "-2":"There was a problem programming your Arduino. If you are using a non-English Windows version, or username please contact us.",
         "-204":"Could not program your device, the process timed out. Make sure that you have connected it properly, that you have selected the correct settings (device type and port) and try again.",
@@ -1614,8 +1613,23 @@ window.flashing_errors =
         32001:"The selected port seems to be in use. Please make sure that you are not using it from some other program.",
         33005:"This baudrate is not supported by the operating system.",
         2001:"The selected port seems to be in use. Please make sure that you are not using it from some other program.",
-        3005:"This baudrate is not supported by the operating system."
-
+        3005:"This baudrate is not supported by the operating system.",
+        36000: "Could not connect to your device. Make sure that you have connected it properly, that you have selected the correct settings (device type and port) and try again.",
+        1001: "Your device is unresponsive. Please make sure you have selected the correct device and it is connected properly.",
+        1002: "Your device is unresponsive. Please make sure you have selected the correct device and it is connected properly.",
+g
+        20000: "Your device is unresponsive. Please make sure you have selected the correct device and it is connected properly.",
+        20001: "There was a problem during the flashing process. Please make sure you have selected the correct device,  close other tabs that may use it, reload the page and try again. If the problem persists, please contact us.",
+        20002: "There was a problem during the flashing process. Please make sure you have selected the correct device,  close other tabs that may use it, reload the page and try again. If the problem persists, please contact us.",
+        20003: "The connection to your device was lost unexpectedly during the transaction. Please try again.",
+        20004: "There was a problem during the flashing process. Please make sure you have selected the correct device,  close other tabs that may use it, reload the page and try again. If the problem persists, please contact us.",
+        20005: "There was a problem during the flashing process. Please make sure you have selected the correct device,  close other tabs that may use it, reload the page and try again. If the problem persists, please contact us.",
+        20006: "There was a problem during the flashing process. Please make sure you have selected the correct device,  close other tabs that may use it, reload the page and try again. If the problem persists, please contact us.",
+        20007: "There was a problem during the flashing process. Please make sure you have selected the correct device,  close other tabs that may use it, reload the page and try again. If the problem persists, please contact us.",
+        20008: "There was a problem during the flashing process. Please make sure you have selected the correct device,  close other tabs that may use it, reload the page and try again. If the problem persists, please contact us.",
+        20009: "There was a problem during the flashing process. Please make sure you have selected the correct device,  close other tabs that may use it, reload the page and try again. If the problem persists, please contact us.",
+        20010: "Your device sends data faster than your computer can proccess.",
+        20500: "There was a problem during the flashing process. Please make sure you have selected the correct device,  close other tabs that may use it, reload the page and try again. If the problem persists, please contact us."
     };
 
     //Scrolling function
