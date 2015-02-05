@@ -24,6 +24,11 @@
 	"accepts_tls_channel_id": false
     },
     "permissions": [
+        {
+            "usbDevices": [
+                {"vendorId": 6017, "productId": 3231}
+            ]
+        },
         "storage",
 	"serial",
         "usb",
