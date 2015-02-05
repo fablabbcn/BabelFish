@@ -53,6 +53,10 @@ SerialTransaction.prototype.refreshTimeout = function () {
 };
 
 SerialTransaction.prototype.errCb = function (id, var_message) {
+  this.log.error("Oops:", this.errorCallback ? "Will call" : "Wont call");
+  var errCb = (this.errorCallback || function () {}).bind(this);
+  this.errorCallback = null;
+
   this.log.error.apply(this.log, arraify(arguments, 1, "[FINAL ERROR]"));
   this.block = true;
   if (this.previousErrors.length > 0)
@@ -62,8 +66,7 @@ SerialTransaction.prototype.errCb = function (id, var_message) {
   this.previousErrors.push(logargs);
   this.cleanup();
   this.log.error.apply(this.log.error, logargs);
-  if (this.errorCallback)
-    this.errorCallback(id, logargs.join(''));
+  errCb(id, logargs.join(''));
 };
 
 // Should spawn api calls synchronously, that is not in callbacks.
