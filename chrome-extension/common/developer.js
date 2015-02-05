@@ -1,6 +1,7 @@
 // This file contains developer mode specific stuff. Include it at the
 // top of browserify when developing BabelFish
 
+console.warn("In developer mode!");
 var extensionSet;
 
 // Send the extension id to the server to send correct config to the
@@ -12,8 +13,12 @@ function updateExtensionId (urls, config) {
       url = urls.shift();
 
   // Define it if you are an extension
-  if (window.chrome && window.chrome.runtime && chrome.runtime.id)
+  if (window.chrome && window.chrome.runtime && chrome.runtime.id) {
+    console.log("Updating remote extension id:", url);
     ext += "?extensionid="+ chrome.runtime.id;
+  } else {
+    console.log("Reading extension id from remote:", url);
+  }
 
   url = url.replace("*", ext);
   xhr.onreadystatechange = function () {
