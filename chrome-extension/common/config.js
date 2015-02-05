@@ -30,7 +30,7 @@ var config = {
 if (window.chrome && window.chrome.runtime && window.chrome.runtime.id)
   config.extensionId = chrome.runtime.id;
 
-if (window.codebenderChromeDeveleoperMode)
+if (window.codebenderChromeDeveloperMode)
   updateExtensionId(matchUrls, config);
 
 try {
