@@ -258,7 +258,7 @@ SerialTransaction.prototype.onOffDTR = function (cb) {
       self.connectionId, {dtr: before, rts: before},
       function (ok) {
         if (!ok) {
-          self.errCb(self.DTR_RTS_FAIL, "Couldn't send DTR");
+          self.errCb(errno.DTR_RTS_FAIL, "Couldn't send DTR");
           return;
         }
         setTimeout(function() {
