@@ -32,7 +32,9 @@ store-zip: $(CHROME_ZIP)
 .PHONY:
 enable-dev-mode:
 	cp $(DEV_FILE).dev $(DEV_FILE)
+	$(MAKE) browserify
 
 .PHONY:
 disable-dev-mode:
 	cp $(DEV_FILE).nodev $(DEV_FILE)
+	$(MAKE) browserify
