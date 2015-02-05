@@ -127,12 +127,6 @@ function populateConnections() {
 }
 
 setInterval(populateConnections, 1000);
-function cleanLogs() {
-  var lglst = document.getElementsByClassName("loglist");
-  Array.prototype.forEach.call(lglst, function (el) {el.innerHTML = "";});
-}
-
-document.getElementById("cleanlogs").onclick = cleanLogs;
 
 function quickFlash() {
 
@@ -152,3 +146,17 @@ function quickFlash() {
   else
     throw Error("No suitable port found.");
 }
+
+function populateUSBs () {
+  var el = document.getElementById("usbdevs");
+  chrome.usb.getDevices({}, function (devs) {
+    var ihtml = devs.reduce(function (ret, d) {
+      return ret + "<li>" + JSON.stringify(d) + "</li>\n";
+    }, "");
+
+    if (el.innerHTML != ihtml)
+      el.innerHTML = ihtml;
+  });
+}
+
+setInterval(populateUSBs, 2000);
