@@ -17,7 +17,10 @@ CLIENT_FILES =								\
 
 browserify = $(shell which browserify || echo $(dot)/node_modules/.bin/browserify)
 $(browserify): $(dot)/node_modules
-browserify $(dot)/bundles/chrome-client.js: $(CLIENT_FILES) | $(browserify) $(dot)/bundles
+
+.PHONY:
+browserify: $(dot)/bundles/chrome-client.js enable-dev-mode
+$(dot)/bundles/chrome-client.js: $(CLIENT_FILES) | $(browserify) $(dot)/bundles
 	$(browserify) -e $(dot)/codebender/plugin.js | \
 		cat $(DEV_FILE) - $(dot)/codebender/ad-hoc-changes.js $(dot)/codebender/compilerflasher.js \
 		> $(dot)/bundles/chrome-client.js

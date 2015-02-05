@@ -6,3 +6,4 @@ TAGS
 bundles/
 *.zip
 *.tmp
+chrome-extension/common/developer.js
