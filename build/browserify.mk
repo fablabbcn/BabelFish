@@ -19,8 +19,10 @@ browserify = $(shell which browserify || echo $(dot)/node_modules/.bin/browserif
 $(browserify): $(dot)/node_modules
 
 .PHONY:
-browserify: $(dot)/bundles/chrome-client.js enable-dev-mode
+browserify: $(dot)/bundles/chrome-client.js
 $(dot)/bundles/chrome-client.js: $(CLIENT_FILES) $(DEV_FILE) $(dot)/codebender/ad-hoc-changes.js $(dot)/codebender/compilerflasher.js | $(browserify) $(dot)/bundles
 	$(browserify) -e $(dot)/codebender/plugin.js | \
 		cat $(DEV_FILE) - $(dot)/codebender/ad-hoc-changes.js $(dot)/codebender/compilerflasher.js \
 		> $(dot)/bundles/chrome-client.js
+
+$(DEV_FILE): enable-dev-mode
