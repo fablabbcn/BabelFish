@@ -1,15 +1,67 @@
 var utilModule = require("./util"),
     arraify = utilModule.arraify,
-    deepCopy = utilModule.deepCopy;
+    deepCopy = utilModule.deepCopy,
+    errno = require("./errno");
 
-function Transaction () {
+function Transaction (config, finishCallback, errorCallback) {
   this.hooks_ = {};
   this.state = null;
   this.transitions = [];
   this.block = false;
   this.context = {};
+
+  this.config = config;
+  this.finishCallback = finishCallback;
+  this.errorCallback = errorCallback;
+  this.previousErrors = [];
 }
+
 Transaction.prototype = {
+  refreshTimeout: function () {
+    var self = this;
+
+    if (this.timeout) {
+      this.log.log("Clearing old timeout");
+      clearTimeout(this.timeout);
+      this.timeout = null;
+    } else {
+      this.timeoutSecs = 20;
+    }
+
+    this.timeout = setTimeout(function () {
+      self.errCb(errno.IDLE_HOST, "No communication with device for over ", self.timeoutSecs, "s");
+    }, this.timeoutSecs * 1000);
+  },
+
+  errCb: function (id, var_message) {
+    var self = this;
+    this.log.error.apply(this.log, arraify(arguments, 1, "[FINAL ERROR]"));
+    this.block = true;
+    if (this.previousErrors.length > 0)
+      this.log.warn("Previous errors", this.previousErrors);
+
+    var logargs = arraify(arguments, 1, "state: ", this.state, " - ");
+    this.previousErrors.push(logargs);
+    this.cleanup(function () {
+      self.log.error.apply(this.log.error, logargs);
+      if (self.errorCallback)
+        self.errorCallback(id, logargs.join(''));
+    });
+  },
+
+  cleanup: function (callback) {
+    if (this.timeout){
+      this.log.log("Stopping timeout");
+      clearTimeout(this.timeout);
+    }
+    this.timeout = null;
+
+    if (this.localCleanup)
+      this.localCleanup(callback);
+    else if (callback)
+      callback();
+  },
+
   getHook: function (hookIdArray) {
     var key = hookIdArray.sort().join('_');
     return this.hooks_[key];

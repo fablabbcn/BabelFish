@@ -8,24 +8,17 @@ var _create_chrome_client = require('./../../../chrome-extension/client/rpc-clie
 
 function SerialTransaction (config, finishCallback, errorCallback) {
   Transaction.apply(this, arraify(arguments, 2));
-
-  this.config = config;
-  this.init(finishCallback, errorCallback);
+  this.init();
 }
 
 SerialTransaction.prototype = new Transaction();
 
-SerialTransaction.prototype.init = function (finishCallback, errorCallback) {
-  this.previousErrors = [];
+SerialTransaction.prototype.init = function () {
   if (Transaction.prototype.init)
     Transaction.prototype.init.apply(this, arraify(arguments, 2));
 
-  this.finishCallback = finishCallback;
-  this.errorCallback = errorCallback;
-
   this.buffer = new buffer.Buffer();
   this.serial = chrome.serial;
-  this.log = console;
 
   // XXX: Remove me at the end. Maybe this could be in the buffer.
   this.memOps = new MemoryOperations();
@@ -35,46 +28,9 @@ SerialTransaction.prototype.init = function (finishCallback, errorCallback) {
   this.block = false;
 };
 
-
-SerialTransaction.prototype.refreshTimeout = function () {
+// Called by the transaction cleanup
+SerialTransaction.prototype.localCleanup = function (callback) {
   var self = this;
-
-  if (this.timeout) {
-    this.log.log("Clearing old timeout");
-    clearTimeout(this.timeout);
-    this.timeout = null;
-  } else {
-    this.timeoutSecs = 20;
-  }
-
-  this.timeout = setTimeout(function () {
-    self.errCb(errno.IDLE_HOST, "No communication with device for over ", self.timeoutSecs, "s");
-  }, this.timeoutSecs * 1000);
-};
-
-SerialTransaction.prototype.errCb = function (id, var_message) {
-  this.log.error.apply(this.log, arraify(arguments, 1, "[FINAL ERROR]"));
-  this.block = true;
-  if (this.previousErrors.length > 0)
-    this.log.warn("Previous errors", this.previousErrors);
-
-  var logargs = arraify(arguments, 1, "state: ", this.state, " - ");
-  this.previousErrors.push(logargs);
-  this.cleanup();
-  this.log.error.apply(this.log.error, logargs);
-  if (this.errorCallback)
-    this.errorCallback(id, logargs.join(''));
-};
-
-// Should spawn api calls synchronously, that is not in callbacks.
-SerialTransaction.prototype.cleanup = function (callback) {
-  var self = this;
-
-  if (this.timeout){
-    this.log.log("Stopping timeout");
-    clearTimeout(this.timeout);
-  }
-  this.timeout = null;
 
   self.serial.customErrorHandler = null;
   if (this.listenerHandler)
