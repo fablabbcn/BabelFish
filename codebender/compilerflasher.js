@@ -1617,7 +1617,7 @@ window.flashing_errors =
         36000: "Could not connect to your device. Make sure that you have connected it properly, that you have selected the correct settings (device type and port) and try again.",
         1001: "Your device is unresponsive. Please make sure you have selected the correct device and it is connected properly.",
         1002: "Your device is unresponsive. Please make sure you have selected the correct device and it is connected properly.",
-g
+
         20000: "Your device is unresponsive. Please make sure you have selected the correct device and it is connected properly.",
         20001: "There was a problem during the flashing process. Please make sure you have selected the correct device,  close other tabs that may use it, reload the page and try again. If the problem persists, please contact us.",
         20002: "There was a problem during the flashing process. Please make sure you have selected the correct device,  close other tabs that may use it, reload the page and try again. If the problem persists, please contact us.",
