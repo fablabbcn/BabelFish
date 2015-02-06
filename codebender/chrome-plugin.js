@@ -86,8 +86,6 @@ Plugin.prototype = {
           return;
         }
 
-        dbg("Samultaneous threads:", self.readingInfo.samultaneousRequests);
-
         if (!readArg) {
           console.warn("Bad readArg from the low level api.");
           if (badArgCount++ > 30)
