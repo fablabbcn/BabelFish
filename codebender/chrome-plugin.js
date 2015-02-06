@@ -76,11 +76,23 @@ Plugin.prototype = {
       // This will fail if:
       // - More than 3 of this are running simultaneously
       // - More than 10 sonsecutive buffer overflows occur
-      this.readingInfo.handler = function (readArg) {
-        if (!self.readingInfo || !readArg) {
-          console.warn("Bad reading info or read arg. Tends to correct itself.");
+      var badArgCount = 0;
+      this.readingInfo.handler = function thisHandler_ (readArg) {
+        if (!self.readingInfo){
+          console.warn("Bad reading info. Wait or reload the tab.");
+          self.serial.onReceive.removeListener(thisHandler_);
           return;
         }
+
+        if (!readArg) {
+          console.warn("Bad readArg from the low level api.");
+          if (badArgCount++ > 30)
+            self.disconnect();
+
+          return;
+        }
+
+        // Not for us
         if (readArg.connectionId != connectionId)
           return;
 
