@@ -78,11 +78,15 @@ Plugin.prototype = {
       // - More than 10 sonsecutive buffer overflows occur
       var badArgCount = 0;
       this.readingInfo.handler = function thisHandler_ (readArg) {
-        if (!self.readingInfo){
-          console.warn("Bad reading info. Wait or reload the tab.");
-          self.serial.onReceive.removeListener(thisHandler_);
+        // The only reason for the readingInfo to be null should be
+        // that it was cleaned. Just wait for the api to do it's
+        // thing.
+        if (!self.readingInfo) {
+          console.warn("Bad reading info. Wait or reload the page.");
           return;
         }
+
+        dbg("Samultaneous threads:", self.handler.samultaneousRequests);
 
         if (!readArg) {
           console.warn("Bad readArg from the low level api.");
@@ -152,7 +156,7 @@ Plugin.prototype = {
     if (!Number.isInteger(this.readingInfo.samultaneousRequests))
       this.readingInfo.samultaneousRequests = 0;
 
-    if (++this.readingInfo.samultaneousRequests > 500) {
+    if (++this.readingInfo.samultaneousRequests > 50) {
       console.log("Too many requests, reading info:",this.readingInfo);
       // The speed of your device is too high for this serial,
       // may I suggest minicom or something. This happens if we
