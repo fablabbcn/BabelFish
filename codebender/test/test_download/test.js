@@ -160,3 +160,22 @@ function populateUSBs () {
 }
 
 setInterval(populateUSBs, 2000);
+
+function openCloseUSB() {
+  chrome.usb.getDevices({}, function (devs) {
+    console.log("Devices that I will open and close:", devs);
+    if (devs.length == 0) {
+      console.error("No devices connected");
+      return;
+    }
+
+    devs.forEach(function (dev) {
+      chrome.usb.openDevice(dev, function (h) {
+        console.log("Device opened, handler:", h);
+        chrome.usb.closeDevice(h, function () {
+          console.log("Device closed");
+        });
+      });
+    });
+  });
+}
