@@ -97,7 +97,7 @@ STK500Transaction.prototype.flash = function (deviceName, sketchData) {
     function () {
       self.serial.connect(deviceName,
                           {bitrate: self.config.speed, name: deviceName},
-                          self.transitionCb('connectDone', sketchData));
+                          self.transitionCb('megaHack', sketchData));
     });
 };
 
