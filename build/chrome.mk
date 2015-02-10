@@ -1,12 +1,15 @@
 # Targets for running chromeb
 
-chrome = $(shell which chrome || which chromium || echo  ~/Applications/Chromium.app/Contents/MacOS/Chromium)
+chrome = $(shell which chromium-dev || which chrome || which chromium || echo  ~/Applications/Chromium.app/Contents/MacOS/Chromium)
+ifneq ($(debug),)
+debug-arg=--enable-logging --v=5 --enable-logging=stderr
+endif
 chrome-args = --user-data-dir=/tmp/chromium-user-data				\
 --load-extension=$(dot)/CodebenderChromeDeveloper,$(dot)/chrome-extension	\
 --no-first-run,									\
 --no-default-browser-check							\
 --disable-web-security								\
---no-sandbox
+--no-sandbox $(debug-arg)
 chrome-log-dir = $(dot)/chrome-logs
 
 SUBMODULES += $(dot)/CodebenderChromeDeveloper
