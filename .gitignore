@@ -7,3 +7,4 @@ bundles/
 *.zip
 *.tmp
 chrome-extension/common/developer.js
+.dir-locals.el
