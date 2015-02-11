@@ -175,21 +175,27 @@ if (!window.chrome) {
 
       callback.rpcErrorHandler = this.customErrorHandler;
       var self = this,
+          goodErr = new Error("Error in API callback."),
           ret = function (resp) {
             // Ignore free resoponses
-            if (!resp)
-              return true;
+            try {
+              if (!resp)
+                return true;
 
-            // Raise an error if the server reports one.
-            if (resp.error) {
-              self.errorHandler("RPC call failed:" + resp.error, callback);
-            } else {
-              // If there is a callback call it.
-              if (callback) {
-                return callback.apply(null, argsDecode(resp.args));
+              // Raise an error if the server reports one.
+              if (resp.error) {
+                self.errorHandler("RPC call failed:" + resp.error, callback);
+              } else {
+                // If there is a callback call it.
+                if (callback) {
+                  return callback.apply(null, argsDecode(resp.args));
+                }
               }
+              return true;
+            } catch(e) {
+              goodErr.message = e.message;
+              throw goodErr;
             }
-            return true;
           };
 
       ret.callbackId = callback.callbackId;
@@ -224,6 +230,7 @@ if (!window.chrome) {
           // false if it's a cleaner
           clientCallback = !(this.availableCleaners[fnname]) &&
             rich_args.callbackRaw;
+
       dbg("Calling chrome." + this.obj_name + '.' + fnname + "(", args, ")");
 
       // Send the rpc call. _message will deal with the callback

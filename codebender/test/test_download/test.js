@@ -126,7 +126,7 @@ function populateConnections() {
   });
 }
 
-setInterval(populateConnections, 1000);
+var popInt = setInterval(populateConnections, 1000);
 
 function quickFlash() {
 
@@ -159,7 +159,7 @@ function populateUSBs () {
   });
 }
 
-setInterval(populateUSBs, 2000);
+var usbInt = setInterval(populateUSBs, 2000);
 
 var sck_default = 10;
 function transferOut(data) {
