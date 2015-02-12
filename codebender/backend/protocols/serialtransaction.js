@@ -20,10 +20,6 @@ SerialTransaction.prototype.init = function () {
   this.buffer = new buffer.Buffer();
   this.serial = chrome.serial;
 
-  // XXX: Remove me at the end. Maybe this could be in the buffer.
-  this.memOps = new MemoryOperations();
-  this.memOps.CHIP_ERASE_ARR = [0xAC, 0x80, 0x00, 0x00];
-
   this.serial.customErrorHandler = this.errCb.bind(this, 1);
   this.block = false;
 };

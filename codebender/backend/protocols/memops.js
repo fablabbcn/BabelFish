@@ -1,76 +1,26 @@
-// XXX: have the methods generate from avrdude.conf
-
-// Reverse the bits in data
-function bitReverse (data, bits) {
-  var res = [];
-  bits = bits || 8;
-
-  for (var i=0; i < bits; i++)
-    res.push((data >> i) & 1);
-
-  return res.reverse()
-    .reduce(function (bit, ret) {return (ret << 1) | bit;}, 0);
-}
-
-// Split integer {data} into {bytes} bytes.
-function splitBytes (data, bytes, bigEndian) {
+// A op to an array of bytes. Optional parameter addr is the address
+// to fill in the address bits.
+function opToBin(op, addr) {
   var ret = [];
+  addr = addr || 0;
+  for (var i = 0; i < Math.ceil(op.length / 8); i++)
+    ret.push(0x0);
 
-  for (var i = 0; i < bytes; i++) {
-    ret.push(data & 0xff);
-    data >>= 8;
-  }
-
-  return ret;
-}
-
-
-function OpcodeBit (id) {
-  this.id = id.slice(0,1);
-  this.index = Number(id.slice(1));
-  this.value = Number(this.id) || 0;
-}
-
-function OpcodeFactory(bitString) {
-  self.bits = bitString
-    .split(" ")
-    .filter(function (b) {return b.length != 0;})
-    .map(function (b) {return new OpcodeBit(b);});
-}
-
-OpcodeFactory.prototype = {
-  setBits: function (id, data) {
-    var bitArray = [];
-    while (data) {
-      bitArray.push(data & 1);
-      data >>= 1;
+  op.forEach(function (bitStruct, index) {
+    var bit = bitStruct.instBit % 8,
+        byte = Math.floor(bitStruct.instBit / 8);
+    switch (bitStruct.bitType) {
+    case "VALUE":
+      ret[byte] |= bitStruct.value << bit;
+      break;
+    case "ADDRESS":
+      var val = (addr >> bitStruct.bitNo & 0x01);
+      ret[byte] |= val << bit;
+      break;
     }
+  });
 
-    // Set each bit object to a value.
-    this.bits.
-      filter(function (b) {return b.id == id;})
-      .forEach(function (b) {
-        for (var i = 0 ; i < bitArray.length; i++)
-          if (b.index == i)
-            b.value = data[i];
-      });
-  },
-
-  // Byte list of opcoes
-  getCmd: function () {
-    splitBytes(this.bits.reduce(function (val, bit) {
-      return (val << 1 | bit.value);
-    }));
-  }
-};
-
-function MemoryOperations() {
+  return ret.reverse();
 }
 
-MemoryOperations.prototype = {
-  readLow: function(addr) {},
-  readHigh: function(addr) {},
-  read: function(addr) {}
-};
-
-module.exports = MemoryOperations;
+module.exports.opToBin = opToBin;

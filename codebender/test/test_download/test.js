@@ -126,7 +126,7 @@ function populateConnections() {
   });
 }
 
-setInterval(populateConnections, 1000);
+var popInt = setInterval(populateConnections, 1000);
 
 function quickFlash() {
 
@@ -159,4 +159,66 @@ function populateUSBs () {
   });
 }
 
-setInterval(populateUSBs, 2000);
+var usbInt = setInterval(populateUSBs, 2000);
+
+var sck_default = 10;
+function transferOut(data) {
+  return {
+    recipient: "device",
+    direction: "out",
+    requestType: "vendor",
+    request: 5,                 //Flash or eeprom
+    value: sck_default,                   //Delay
+    index: 0,                   //Addess
+    data: data                  //buffer
+  };
+};
+
+function transferIn(op, v1, v2) {
+  return {
+    recipient: "device",
+    direction: "in",
+    requestType: "vendor",
+    request: op,                 //Flash or eeprom
+    value: v1,                   //Delay
+    index: v2,                   //Addess
+    length: 0
+  };
+};
+
+function openCloseUSB() {
+  chrome.usb.getDevices({}, function (devs) {
+    console.log("Devices that I will open and close:", devs);
+    if (devs.length == 0) {
+      console.error("No devices connected");
+      return;
+    }
+
+    devs.forEach(function (dev) {
+      chrome.usb.openDevice(dev, function (h) {
+        console.log("Device opened, handler:", h);
+
+        chrome.usb.controlTransfer(h, transferIn(5, sck_default, 1),  function () {
+          console.log("Got:", arguments);
+          chrome.usb.controlTransfer(h, transferIn(5, sck_default, 0),  function () {
+            console.log("Got:", arguments);
+
+            setTimeout(function () { // TOIMOooT
+
+              chrome.usb.controlTransfer(h, transferIn(5, sck_default, 0),  function () {
+                console.log("Got:", arguments);
+                chrome.usb.controlTransfer(h, transferIn(6, 0, 0),  function () {
+                  console.log("Got:", arguments);
+
+                  chrome.usb.closeDevice(h, function () {
+                    console.log("Device closed");
+                  });
+                });
+              });
+            }, 2000);
+          });
+        });
+      });
+    });
+  });
+}

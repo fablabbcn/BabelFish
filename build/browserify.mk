@@ -1,5 +1,5 @@
 # Browserify related targets
-
+force:
 
 CLIENT_FILES =								\
 	$(dot)/codebender/backend/buffer.js				\
@@ -20,9 +20,9 @@ $(browserify): $(dot)/node_modules
 
 .PHONY:
 browserify: $(dot)/bundles/chrome-client.js
-$(dot)/bundles/chrome-client.js: $(CLIENT_FILES) $(DEV_FILE) $(dot)/codebender/ad-hoc-changes.js $(dot)/codebender/compilerflasher.js | $(browserify) $(dot)/bundles
+$(dot)/bundles/chrome-client.js: $(CLIENT_FILES) $(DEV_FILE) $(dot)/codebender/ad-hoc-changes.js $(dot)/codebender/compilerflasher.js force | $(browserify) $(dot)/bundles
 	($(browserify) -e $(dot)/codebender/plugin.js | \
 		cat $(DEV_FILE) - $(dot)/codebender/ad-hoc-changes.js $(dot)/codebender/compilerflasher.js \
-		> $(dot)/bundles/chrome-client.js) || (rm $(dot)/bundles/chrome-client.js; echo "Maybe run: make enable-dev-mode")
+		> $(dot)/bundles/chrome-client.js) || (rm $(dot)/bundles/chrome-client.js; echo "Maybe run: make enable-dev-mode";false)
 
 $(DEV_FILE): enable-dev-mode

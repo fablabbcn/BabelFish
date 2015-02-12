@@ -106,6 +106,9 @@ struct serial_device usb_serdev_frame =
 
    Usbtiny also uses control messages and sends avt_ops with cmd.
 
+   For in we have USB_ENDPOINT_IN | USB_TYPE_VENDOR | USB_RECIP_DEVICE
+   For out USB_ENDPOINT_OUT | USB_TYPE_VENDOR | USB_RECIP_DEVICE
+
    - Initialize sets sck and sends USBTINY_POWERUP fn with period to
      sck and RESET_HIGH. Then PGM_ENABLE avr_op. Will probably have to
      strace this one.
@@ -127,4 +130,4 @@ struct serial_device usb_serdev_frame =
 	                             // this per byte. Then add the cmd-delay
 		) < 0) {
      #+END_EXAMPLE
-   - usb_out directly maps it's arguments to usb_control_msg
+   - usb_out directly maps it's arguments to usb_control_msg~

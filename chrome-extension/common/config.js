@@ -11,7 +11,7 @@ var config = {
                    cleaner: 'onReceive.removeListener'}]
     },
     usb: {
-      methods: ['getDevices', 'openDevice', 'findDevices', 'closeDevice', 'resetDevice']
+      methods: ['getDevices', 'openDevice', 'findDevices', 'closeDevice', 'resetDevice', 'requestAccess', 'controlTransfer']
     },
     storage: {
       methods: ['local.get', 'local.set'],
