@@ -41,14 +41,14 @@ function USBTinyTransaction(config, finishCallback, errorCallback) {
 
 USBTinyTransaction.prototype = new Transaction();
 
-USBTinyTransaction.prototype.transferOut = function (op, v1, v2, data) {
+USBTinyTransaction.prototype.transferOut = function (op, value, index, data) {
   return {
     recipient: "device",
     direction: "out",
     requestType: "vendor",
     request: op,
-    value: v1,
-    index: v2,
+    value: value,
+    index: index,
     data: buffer.binToBuf(data || [])
   };
 };
@@ -72,7 +72,8 @@ USBTinyTransaction.prototype.write = function (info, cb) {
     info, function (arg) {
       arg.data = buffer.bufToBin(arg.data);
 
-      log.log(arg);
+      log.log('sent:', buffer.hexRep([info.request, info.value, info.index]));
+      log.log('got:', buffer.hexRep(arg.data));
       cb(arg);
     });
 };
@@ -131,14 +132,11 @@ USBTinyTransaction.prototype.programPage = function (offset) {
       info = this.transferOut(this.UT.FLASH_READ, 0, offset,
                               this.hexData.slice(offset, end));
 
-  if (end > this.hexData.length)
-    this.write(info, this.transitionCb("powerDown"));
-  else
-    this.transition('programPage', end);
+  this.write(info, this.transitionCb(
+    end > this.hexData.length ? 'powerDown': 'programPage', end));
 };
 
-USBTinyTransaction.prototype.powerDown = function (ctrlArg) {
-  log.log(this.handler);
+USBTinyTransaction.prototype.powerDown = function (endPage, ctrlArg) {
   this.control(this.UT.POWERDOWN, 0, 0,
                this.transitionCb('endTransaction'));
 };
