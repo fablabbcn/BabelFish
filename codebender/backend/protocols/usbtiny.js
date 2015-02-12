@@ -73,7 +73,6 @@ USBTinyTransaction.prototype.write = function (info, cb) {
       arg.data = buffer.bufToBin(arg.data);
 
       log.log('sent:', buffer.hexRep([info.request, info.value, info.index]));
-      log.log('got:', buffer.hexRep(arg.data));
       cb(arg);
     });
 };
@@ -112,31 +111,57 @@ USBTinyTransaction.prototype.flash = function (_, hexData) {
     }
 
     self.handler = hndls.pop();
-    self.transition('powerUp');
+
+    // Power up to chip erase
+    self.transition('powerUp', self.transitionCb('chipErase'));
   });
 };
 
-USBTinyTransaction.prototype.powerUp = function (cb) {
-  log.log(this.handler);
-  this.control(this.UT.POWERUP, this.sck, this.UT.RESET_LOW,
-               cb || this.transitionCb('programEnable'));
+USBTinyTransaction.prototype.chipErase = function () {
+  var self = this;
+
+  setTimeout(function () {
+    self.operation("CHIP_ERASE", self.transitionCb('powerUp'));
+  }, self.config.avrdude.chipEraseDelay / 1000);
 };
 
-USBTinyTransaction.prototype.programEnable = function () {
-  this.operation("PGM_ENABLE", this.transitionCb('programPage', 0));
+// The callback to use to program(it may be chipErase)
+USBTinyTransaction.prototype.powerUp = function (programCb) {
+  if (typeof programCb !== 'function')
+    programCb = null;
+
+  log.log(this.handler);
+  this.control(this.UT.POWERUP, this.sck, this.UT.RESET_LOW,
+               this.transitionCb('programEnable', programCb));
+};
+
+USBTinyTransaction.prototype.programEnable = function (programCb) {
+  this.operation("PGM_ENABLE", programCb || this.transitionCb('programPage', 0));
 };
 
 USBTinyTransaction.prototype.programPage = function (offset) {
   var page = this.config.avrdude.memory.flash.page_size,
       end = offset + page,
-      info = this.transferOut(this.UT.FLASH_READ, 0, offset,
+      info = this.transferOut(this.UT.FLASH_WRITE, 0, offset,
                               this.hexData.slice(offset, end));
 
-  this.write(info, this.transitionCb(
-    end > this.hexData.length ? 'powerDown': 'programPage', end));
+  this.write(info, this.transitionCb('flushPage', offset, end));
 };
 
-USBTinyTransaction.prototype.powerDown = function (endPage, ctrlArg) {
+USBTinyTransaction.prototype.flushPage = function (offset, end, ctrlArg) {
+  var writePageArr = this.config.avrdude.memory.flash.memops.WRITEPAGE,
+      cmd = ops.opToBin(writePageArr, offset / 2),
+      self = this;
+
+  this.cmd(cmd, function (res) {
+    if (end > self.hexData.length)
+      self.transition('powerDown');
+    else
+      self.transition('programPage', end);
+  });
+};
+
+USBTinyTransaction.prototype.powerDown = function () {
   this.control(this.UT.POWERDOWN, 0, 0,
                this.transitionCb('endTransaction'));
 };

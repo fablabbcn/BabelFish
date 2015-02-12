@@ -21,6 +21,9 @@ function storeAsTwoBytes(n) {
 
 // Hex representation of an integer array.
 function hexRep(intArray) {
+  if (intArray === undefined)
+    return "<undefined>";
+
   var buf = "[";
   var sep = "";
   for (var i = 0; i < intArray.length; ++i) {
