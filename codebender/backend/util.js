@@ -84,8 +84,28 @@ function zip(varArgs) {
   });
 }
 
+function pyzip() {
+  var args = [].slice.call(arguments);
+  var shortest = args.length==0 ? [] : args.reduce(function(a,b){
+    return a.length<b.length ? a : b;
+  });
+
+  return shortest.map(function(_,i){
+    return args.map(function(array){return array[i];});
+  });
+}
+
+function chain (functionArray, final) {
+  if (functionArray.length == 0) {
+    final();
+    return;
+  }
+
+  functionArray[0](chain.bind(null, functionArray.slice(1)));
+}
 
 module.exports.arraify = arraify;
+module.exports.chain = chain;
 module.exports.zip = zip;
 module.exports.deepCopy = deepCopy;
 module.exports.infinitePoll = infinitePoll;

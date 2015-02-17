@@ -1,12 +1,14 @@
 var utilModule = require("./util"),
     arraify = utilModule.arraify,
     deepCopy = utilModule.deepCopy,
+    chain = utilModule.chain,
+    ops = require("./protocols/memops"),
     errno = require("./errno");
 
 function Transaction (config, finishCallback, errorCallback) {
   this.hooks_ = {};
   this.state = null;
-  this.transitions = [];
+  this.stateHistory = [];
   this.block = false;
   this.context = {};
 
@@ -79,7 +81,7 @@ Transaction.prototype = {
     // this.triggerHook(['leave', oldState], this.context);
     this.state = state;
     // this.triggerHook(['enter', this.state], this.context);
-    // this.transitions.push([state, oldState, deepCopy(this.context)]);
+    this.stateHistory.push(state);
 
     if (this.block) {
       console.log("Jumping to state\'", state, "' arguments:", args,"BLOCKED");
@@ -119,6 +121,36 @@ Transaction.prototype = {
     if (!bool) {
       this.cbErr.apply(this, args);
     }
+  },
+
+  // mem is the memory type. It can be 'lfuse' or 'lock' or 'flash' etc
+  // (see avrdude.conf)
+  writeMemory: function (mem, addr, val, cb) {
+    var writeByteArr = this.config.avrdude.memory[mem].memops.WRITE,
+        cmd = ops.opToBin(writeByteArr, {ADDRESS: addr, OUTPUT: val});
+
+    this.cmd(cmd, cb);
+  },
+
+  // Setup the special bits that configuration has values for
+  setupSpecialBits: function (controlBits, cb) {
+    var self = this,
+        knownBits = Object.getOwnPropertyNames(controlBits || {});
+
+    chain(knownBits.map(function (memName) {
+      var addr = 0;
+      return function (nextCallback) {
+        this.log.log("Writing ", self.config.controlBits[memName], "->", memName);
+        self.writeMemory(memName, addr, self.config.controlBits[memName],
+                         nextCallback);
+      };
+    }), cb);
+  },
+
+  // Memory operation based on an array of operation bits
+  operation: function (op, cb) {
+    this.log.log("Running operation:", op);
+    return this.cmd(ops.opToBin(this.config.avrdude.ops[op]), cb);
   }
 };
 

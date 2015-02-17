@@ -1,15 +1,13 @@
 var _create_chrome_client = require('./../../../chrome-extension/client/rpc-client'),
-    Transaction = require('./../transaction').Transaction,
+    USBTransaction = require('./usbtransaction').USBTransaction,
     arraify = require('./../util').arraify,
-    forEachWithCallback = require('./../util').forEachWithCallback,
-    MemoryOperations = require('./memops'),
-    buffer = require("./../buffer"),
     ops = require("./memops"),
+    buffer = require("./../buffer"),
     Log = require('./../logging').Log,
     log = new Log('USBTiny');
 
 function USBTinyTransaction(config, finishCallback, errorCallback) {
-  Transaction.apply(this, arraify(arguments));
+  USBTransaction.apply(this, arraify(arguments));
   this.UT = {
     // Generic requests to the USBtiny
     ECHO: 0,              // echo test
@@ -34,53 +32,10 @@ function USBTinyTransaction(config, finishCallback, errorCallback) {
 
   // Default product and vendor IDs
   this.device = {productId: 0xc9f, vendorId: 0x1781};
-  this.usb = chrome.usb;
   this.log = log;
-  this.sck = 10;
 }
 
-USBTinyTransaction.prototype = new Transaction();
-
-USBTinyTransaction.prototype.transferOut = function (op, value, index, data) {
-  return {
-    recipient: "device",
-    direction: "out",
-    requestType: "vendor",
-    request: op,
-    value: value,
-    index: index,
-    data: buffer.binToBuf(data || [])
-  };
-};
-
-USBTinyTransaction.prototype.transferIn = function (op, val, ind, length) {
-  return {
-    recipient: "device",
-    direction: "in",
-    requestType: "vendor",
-    request: op,
-    value: val,
-    index: ind,
-    length: length || 0
-  };
-};
-
-// Full fledged write with control
-USBTinyTransaction.prototype.write = function (info, cb) {
-  this.usb.controlTransfer(
-    this.handler,
-    info, function (arg) {
-      arg.data = buffer.bufToBin(arg.data);
-
-      log.log('sent:', buffer.hexRep([info.request, info.value, info.index]));
-      cb(arg);
-    });
-};
-
-// A simple control message with 2 values (index, value that is)
-USBTinyTransaction.prototype.control = function (op, v1, v2, cb) {
-  this.write(self.transferIn(op, v1, v2), cb);
-};
+USBTinyTransaction.prototype = new USBTransaction();
 
 USBTinyTransaction.prototype.cmd = function (cmd, cb) {
   log.log("Sending command:", buffer.hexRep(cmd));
@@ -93,16 +48,16 @@ USBTinyTransaction.prototype.cmd = function (cmd, cb) {
   this.write(info, cb);
 };
 
-USBTinyTransaction.prototype.operation = function (op, cb) {
-  log.log("Running operation:", op);
-  return this.cmd(ops.opToBin(this.config.avrdude.ops[op]), cb);
-};
+
+// === Initial superstate ===
+// flash -> powerUp -> programEnable -> setFuses -> chipErase ->
+//          powerUp -> programEnable -> [program]
 
 // First argument is ignored for compatibility with serial flashes tha
 // accept the device name.
 USBTinyTransaction.prototype.flash = function (_, hexData) {
   var self = this;
-  self.hexData = hexData;
+  this.hexData = hexData;
 
   self.usb.findDevices(self.device, function (hndls) {
     if (hndls.length == 0) {
@@ -111,10 +66,33 @@ USBTinyTransaction.prototype.flash = function (_, hexData) {
     }
 
     self.handler = hndls.pop();
-
     // Power up to chip erase
-    self.transition('powerUp', self.transitionCb('chipErase'));
+    self.transition('powerUp');
   });
+};
+
+// The callback to use to program(it may be chipErase)
+USBTinyTransaction.prototype.powerUp = function () {
+  log.log(this.handler);
+  this.control(this.UT.POWERUP, this.sck, this.UT.RESET_LOW,
+               this.transitionCb('programEnable'));
+};
+
+USBTinyTransaction.prototype.programEnable = function () {
+  var cb;
+
+  // If the the fuses are already set jump to programming
+  if (this.stateHistory.indexOf('setFuses') == -1)
+    cb = this.transitionCb('setFuses');
+  else
+    cb = this.transitionCb('programPage', 0);
+
+  this.operation("PGM_ENABLE", cb);
+};
+
+USBTinyTransaction.prototype.setFuses = function () {
+  this.setupSpecialBits(self.config.controlBits,
+                        this.transitionCb('chipErase'));
 };
 
 USBTinyTransaction.prototype.chipErase = function () {
@@ -124,21 +102,7 @@ USBTinyTransaction.prototype.chipErase = function () {
     self.operation("CHIP_ERASE", self.transitionCb('powerUp'));
   }, self.config.avrdude.chipEraseDelay / 1000);
 };
-
-// The callback to use to program(it may be chipErase)
-USBTinyTransaction.prototype.powerUp = function (programCb) {
-  if (typeof programCb !== 'function')
-    programCb = null;
-
-  log.log(this.handler);
-  this.control(this.UT.POWERUP, this.sck, this.UT.RESET_LOW,
-               this.transitionCb('programEnable', programCb));
-};
-
-USBTinyTransaction.prototype.programEnable = function (programCb) {
-  this.operation("PGM_ENABLE", programCb || this.transitionCb('programPage', 0));
-};
-
+// === Programming superstate ===
 USBTinyTransaction.prototype.programPage = function (offset) {
   var page = this.config.avrdude.memory.flash.page_size,
       end = offset + page,
@@ -150,7 +114,7 @@ USBTinyTransaction.prototype.programPage = function (offset) {
 
 USBTinyTransaction.prototype.flushPage = function (offset, end, ctrlArg) {
   var writePageArr = this.config.avrdude.memory.flash.memops.WRITEPAGE,
-      cmd = ops.opToBin(writePageArr, offset / 2),
+      cmd = ops.opToBin(writePageArr, {ADDRESS: offset / 2}),
       self = this;
 
   this.cmd(cmd, function (res) {
@@ -160,6 +124,8 @@ USBTinyTransaction.prototype.flushPage = function (offset, end, ctrlArg) {
       self.transition('programPage', end);
   });
 };
+
+// === Final superstate
 
 USBTinyTransaction.prototype.powerDown = function () {
   this.control(this.UT.POWERDOWN, 0, 0,

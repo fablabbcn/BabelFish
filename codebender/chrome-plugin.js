@@ -23,7 +23,6 @@ function Plugin() {
 
   this.bufferSize = 100;
 
-  var self = this;
   // self.serial.onReceiveError.addListener(function (info) {
   //   console.warn("Failed connection: " + info.connectionId +" ( " + info.error + " )");
   //   self.serial.getConnections(function (connections) {
@@ -198,28 +197,35 @@ Plugin.prototype = {
     });
   },
 
-  flashWithProgrammer: function (device, code, maxsize, string,
-                                   programmerData, mcu, flash_callback) {
-    console.error("Not implemented");
+  flashWithProgrammer: function (device, code, maxsize, protocol,
+                                 programmerData, mcu, cb) {
+    // XXX: maybe fail if this is not a programmer.
+    this.flash (device, code, maxsize, protocol, false, 0, mcu, cb);
   },
 
   flashBootloader: function (device, protocol, speed, force,
-                               delay, high_fuses, low_fuses,
-                               extended_fuses, unlock_bits, mcu,
-                               cb) {
+                             delay, high_fuses, low_fuses,
+                             extended_fuses, unlock_bits, mcu,
+                             cb) {
     // Validate the data
     // Async run doFlashWithProgrammer
-    console.error("Not implemeted");
+
+    var _ = null,          //Dont care values
+        controlBits = {
+          hfuse: high_fuses,
+          lfuse: low_fuses,
+          efuse: extended_fuses,
+          ulock: unlock_bits
+        };
+
+    this.flash (device, this.savedCode, _, protocol, _, _, mcu,
+                cb, {controlBits: controlBits});
   },
 
-  flash: function (device,
-                   code,
-                   maxsize,
-                   protocol,
-                   disable_flushing,
-                   speed,
-                   mcu,
-                   cb) {
+  // General purpose flashing. User facing for serial flash. The
+  // _extraConfig property is for internal use
+  flash: function (device, code, maxsize, protocol, disable_flushing,
+                   speed, mcu, cb, _extraConfig) {
 
     if (code.length > maxsize) {
       cb(1, "Program too large (" + code.length + ">"+ maxsize + ")");
@@ -255,6 +261,11 @@ Plugin.prototype = {
           self.transaction = null;
         };
 
+    // Override or add properties.
+    Object.getOwnPropertyNames(_extraConfig || {}).forEach(function (key) {
+      config[key] = _extraConfig[key];
+    });
+
     // XXX: Wait for it to finish?
     if(self.transaction)
       self.transaction.cleanup();
@@ -265,8 +276,8 @@ Plugin.prototype = {
           "Protocol:", protocols,
           "Device:", device);
 
-      // Binary string to byte array
-      if (self.binaryMode) {
+      // Binary string to byte array if it is actually base64
+      if (self.binaryMode && typeof code === 'string') {
         code = Base64Binary.decode(code);
         code = Array.prototype.slice.call(code);
       }
@@ -456,6 +467,20 @@ Plugin.prototype = {
   // Internals
   serialMonitorSetStatus: function () {
     this.disconnect();
+  },
+
+  saveHex: function (hexString) {
+    // Parse hex into a byte array and flash should be smart enough to
+    // recognize a byte array.
+    var prev;
+    this.savedCode = hexString.reduce(function (b, c, index) {
+      if (index % 2) {
+        prev = c;
+        return b;
+      } else {
+        return b.concat([Number.parseInt(prev + c)]);
+      }
+    });
   }
 };
 
