@@ -909,7 +909,7 @@ compilerflasher = function(lf){
         }
 
         this.serialSend = function() {
-            if (!window.chrome && this.codebender_plugin.version <= "1.6.0.8")
+            if (window.chrome || (!window.chrome && this.codebender_plugin.version <= "1.6.0.8"))
                 this.codebender_plugin.serialWrite($("#text2send").val());
             else
                 this.codebender_plugin.serialWrite($("#text2send").val(), this.serialMonitorPort);
@@ -1596,40 +1596,39 @@ function logging()
 
 window.flashing_errors =
     {
-        1:"Could not connect to your device. Make sure that you have connected it properly, that you have selected the correct settings (device type and port) and try again.",
-        256:"Could not connect to your device. Make sure that you have connected it properly, that you have selected the correct settings (device type and port) and try again.",
-        "-1":"Couldn’t find an Arduino on the selected port. If you are using Leonardo check that you have the correct port selected. If it is correct, try pressing the board’s reset button after initiating the upload",
-        "-2":"There was a problem programming your Arduino. If you are using a non-English Windows version, or username please contact us.",
-        "-204":"Could not program your device, the process timed out. Make sure that you have connected it properly, that you have selected the correct settings (device type and port) and try again.",
-        "-22":"The selected port seems to be in use. Please check your board connection, and make sure that you are not using it from some other application, you don't have an open serial monitor.",
-        "-23":"Another flashing process is still active. Please wait until it is done and try again.",
-        "-55":"The specified port might not be available. Please check if it is used by another application. If the problem persists, unplug your device and plug it again.",
-        "-56":"The specified port is in use or you do not have enough permissions to use the device. Please check if it is used by another application or correct its permissions.",
-        "-57":"The specified port might not be available. Please check if it is used by another application. If the problem persists, unplug your device and plug it again.",
-        "126":"Something seems to be wrong with the plugin installation. You need to install the plugin again.",
-        "127":"Something seems to be wrong with the plugin installation. You need to install the plugin again.",
-        "-200":"There was a problem during the flashing process. Please try again, or contact us if the problem persists.",
-        100 :"Could not connect to your device. Make sure that you have connected it properly, that you have selected the correct settings (device type and port) and try again.",
-        32001:"The selected port seems to be in use. Please make sure that you are not using it from some other program.",
-        33005:"This baudrate is not supported by the operating system.",
-        2001:"The selected port seems to be in use. Please make sure that you are not using it from some other program.",
-        3005:"This baudrate is not supported by the operating system.",
+        1: "Could not connect to your device. Make sure that you have connected it properly, that you have selected the correct settings (device type and port) and try again.",
+        256: "Could not connect to your device. Make sure that you have connected it properly, that you have selected the correct settings (device type and port) and try again.",
+        "-1": "Couldn’t find an Arduino on the selected port. If you are using Leonardo check that you have the correct port selected. If it is correct, try pressing the board’s reset button after initiating the upload.",
+        "-2": "There was a problem programming your Arduino. If you are using a non-English Windows version, or username please contact us.",
+        "-204": "Could not program your device, the process timed out. Make sure that you have connected it properly, that you have selected the correct settings (device type and port) and try again.",
+        "-22": "The selected port seems to be in use. Please check your board connection, and make sure that you are not using it from some other application or you don't have an open serial monitor.",
+        "-23": "Another flashing process is still active. Please wait until it is done and try again.",
+        "-55": "The specified port might not be available. Please check if it is used by another application. If the problem persists, unplug your device and plug it again.",
+        "-56": "The specified port is in use or you do not have enough permissions to use the device. Please check if it is used by another application or correct its permissions.",
+        "-57": "The specified port might not be available. Please check if it is used by another application. If the problem persists, unplug your device and plug it again.",
+        "126": "Something seems to be wrong with the plugin installation. You need to install the plugin again.",
+        "127": "Something seems to be wrong with the plugin installation. You need to install the plugin again.",
+        "-200": "There was a problem during the flashing process. Please try again, or contact us if the problem persists.",
+        100 : "Could not connect to your device. Make sure that you have connected it properly, that you have selected the correct settings (device type and port) and try again.",
+        32001: "The selected port seems to be in use. Please make sure that you are not using it from some other program.",
+        33005: "This baudrate is not supported by the operating system.",
+        2001: "The selected port seems to be in use. Please make sure that you are not using it from some other program.",
+        3005: "This baudrate is not supported by the operating system.",
         36000: "Could not connect to your device. Make sure that you have connected it properly, that you have selected the correct settings (device type and port) and try again.",
         1001: "Your device is unresponsive. Please make sure you have selected the correct device and it is connected properly.",
         1002: "Your device is unresponsive. Please make sure you have selected the correct device and it is connected properly.",
-
         20000: "Your device is unresponsive. Please make sure you have selected the correct device and it is connected properly.",
-        20001: "There was a problem during the flashing process. Please make sure you have selected the correct device,  close other tabs that may use it, reload the page and try again. If the problem persists, please contact us.",
-        20002: "There was a problem during the flashing process. Please make sure you have selected the correct device,  close other tabs that may use it, reload the page and try again. If the problem persists, please contact us.",
+        20001: "There was a problem during the flashing process. Please make sure you have selected the correct device, close other tabs that may use it, reload the page and try again. If the problem persists, please contact us.",
+        20002: "There was a problem during the flashing process. Please make sure you have selected the correct device, close other tabs that may use it, reload the page and try again. If the problem persists, please contact us.",
         20003: "The connection to your device was lost unexpectedly during the transaction. Please try again.",
-        20004: "There was a problem during the flashing process. Please make sure you have selected the correct device,  close other tabs that may use it, reload the page and try again. If the problem persists, please contact us.",
-        20005: "There was a problem during the flashing process. Please make sure you have selected the correct device,  close other tabs that may use it, reload the page and try again. If the problem persists, please contact us.",
-        20006: "There was a problem during the flashing process. Please make sure you have selected the correct device,  close other tabs that may use it, reload the page and try again. If the problem persists, please contact us.",
-        20007: "There was a problem during the flashing process. Please make sure you have selected the correct device,  close other tabs that may use it, reload the page and try again. If the problem persists, please contact us.",
-        20008: "There was a problem during the flashing process. Please make sure you have selected the correct device,  close other tabs that may use it, reload the page and try again. If the problem persists, please contact us.",
-        20009: "There was a problem during the flashing process. Please make sure you have selected the correct device,  close other tabs that may use it, reload the page and try again. If the problem persists, please contact us.",
+        20004: "There was a problem during the flashing process. Please make sure you have selected the correct device, close other tabs that may use it, reload the page and try again. If the problem persists, please contact us.",
+        20005: "There was a problem during the flashing process. Please make sure you have selected the correct device, close other tabs that may use it, reload the page and try again. If the problem persists, please contact us.",
+        20006: "There was a problem during the flashing process. Please make sure you have selected the correct device, close other tabs that may use it, reload the page and try again. If the problem persists, please contact us.",
+        20007: "There was a problem during the flashing process. Please make sure you have selected the correct device, close other tabs that may use it, reload the page and try again. If the problem persists, please contact us.",
+        20008: "There was a problem during the flashing process. Please make sure you have selected the correct device, close other tabs that may use it, reload the page and try again. If the problem persists, please contact us.",
+        20009: "There was a problem during the flashing process. Please make sure you have selected the correct device, close other tabs that may use it, reload the page and try again. If the problem persists, please contact us.",
         20010: "Your device sends data faster than your computer can proccess.",
-        20500: "There was a problem during the flashing process. Please make sure you have selected the correct device,  close other tabs that may use it, reload the page and try again. If the problem persists, please contact us."
+        20500: "There was a problem during the flashing process. Please make sure you have selected the correct device, close other tabs that may use it, reload the page and try again. If the problem persists, please contact us."
     };
 
     //Scrolling function
