@@ -215,11 +215,11 @@ Plugin.prototype = {
           hfuse: high_fuses,
           lfuse: low_fuses,
           efuse: extended_fuses,
-          ulock: unlock_bits
+          lock: unlock_bits
         };
 
-    this.flash (device, this.savedCode, _, protocol, _, _, mcu,
-                cb, {controlBits: controlBits});
+    this.flash(device, this.savedCode, _, protocol, _, _, mcu,
+               cb, {controlBits: controlBits, chipErase: true});
   },
 
   // General purpose flashing. User facing for serial flash. The

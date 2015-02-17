@@ -132,6 +132,15 @@ Transaction.prototype = {
     this.cmd(cmd, cb);
   },
 
+  // mem is the memory type. It can be 'lfuse' or 'lock' or 'flash' etc
+  // (see avrdude.conf). Cb receives {data: byteArray}
+  readMemory: function (mem, addr, cb) {
+    var readByteArr = this.config.avrdude.memory[mem].memops.READ,
+        cmd = ops.opToBin(readByteArr, {ADDRESS: addr});
+
+    this.cmd(cmd, cb);
+  },
+
   // Setup the special bits that configuration has values for
   setupSpecialBits: function (controlBits, cb) {
     var self = this,

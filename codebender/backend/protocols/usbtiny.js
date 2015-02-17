@@ -50,8 +50,8 @@ USBTinyTransaction.prototype.cmd = function (cmd, cb) {
 
 
 // === Initial superstate ===
-// flash -> powerUp -> programEnable -> setFuses -> chipErase ->
-//          powerUp -> programEnable -> [program]
+// flash -> [powerUp -> programEnable -> chipErase -> setFuses ->]
+//          powerUp -> programEnable -> <program>
 
 // First argument is ignored for compatibility with serial flashes tha
 // accept the device name.
@@ -81,9 +81,9 @@ USBTinyTransaction.prototype.powerUp = function () {
 USBTinyTransaction.prototype.programEnable = function () {
   var cb;
 
-  // If the the fuses are already set jump to programming
-  if (this.stateHistory.indexOf('setFuses') == -1)
-    cb = this.transitionCb('setFuses');
+  // If we are instructed to erse and haven't done so yet.
+  if (this.config.chipErase && this.stateHistory.indexOf('chipErase') == -1)
+    cb = this.transitionCb('chipErase');
   else
     cb = this.transitionCb('programPage', 0);
 
@@ -92,14 +92,17 @@ USBTinyTransaction.prototype.programEnable = function () {
 
 USBTinyTransaction.prototype.setFuses = function () {
   this.setupSpecialBits(self.config.controlBits,
-                        this.transitionCb('chipErase'));
+                        this.transitionCb('powerUp'));
 };
 
+// Chip erase destroys the flash, the lock bits and maybe the eeprom
+// (depending on the value of the fuses). The fuses themselves are
+// untouched.
 USBTinyTransaction.prototype.chipErase = function () {
   var self = this;
 
   setTimeout(function () {
-    self.operation("CHIP_ERASE", self.transitionCb('powerUp'));
+    self.operation("CHIP_ERASE", self.transitionCb('setFuses'));
   }, self.config.avrdude.chipEraseDelay / 1000);
 };
 // === Programming superstate ===
