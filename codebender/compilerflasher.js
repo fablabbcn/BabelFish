@@ -115,14 +115,6 @@ compilerflasher = function(lf){
 
         this.doflashBootloader = function(programmer, board)
         {
-            // Remove when BabelFish implements programmers
-            if (window.chrome)
-            {
-                this.owner.setOperationOutput("Programmers are not supported by the BabelFish extention yet.");
-                this.owner.eventManager.fire('flash_failed', "Programmers are not supported by the BabelFish extention yet.");
-                return;
-            }
-
             this.codebender_plugin.flashBootloader(
                     (this.portslist.selectedIndex == -1 || programmer['communication'] != 'serial')?'':this.portslist.options[this.portslist.selectedIndex].text,
                     programmer['protocol'],
@@ -1370,14 +1362,6 @@ compilerflasher = function(lf){
         url = "http\x3A\x2F\x2Flocalhost\x2Futilities\x2Flogdb\x2F41\x2FRUN_WITH_PROG_BUTTON_META";
         url = url.replace("RUN_WITH_PROG_BUTTON_META", JSON.stringify({ "port":$("#cb_cf_ports").val(), "board":$("#cb_cf_boards option:selected").text(), "programmer":$("#cb_cf_programmers option:selected").text(), "tabID": this.pluginHandler.tabID } ));
         $.get(url);
-
-        // Remove when BabelFish implements programmers
-        if (window.chrome)
-        {
-            this.setOperationOutput("Programmers are not supported by the BabelFish extention yet.");
-            this.eventManager.fire('flash_failed', "Programmers are not supported by the BabelFish extention yet.");
-            return;
-        }
 
         if(this.pluginHandler.canflash(this.selectedBoard, this.selectedProgrammer, true))
         {

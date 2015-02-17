@@ -137,13 +137,7 @@ USBTinyTransaction.prototype.powerDown = function () {
 
 USBTinyTransaction.prototype.endTransaction = function (ctrlArg) {
   var self = this;
-
-  if (this.handler) {
-    this.usb.closeDevice(this.handler, function () {
-      log.log("Handler closed");
-      self.handler = null;
-    });
-  }
+  this.cleanup(this.finishCallback);
 };
 
 module.exports.USBTinyTransaction = USBTinyTransaction;

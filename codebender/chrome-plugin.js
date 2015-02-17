@@ -204,7 +204,8 @@ Plugin.prototype = {
   },
 
   flashWithProgrammer: function (device, code, maxsize, protocol,
-                                 programmerData, mcu, cb) {
+                                 communication, speed, force, delay,
+                                 mcu, cb) {
     // XXX: maybe fail if this is not a programmer.
     this.flash (device, code, maxsize, protocol, false, 0, mcu, cb);
   },
@@ -292,22 +293,6 @@ Plugin.prototype = {
     });
   },
 
-  flashWithProgrammer: function (selectedPort,
-                                 binary,
-                                 maximum_size,
-                                 protocol,
-                                 communication,
-                                 speed,
-                                 force,
-                                 delay,
-                                 mcu,
-                                 cb) {
-    // XXX: first argument is from (no used)
-    //      second argument is progress, currently 1 (change with actual progress)
-    cb(null, 1);
-  },
-
-  // Wrongly sync methods
 
   // Return a string of the port list
   // XXX: this is abused by compilerflasher
