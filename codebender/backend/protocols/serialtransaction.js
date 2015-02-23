@@ -7,7 +7,7 @@ var _create_chrome_client = require('./../../../chrome-extension/client/rpc-clie
     errno = require("./../errno");
 
 function SerialTransaction (config, finishCallback, errorCallback) {
-  Transaction.apply(this, arraify(arguments, 2));
+  Transaction.apply(this, arraify(arguments));
   this.init();
 }
 
