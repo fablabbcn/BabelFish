@@ -1,3 +1,108 @@
+var util = require("./util");
+
+function mergeChunks (blob, chunk) {
+  // Empty chunks are as good as null
+  if (blob && blob.data.length == 0)
+    blob = null;
+
+  if (chunk && chunk.data.length == 0)
+    chunk = null;
+
+  // Preserve data consistency by returning an as-good-as-null
+  // chunk.
+  if (chunk === null || blob === null)
+    return blob || chunk || {addr: 0, data: []};
+
+  var minAddr = Math.min(chunk.addr, blob.addr),
+      maxAddr = Math.max(chunk.addr, blob.addr),
+
+      // Make sure the array has the length maxAddr - minAddr
+      data = util.makeArrayOf(0, blob.addr - minAddr)
+        .concat(blob.data)
+        .concat(util.makeArrayOf(0, maxAddr - blob.addr));
+
+  chunk.data.forEach(function (byte, chunkRelAddr) {
+    // Absoltue address - blob offset = blob relative
+    data[(chunk.addr + chunkRelAddr) - minAddr] = byte;
+  });
+
+  return {
+    addr: minAddr,
+    data: data
+  };
+}
+
+function hexToBytes(strData) {
+  var tmp;
+  return util.arraify(strData).reduce(function (arr, c, i) {
+    // Pair hex digits and parse them.
+    if (i % 2) {
+      return arr.concat([Number.parseInt(tmp + c, 16)]);
+    } else {
+      tmp = c;
+      return arr;
+    }
+  }, []);
+}
+
+var offsetLin = 0;
+// Do nothing (eg eof line) is null
+function lineToChunk (line) {
+  if (line.length == 0)
+    return null;
+
+  var index = 0,
+      // Types
+      DATA = 0,
+      EOF = 1,
+      EXTENDED_SEG_ADDR = 2,
+      START_SEG_ADDR = 3,
+      EXTENDED_LIN_ADDR = 4,
+      START_LIN_ADDR = 5;
+
+  function rng(length) {
+    var start = index, end = index + length;
+    index = end;
+    return line.substring(start, end);
+  }
+
+  var start = rng(1),
+      length = Number.parseInt(rng(2), 16),
+      addr = Number.parseInt(rng(4), 16),
+      type = Number.parseInt(rng(2), 16),
+      strData = rng(length * 2), // two hex characters = one byte
+      // Check all the byts preceeding the checksum
+      actualCheck = hexToBytes(line.substring(1, index))
+        .reduce(function (a, b) {
+          return a+b;
+        }, 0) & 0xff,
+      checksum = Number.parseInt(rng(2), 16),
+      byteData = hexToBytes(strData);
+
+  util.assert(start == ':', "Hex file line did not start with ':': " + line);
+
+  // 2's complement checksum, ie negative sum.
+  util.assert(checksum == ((-actualCheck) & 0xff),
+              "Checksum failed for line: " + line);
+
+  switch (type) {
+  case DATA:
+    return {addr: addr + offsetLin, data: byteData};
+    break;
+  case EXTENDED_LIN_ADDR:
+    offsetLin = Number.parseInt(strData) << 16;
+  default:
+    // XXX: ignore all other types.
+    return null;
+  }
+}
+
+function ParseHexFile(hexString) {
+  return hexString.split("\n")
+    .map(lineToChunk)
+    .reduce(mergeChunks, null) || {addr: 0, data: []};
+}
+
 // Parse an Intel hex file (http://en.wikipedia.org/wiki/Intel_HEX).
 //
 // For simplicity: Requires that the hex file specifies a single, contiguous
@@ -11,7 +116,7 @@
 // TODOs:
 // - Validate checksum
 // - Handle other record types
-function ParseHexFile(input) {
+function _ParseHexFile(input) {
   var kStartcodeBytes = 1;
   var kSizeBytes = 2;
   var kAddressBytes = 4;
@@ -94,8 +199,8 @@ function ParseHexFile(input) {
     if (line.length > ptr + kChecksumBytes + 1) {
       var leftover = line.substring(ptr, line.length);
       if (!leftover.match("$\w+^")) {
-          console.log("Bad line [" + i + "]. leftover data: " + line);
-          return "FAIL";
+        console.log("Bad line [" + i + "]. leftover data: " + line);
+        return "FAIL";
       }
     }
 
@@ -107,6 +212,7 @@ function ParseHexFile(input) {
     } else if (recordTypeHex == kDataRecord) {
       if (address != nextAddress) {
         console.log("I need contiguous addresses");
+        console.log(input);
         return "FAIL";
       }
       nextAddress = address + dataSize;
