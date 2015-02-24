@@ -181,7 +181,7 @@ STK500Transaction.prototype.readSignature = function (data) {
 };
 
 STK500Transaction.prototype.programFlash = function (offset, pgSize) {
-  var data = this.sketchData;
+  var data = this.sketchData, memOffset = this.config.offset || 0;
   log.log("program flash: data.length: ", data.length, ", offset: ", offset, ", page size: ", pgSize);
 
   if (offset >= data.length) {
@@ -191,7 +191,7 @@ STK500Transaction.prototype.programFlash = function (offset, pgSize) {
   }
 
   var payload = this.padOrSlice(data, offset, pgSize),
-      addressBytes = buffer.storeAsTwoBytes(offset / 2),
+      addressBytes = buffer.storeAsTwoBytes((memOffset + offset) / 2),
       sizeBytes = buffer.storeAsTwoBytes(pgSize),
       kFlashMemoryType = 0x46;
 
