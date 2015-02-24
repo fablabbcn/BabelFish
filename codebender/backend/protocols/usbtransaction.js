@@ -30,14 +30,14 @@ USBTransaction.prototype.transferOut = function (op, value, index, data) {
   };
 };
 
-USBTransaction.prototype.transferIn = function (op, val, ind, length) {
+USBTransaction.prototype.transferIn = function (op, value, index, length) {
   return {
     recipient: "device",
     direction: "in",
     requestType: "vendor",
     request: op,
-    value: val,
-    index: ind,
+    index: index,
+    value: value,
     length: length || 0
   };
 };
