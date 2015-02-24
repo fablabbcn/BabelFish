@@ -2,7 +2,7 @@
 
 var protocols = require('./backend/protocols').protocols,
     util = require('./backend/util'),
-    _create_hex_parser = require('./backend/hexparser'),
+    hexutil = require('./backend/hexparser'),
     avrdudeconf = require('./backend/avrdudeconf'),
     errno = require('./backend/errno');
 
@@ -207,26 +207,36 @@ Plugin.prototype = {
                                  communication, speed, force, delay,
                                  mcu, cb) {
     // XXX: maybe fail if this is not a programmer.
-    this.flash (device, code, maxsize, protocol, false, 0, mcu, cb);
+    this.flash(device, code, maxsize, protocol, false, 0, mcu, cb);
   },
 
-  flashBootloader: function (device, protocol, speed, force,
+  flashBootloader: function (device, protocol, communication, speed, force,
                              delay, high_fuses, low_fuses,
-                             extended_fuses, unlock_bits, mcu,
+                             extended_fuses, unlock_bits, lock_bits, mcu,
                              cb) {
     // Validate the data
     // Async run doFlashWithProgrammer
 
+    function toint(hex) {
+      return hex ? Number.parseInt(hex.substring(2), 16) : null;
+    }
+
+    // controlBits are the state of the control bits during th
+    // bootloader flashing and the clearControlBits are the state of
+    // the control bits after the flash.
     var _ = null,          //Dont care values
         controlBits = {
-          hfuse: high_fuses,
-          lfuse: low_fuses,
-          efuse: extended_fuses,
-          lock: unlock_bits
+          hfuse: toint(high_fuses),
+          lfuse: toint(low_fuses),
+          efuse: toint(extended_fuses),
+          lock: toint(unlock_bits)
         };
 
-    this.flash(device, this.savedCode, _, protocol, _, _, mcu,
-               cb, {controlBits: controlBits, chipErase: true});
+    this.flash(device, this.savedBlob.data, _, protocol, _, _, mcu,
+               cb, {controlBits: controlBits,
+                    cleanControlBits: {lock: toint(lock_bits)},
+                    chipErase: true,
+                    offset:this.savedBlob.addr});
   },
 
   // General purpose flashing. User facing for serial flash. The
@@ -234,7 +244,8 @@ Plugin.prototype = {
   flash: function (device, code, maxsize, protocol, disable_flushing,
                    speed, mcu, cb, _extraConfig) {
 
-    if (code.length > maxsize) {
+    // If maxsize is not provided god with us.
+    if (maxsize && code.length > maxsize) {
       cb(1, "Program too large (" + code.length + ">"+ maxsize + ")");
       return;
     }
@@ -402,10 +413,6 @@ Plugin.prototype = {
     });
   },
 
-  saveToHex: function (strData) {
-    console.error("Not implemented");
-  },
-
   serialWrite: function (strData, cb) {
     var self = this;
 
@@ -460,18 +467,10 @@ Plugin.prototype = {
     this.disconnect();
   },
 
-  saveHex: function (hexString) {
+  saveToHex: function (hexString) {
     // Parse hex into a byte array and flash should be smart enough to
     // recognize a byte array.
-    var prev;
-    this.savedCode = hexString.reduce(function (b, c, index) {
-      if (index % 2) {
-        prev = c;
-        return b;
-      } else {
-        return b.concat([Number.parseInt(prev + c)]);
-      }
-    });
+    this.savedBlob = hexutil.ParseHexFile(hexString);
   }
 };
 
