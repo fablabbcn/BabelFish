@@ -3,6 +3,7 @@ var utilModule = require("./util"),
     deepCopy = utilModule.deepCopy,
     chain = utilModule.chain,
     ops = require("./protocols/memops"),
+    buffer = require("./buffer"),
     errno = require("./errno");
 
 function Transaction (config, finishCallback, errorCallback) {
@@ -133,12 +134,14 @@ Transaction.prototype = {
   },
 
   // mem is the memory type. It can be 'lfuse' or 'lock' or 'flash' etc
-  // (see avrdude.conf). Cb receives {data: byteArray}
+  // (see avrdude.conf). Cb receives a byte array.
   readMemory: function (mem, addr, cb) {
     var readByteArr = this.config.avrdude.memory[mem].memops.READ,
         cmd = ops.opToBin(readByteArr, {ADDRESS: addr});
 
-    this.cmd(cmd, cb);
+    this.cmd(cmd, function (resp) {
+      cb(ops.extractOpData('OUTPUT', readByteArr, resp.data));
+    });
   },
 
   // Setup the special bits that configuration has values for
@@ -146,12 +149,32 @@ Transaction.prototype = {
     var self = this,
         knownBits = Object.getOwnPropertyNames(controlBits || {});
 
+    this.log.log("Will write control bits:", controlBits);
     chain(knownBits.map(function (memName) {
       var addr = 0;
+
       return function (nextCallback) {
-        this.log.log("Writing ", self.config.controlBits[memName], "->", memName);
-        self.writeMemory(memName, addr, self.config.controlBits[memName],
-                         nextCallback);
+        if (controlBits[memName] !== null) {
+          self.log.log("Writing ", buffer.hexRep([controlBits[memName]]),
+                       "->", memName);
+
+          function verifyMem (cb) {
+            self.readMemory(memName, addr, function (resp) {
+              console.log("Read memory", memName, ":", buffer.hexRep(resp));
+              if (resp[0] == controlBits[memName]) {
+                nextCallback();
+              } else {
+                self.errCb(1, "Memory verification after write failed for",
+                           memName);
+                return;
+              }
+            });
+          }
+          self.writeMemory(memName, addr, controlBits[memName],
+                           verifyMem);
+        } else {
+          nextCallback();
+        }
       };
     }), cb);
   },
