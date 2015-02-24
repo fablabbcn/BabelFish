@@ -95,16 +95,45 @@ function pyzip() {
   });
 }
 
+// Chain functiona arrays. Each function in the array receives as a
+// first arg a callback whose arguments are the 2nd, 3rd... arg of
+// the next call. Eg.
+//
+// chain([function (next) {next(1,2,3);},
+//        function (next, a, b, c) {console.log(a, b, c)}]);
+//
+// Will print "1 2 3"
 function chain (functionArray, final) {
   if (functionArray.length == 0) {
-    final();
+    if (final)
+      final();
     return;
   }
 
-  functionArray[0](chain.bind(null, functionArray.slice(1)));
+  var args = [chain.bind(null, functionArray.slice(1), final)]
+        .concat(arraify(arguments, 2));
+  functionArray[0].apply(null, args);
 }
 
+function makeArrayOf(value, length) {
+  assert (length < 100000 && length >= 0,
+          "Length of array too large or too small");
+
+  var arr = [], i = length;
+  while (i--) {
+    arr[i] = value;
+  }
+  return arr;
+}
+
+function assert(val, msg) {
+  if (!val)
+    throw new Error("AssertionError: " + msg);
+}
+
+module.exports.makeArrayOf = makeArrayOf;
 module.exports.arraify = arraify;
+module.exports.assert = assert;
 module.exports.chain = chain;
 module.exports.zip = zip;
 module.exports.deepCopy = deepCopy;
