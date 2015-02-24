@@ -1,3 +1,5 @@
+var util = require('./../util');
+
 // A op to an array of bytes. Optional parameter addr is the address
 // to fill in the address bits.
 function opToBin(op, param) {
@@ -20,5 +22,31 @@ function opToBin(op, param) {
   return ret.reverse();
 }
 
+function intToByteArray (intData, bitNum) {
+  return util.makeArrayOf(0, Math.ceil(bitNum / 8))
+    .map(function (_, index) {
+      return (intData >> index * 8) & 0xff;
+    });
+}
 
+function extractOpData(type, op, bin) {
+  var retBits = 0,
+      intData = op.reduce(function (ret, bitStruct, index) {
+        var bit = bitStruct.instBit % 8,
+            byte = Math.floor(bitStruct.instBit / 8),
+            byteMask = 1 << bit;
+
+        retBits = Math.max(retBits, bitStruct.bitNo + 1);
+
+        if (bitStruct.bitType == type) {
+          return ret | (((bin[byte] & byteMask) >> bit) << bitStruct.bitNo);
+        }
+
+        return ret;
+      }, 0);
+
+  return intToByteArray(intData, retBits);
+}
+
+module.exports.extractOpData = extractOpData;
 module.exports.opToBin = opToBin;
