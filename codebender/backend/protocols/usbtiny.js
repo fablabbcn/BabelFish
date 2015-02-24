@@ -38,16 +38,17 @@ function USBTinyTransaction(config, finishCallback, errorCallback) {
 USBTinyTransaction.prototype = new USBTransaction();
 
 USBTinyTransaction.prototype.cmd = function (cmd, cb) {
-  log.log("Sending command:", buffer.hexRep(cmd));
 
   var info = this.transferIn(this.UT.SPI,
                              (cmd[1] << 8) | cmd[0],
                              (cmd[3] << 8) | cmd[2],
                              4);
 
-  this.write(info, cb);
+  this.write(info, function (resp) {
+    log.log("CMD:", buffer.hexRep(cmd), buffer.hexRep(resp.data));
+    cb(resp);
+  });
 };
-
 
 // === Initial superstate ===
 // flash -> [powerUp -> programEnable -> chipErase -> setFuses ->]
@@ -91,7 +92,7 @@ USBTinyTransaction.prototype.programEnable = function () {
 };
 
 USBTinyTransaction.prototype.setFuses = function () {
-  this.setupSpecialBits(self.config.controlBits,
+  this.setupSpecialBits(this.config.controlBits,
                         this.transitionCb('powerUp'));
 };
 
@@ -105,11 +106,13 @@ USBTinyTransaction.prototype.chipErase = function () {
     self.operation("CHIP_ERASE", self.transitionCb('setFuses'));
   }, self.config.avrdude.chipEraseDelay / 1000);
 };
+
 // === Programming superstate ===
 USBTinyTransaction.prototype.programPage = function (offset) {
   var page = this.config.avrdude.memory.flash.page_size,
       end = offset + page,
-      info = this.transferOut(this.UT.FLASH_WRITE, 0, offset,
+      info = this.transferOut(this.UT.FLASH_WRITE, 0,
+                              offset + this.config.offset,
                               this.hexData.slice(offset, end));
 
   this.write(info, this.transitionCb('flushPage', offset, end));
@@ -131,8 +134,12 @@ USBTinyTransaction.prototype.flushPage = function (offset, end, ctrlArg) {
 // === Final superstate
 
 USBTinyTransaction.prototype.powerDown = function () {
-  this.control(this.UT.POWERDOWN, 0, 0,
-               this.transitionCb('endTransaction'));
+  var self = this;
+
+  this.setupSpecialBits(self.config.cleanControlBits, function () {
+    self.control(self.UT.POWERDOWN, 0, 0,
+                 self.transitionCb('endTransaction'));
+  });
 };
 
 USBTinyTransaction.prototype.endTransaction = function (ctrlArg) {
