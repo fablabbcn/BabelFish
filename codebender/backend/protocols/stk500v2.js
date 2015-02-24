@@ -303,8 +303,9 @@ STK500v2Transaction.prototype.preProgramHack = function () {
 };
 
 STK500v2Transaction.prototype.programFlash = function (offset, pgSize) {
-  var data = this.sketchData;
-  log.log("program flash: data.length: ", data.length, ", offset: ", offset, ", page size: ", pgSize);
+  var data = this.sketchData, memOffset = this.config.offset || 0;
+  log.log("program flash: data.length: ", data.length,
+          ", offset: ", offset, ", page size: ", pgSize);
 
   if (offset >= data.length) {
     log.log("Done programming flash: ", offset, " vs. " + data.length);
@@ -314,7 +315,7 @@ STK500v2Transaction.prototype.programFlash = function (offset, pgSize) {
 
   var self = this,
       payload = this.padOrSlice(data, offset, pgSize),
-      addressBytes = buffer.storeAsNBytes(4, offset / 2),
+      addressBytes = buffer.storeAsNBytes(4, (memOffset + offset) / 2),
       sizeBytes = buffer.storeAsTwoBytes(pgSize),
       memMode = 0xc1,
       delay = 10,
