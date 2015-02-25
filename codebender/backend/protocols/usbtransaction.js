@@ -61,11 +61,19 @@ USBTransaction.prototype.control = function (op, v1, v2, cb) {
 
 USBTransaction.prototype.localCleanup = function (callback) {
 
+  function doCleanup () {
+    log.log("Handler closed");
+    self.handler = null;
+    callback();
+  }
+
+  // Cleanup even if closeDevice fails (eg if it was never opened).
+  var emergencyCleanup = setTimeout(doCleanup, 2000);
+
   if (this.handler) {
     this.usb.closeDevice(this.handler, function () {
-      log.log("Handler closed");
-      self.handler = null;
-      callback();
+      clearTimeout(emergencyCleanup);
+      doCleanup();
     });
   }
 };
