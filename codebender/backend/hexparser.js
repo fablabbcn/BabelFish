@@ -13,21 +13,21 @@ function mergeChunks (blob, chunk) {
   if (chunk === null || blob === null)
     return blob || chunk || {addr: 0, data: []};
 
-  var minAddr = Math.min(chunk.addr, blob.addr),
-      maxAddr = Math.max(chunk.addr, blob.addr),
-
+  var minStart = Math.min(chunk.addr, blob.addr),
+      maxEnd = Math.max(chunk.addr + chunk.data.length,
+                        blob.addr + blob.data.length),
       // Make sure the array has the length maxAddr - minAddr
-      data = util.makeArrayOf(0, blob.addr - minAddr)
+      data = util.makeArrayOf(0, blob.addr - minStart)
         .concat(blob.data)
-        .concat(util.makeArrayOf(0, maxAddr - blob.addr));
+        .concat(util.makeArrayOf(0,  maxEnd - (blob.data.length + blob.addr)));
 
-  chunk.data.forEach(function (byte, chunkRelAddr) {
+  chunk.data.forEach(function (byte, byteRelAddr) {
     // Absoltue address - blob offset = blob relative
-    data[(chunk.addr + chunkRelAddr) - minAddr] = byte;
+    data[byteRelAddr + (chunk.addr - minStart)] = byte;
   });
 
   return {
-    addr: minAddr,
+    addr: minStart,
     data: data
   };
 }
@@ -45,59 +45,61 @@ function hexToBytes(strData) {
   }, []);
 }
 
-var offsetLin = 0;
-// Do nothing (eg eof line) is null
-function lineToChunk (line) {
-  if (line.length == 0)
-    return null;
-
-  var index = 0,
-      // Types
-      DATA = 0,
-      EOF = 1,
-      EXTENDED_SEG_ADDR = 2,
-      START_SEG_ADDR = 3,
-      EXTENDED_LIN_ADDR = 4,
-      START_LIN_ADDR = 5;
-
-  function rng(length) {
-    var start = index, end = index + length;
-    index = end;
-    return line.substring(start, end);
-  }
-
-  var start = rng(1),
-      length = Number.parseInt(rng(2), 16),
-      addr = Number.parseInt(rng(4), 16),
-      type = Number.parseInt(rng(2), 16),
-      strData = rng(length * 2), // two hex characters = one byte
-      // Check all the byts preceeding the checksum
-      actualCheck = hexToBytes(line.substring(1, index))
-        .reduce(function (a, b) {
-          return a+b;
-        }, 0) & 0xff,
-      checksum = Number.parseInt(rng(2), 16),
-      byteData = hexToBytes(strData);
-
-  util.assert(start == ':', "Hex file line did not start with ':': " + line);
-
-  // 2's complement checksum, ie negative sum.
-  util.assert(checksum == ((-actualCheck) & 0xff),
-              "Checksum failed for line: " + line);
-
-  switch (type) {
-  case DATA:
-    return {addr: addr + offsetLin, data: byteData};
-    break;
-  case EXTENDED_LIN_ADDR:
-    offsetLin = Number.parseInt(strData) << 16;
-  default:
-    // XXX: ignore all other types.
-    return null;
-  }
-}
-
 function ParseHexFile(hexString) {
+  var offsetLin = 0;
+  // Do nothing (eg eof line) is null
+
+  function lineToChunk (line) {
+    if (line.length == 0)
+      return null;
+
+    var index = 0,
+        // Types
+        DATA = 0,
+        EOF = 1,
+        EXTENDED_SEG_ADDR = 2,
+        START_SEG_ADDR = 3,
+        EXTENDED_LIN_ADDR = 4,
+        START_LIN_ADDR = 5;
+
+    function rng(length) {
+      var start = index, end = index + length;
+      index = end;
+      return line.substring(start, end);
+    }
+
+    var start = rng(1),
+        length = Number.parseInt(rng(2), 16),
+        addr = Number.parseInt(rng(4), 16),
+        type = Number.parseInt(rng(2), 16),
+        strData = rng(length * 2), // two hex characters = one byte
+        // Check all the byts preceeding the checksum
+        actualCheck = hexToBytes(line.substring(1, index))
+          .reduce(function (a, b) {
+            return a+b;
+          }, 0) & 0xff,
+        checksum = Number.parseInt(rng(2), 16),
+        byteData = hexToBytes(strData);
+
+    util.assert(start == ':', "Hex file line did not start with ':': " + line);
+
+    // 2's complement checksum, ie negative sum.
+    util.assert(checksum == ((-actualCheck) & 0xff),
+                "Checksum failed for line: " + line);
+
+    switch (type) {
+    case DATA:
+      console.log(addr);
+      return {addr: addr + offsetLin, data: byteData};
+      break;
+    case EXTENDED_LIN_ADDR:
+      offsetLin = Number.parseInt(strData) << 16;
+    default:
+      // XXX: ignore all other types.
+      return null;
+    }
+  }
+
   return hexString.split("\n")
     .map(lineToChunk)
     .reduce(mergeChunks, null) || {addr: 0, data: []};
