@@ -128,7 +128,7 @@ function makeArrayOf(value, length) {
 
 function assert(val, msg) {
   if (!val)
-    throw new Error("AssertionError: " + msg);
+    throw Error("AssertionError: " + msg);
 }
 
 module.exports.makeArrayOf = makeArrayOf;

@@ -84,10 +84,11 @@ STK500Transaction.prototype.writeThenRead = function (data, cb, _retryCnt) {
 };
 
 STK500Transaction.prototype.initializationMsg = function (maj, min) {
-  var flashmem = self.config.avrdude.flash ||
-        {readback: [0xff, 0xff],
-         pageSize: 0,
-         size: 0},
+  var defmem = {readback: [0xff, 0xff],
+                pageSize: 0,
+                size: 0},
+      flashmem = this.config.avrdude.memory.flash || defmem,
+      eepromem = this.config.avrdude.memory.eeprom || defmem,
       extparams = {pagel: this.config.avrdude.pagel || 0xd7,
                    bs2: this.config.avrdude.bs2 || 0xa0,
                    len: ((maj > 1) || ((maj == 1) && (min > 10))) ? 4: 3},
@@ -95,7 +96,7 @@ STK500Transaction.prototype.initializationMsg = function (maj, min) {
         // 0: SET_DEVICE
         this.STK.SET_DEVICE,
         // 1: config->devcode
-        this.config.avrdude.stk500_devcode,
+        this.config.avrdude.stk500_devcode || 0,
         // 2: 0 // device revision
         0,
         // 3: !(parallel && serial programming)
@@ -110,31 +111,31 @@ STK500Transaction.prototype.initializationMsg = function (maj, min) {
         // 6: 1
         1,
         // 7: lock.size || 0
-        this.config.avrdude.memops.lock ?
+        this.config.avrdude.memory.lock ?
           this.config.avrdude.memory.lock.size : 0,
         // 8: sum(fuse.size)
         [
           this.config.avrdude.memory.fuse,
           this.config.avrdude.memory.hfuse,
           this.config.avrdude.memory.lfuse,
-          this.config.avrdude.memory.efuse,
-        ].reduce(function (a,b) {return ((a?a.size:0) + (b?b.size:0));}),
+          this.config.avrdude.memory.efuse
+        ].reduce(function (res, b) {return (res + (b?b.size:0));}, 0),
         // 9: readback[0] if flash or 0xff
         flashmem.readback[0],
         // 10: readback[1] if flash or 0xff
         flashmem.readback[1],
-        // 11: 0
-        0,
-        // 12: 0
-        0,
+        // 11: eeprom readback
+        eepromem.readback[0],
+        // 12: eeprom readback
+        eepromem.readback[1],
         // 13: (pageSize >> 8) &0xff
-        (flashmem.pageSize >> 8) & 0xff,
+        (flashmem.page_size >> 8) & 0xff,
         // 14: pageSize & 0xff
-        flashmem.pageSize & 0xff,
-        // 15: 0
-        0,
-        // 16: 0
-        0,
+        flashmem.page_size & 0xff,
+        // 15: eeprom equiv
+        (eepromem.size >> 8) & 0xff,
+        // 16: eeprom equiv
+        eepromem.size & 0xff,
         // 17: size >> 24
         (flashmem.size >> 24) & 0xff,
         // 18: size >> 16
@@ -149,14 +150,15 @@ STK500Transaction.prototype.initializationMsg = function (maj, min) {
       extparamArray = [
         this.STK.SET_DEVICE_EXT,
         extparams.len + 1,
-        0,                  //would be size if eeprom
+        this.config.avrdude.memory.eeprom ?
+          this.config.avrdude.memory.eeprom.page_size : 0,
         extparams.pagel,
         extparams.bs2,
-      ].slice(extparams.len + 1)
+        this.config.avrdude.resetDisposition == "dedicated" ? 0 : 1,
+      ].slice(0, extparams.len + 2)
         .concat(this.STK.CRC_EOP);
 
-  return {initMessage: initMessage,
-          extraParams: extparamArray};
+  return [initMessage, extparamArray];
 };
 
 // Cb should have the 'state' format, ie function (data)
@@ -231,36 +233,54 @@ STK500Transaction.prototype.inSyncWithBoard = function (data) {
 };
 
 STK500Transaction.prototype.readHardwareVersion = function (data) {
-  this.writeThenRead([this.STK.GET_PARAMETER, this.STK.SW_VER_MAJOR, this.STK.CRC_EOP],
+  this.writeThenRead([this.STK.GET_PARAMETER,
+                      this.STK.HW_VER,
+                      this.STK.CRC_EOP],
                      this.transitionCb('readSoftwareMajorVersion'));
 };
 
 STK500Transaction.prototype.readSoftwareMajorVersion = function (data) {
-  this.writeThenRead([this.STK.GET_PARAMETER, this.STK.SW_VER_MINOR, this.STK.CRC_EOP],
+  this.writeThenRead([this.STK.GET_PARAMETER,
+                      this.STK.HW_VER,
+                      this.STK.CRC_EOP],
                      this.transitionCb('readSoftwareMinorVersion'));
 };
 
 STK500Transaction.prototype.readSoftwareMinorVersion = function (data) {
+  var self = this;
+  this.writeThenRead(
+    [this.STK.GET_PARAMETER,
+     this.STK.SW_VER_MAJOR,
+     this.STK.CRC_EOP], function (major) {
+
+       self.writeThenRead(
+         [self.STK.GET_PARAMETER,
+          self.STK.SW_VER_MINOR,
+          self.STK.CRC_EOP], function (minor) {
+            var initMsgs = self.initializationMsg(major[0], minor[0]);
+            self.writeThenRead(
+              initMsgs[0], function (data) {
+                self.writeThenRead(initMsgs[1], self.transitionCb('enterProgmode'));
+              });
+          });
+     });
+}
+
+STK500Transaction.prototype.enterProgmode = function (data) {
   this.writeThenRead([this.STK.ENTER_PROGMODE, this.STK.CRC_EOP],
-                     this.transitionCb('enteredProgmode'));
+                     this.transitionCb('programFlash',
+                                       this.config.avrdude.memory.flash.page_size,
+                                       null));
 };
 
-STK500Transaction.prototype.enteredProgmode = function (data) {
-  this.writeThenRead([this.STK.READ_SIGN, this.STK.CRC_EOP],
-                     this.transitionCb('readSignature'));
-};
+STK500Transaction.prototype.programFlash = function (pgSize, offset) {
+  var data = this.sketchData.data, memOffset = this.config.offset || 0;
+  if (offset === null)
+    offset = this.sketchData.addr;
 
-STK500Transaction.prototype.readSignature = function (data) {
-  log.log("Signature:", buffer.hexRep(data));
-  var offset = 0;
-  this.transition('programFlash', offset,
-                  this.config.avrdude.memory.flash.page_size,
-                  this.transitionCb('doneProgramming'));
-};
-
-STK500Transaction.prototype.programFlash = function (offset, pgSize) {
-  var data = this.sketchData, memOffset = this.config.offset || 0;
-  log.log("program flash: data.length: ", data.length, ", offset: ", offset, ", page size: ", pgSize);
+  log.log("program flash: data.length: ", data.length,
+          ", offset: ", offset,
+          ", page size: ", pgSize);
 
   if (offset >= data.length) {
     log.log("Done programming flash: ", offset, " vs. " + data.length);
@@ -282,10 +302,9 @@ STK500Transaction.prototype.programFlash = function (offset, pgSize) {
 
   var self = this;
   self.writeThenRead(loadAddressMessage, function(reponse) {
-    self.writeThenRead(programMessage, function(response) {
-      // Program the next section
-      self.transition('programFlash', offset + pgSize, pgSize);
-    });
+    self.writeThenRead(programMessage,
+                       // Program the next section
+                       self.transitionCb('programFlash', pgSize, offset + pgSize));
   });
 };
 
