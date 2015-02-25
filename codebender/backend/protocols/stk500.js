@@ -22,7 +22,9 @@ function STK500Transaction () {
     READ_SIGN: 0x75,
     HW_VER: 0x80,
     SW_VER_MINOR: 0x82,
-    SW_VER_MAJOR: 0x81
+    SW_VER_MAJOR: 0x81,
+    SET_DEVICE: 0x42,
+    SET_DEVICE_EXT: 0x45
   };
   this.pageSize = 256;
   this.log = log;
@@ -76,9 +78,85 @@ STK500Transaction.prototype.writeThenRead = function (data, cb, _retryCnt) {
     outgoingMsg: data,
     modifyDatabuffer: modifyDatabuffer,
     callback: cb,
-    ttl: 500,
+    ttl: 1000,
     willRetry: true,
     timeoutCb: retryThenErrcb});
+};
+
+STK500Transaction.prototype.initializationMsg = function (maj, min) {
+  var flashmem = self.config.avrdude.flash ||
+        {readback: [0xff, 0xff],
+         pageSize: 0,
+         size: 0},
+      extparams = {pagel: this.config.avrdude.pagel || 0xd7,
+                   bs2: this.config.avrdude.bs2 || 0xa0,
+                   len: ((maj > 1) || ((maj == 1) && (min > 10))) ? 4: 3},
+      initMessage =  [
+        // 0: SET_DEVICE
+        this.STK.SET_DEVICE,
+        // 1: config->devcode
+        this.config.avrdude.stk500_devcode,
+        // 2: 0 // device revision
+        0,
+        // 3: !(parallel && serial programming)
+        (this.config.avrdude.serialProgramMode &&
+         this.config.avrdude.parallelProgramMode)? 0 : 1,
+        // 4: !(parallel && pseudoparallel)
+        //   n_extparams -> 0 if pseudoparallel
+        (this.config.avrdude.pseudoparallelProgramMode &&
+         this.config.avrdude.parallelProgramMode)? 0 : 1,
+        // 5: 1
+        1,
+        // 6: 1
+        1,
+        // 7: lock.size || 0
+        this.config.avrdude.memops.lock ?
+          this.config.avrdude.memory.lock.size : 0,
+        // 8: sum(fuse.size)
+        [
+          this.config.avrdude.memory.fuse,
+          this.config.avrdude.memory.hfuse,
+          this.config.avrdude.memory.lfuse,
+          this.config.avrdude.memory.efuse,
+        ].reduce(function (a,b) {return ((a?a.size:0) + (b?b.size:0));}),
+        // 9: readback[0] if flash or 0xff
+        flashmem.readback[0],
+        // 10: readback[1] if flash or 0xff
+        flashmem.readback[1],
+        // 11: 0
+        0,
+        // 12: 0
+        0,
+        // 13: (pageSize >> 8) &0xff
+        (flashmem.pageSize >> 8) & 0xff,
+        // 14: pageSize & 0xff
+        flashmem.pageSize & 0xff,
+        // 15: 0
+        0,
+        // 16: 0
+        0,
+        // 17: size >> 24
+        (flashmem.size >> 24) & 0xff,
+        // 18: size >> 16
+        (flashmem.size >> 16) & 0xff,
+        // 19: size >> 8
+        (flashmem.size >> 8) & 0xff,
+        // 20: size
+        flashmem.size & 0xff,
+        // 21: EOP
+        this.STK.CRC_EOP
+      ],
+      extparamArray = [
+        this.STK.SET_DEVICE_EXT,
+        extparams.len + 1,
+        0,                  //would be size if eeprom
+        extparams.pagel,
+        extparams.bs2,
+      ].slice(extparams.len + 1)
+        .concat(this.STK.CRC_EOP);
+
+  return {initMessage: initMessage,
+          extraParams: extparamArray};
 };
 
 // Cb should have the 'state' format, ie function (data)
@@ -96,7 +174,7 @@ STK500Transaction.prototype.flash = function (deviceName, sketchData) {
     deviceName,
     function () {
       self.serial.connect(deviceName,
-                          {bitrate: self.config.speed, name: deviceName},
+                          {bitrate: self.config.speed || 19200, name: deviceName},
                           self.transitionCb('megaHack', sketchData));
     });
 };
@@ -139,7 +217,7 @@ STK500Transaction.prototype.connectDone = function (hexCode, connectArg) {
     // Mega hack
     this.justWrite([this.STK.GET_SYNC, this.STK.CRC_EOP], function () {
       self.buffer.drain(function () {
-        self.onOffDTR(function () {
+        (self.config.avoidTwiggleDTR ? self.onOffDTR.bind(self) : setTimeout)(function () {
           self.writeThenRead([self.STK.GET_SYNC, self.STK.CRC_EOP],
                              self.transitionCb('inSyncWithBoard'));
         });

@@ -207,7 +207,8 @@ Plugin.prototype = {
                                  communication, speed, force, delay,
                                  mcu, cb) {
     // XXX: maybe fail if this is not a programmer.
-    this.flash(device, code, maxsize, protocol, false, 0, mcu, cb);
+    this.flash(device, code, maxsize, protocol, false, 0, mcu, cb,
+               {avoidTwiggleDTR: true});
   },
 
   flashBootloader: function (device, protocol, communication, speed, force,
