@@ -291,14 +291,14 @@ Plugin.prototype = {
 
     self.transaction = new protocols[protocol](config, finishCallback, errorCallback),
     setTimeout(function () {
-      dbg("Code length", code.length, typeof code,
+      dbg("Code length", code.length || code.data.length, typeof code,
           "Protocol:", protocols,
           "Device:", device);
 
       // Binary string to byte array if it is actually base64
       if (self.binaryMode && typeof code === 'string') {
-        code = Base64Binary.decode(code);
-        code = Array.prototype.slice.call(code);
+        var _code = Base64Binary.decode(code);
+        code = {data: Array.prototype.slice.call(_code), addr: 0};
       }
 
       self.transaction.flash(device, code);
