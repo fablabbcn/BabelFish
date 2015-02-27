@@ -6,6 +6,7 @@ var SerialTransaction = require('./serialtransaction'),
     errno = require("./../errno");
 
 function STK500Transaction () {
+  this.log = log;
   SerialTransaction.apply(this, arraify(arguments));
 
   this.STK = {
@@ -19,6 +20,7 @@ function STK500Transaction () {
     LOAD_ADDRESS: 0x55,
     UNIVERSAL: 0x56,
     PROG_PAGE: 0x64,
+    READ_PAGE: 0x74,
     READ_SIGN: 0x75,
     HW_VER: 0x80,
     SW_VER_MINOR: 0x82,
@@ -26,52 +28,90 @@ function STK500Transaction () {
     SET_DEVICE: 0x42,
     SET_DEVICE_EXT: 0x45
   };
-  this.pageSize = 256;
-  this.log = log;
   this.maxMessageRetries = 4;
 }
 
-STK500Transaction.prototype = new SerialTransaction();
+STK500Transaction.prototype = new SerialTransaction;
 
-STK500Transaction.prototype.writeThenRead = function (data, cb, _retryCnt) {
-  var self = this;
-  if (!Number.isInteger(_retryCnt))
-    _retryCnt = this.maxMessageRetries;
 
+// Keywrod arguments are
+//
+// - retryCount: the number of retries allowed.
+//
+// - minPureData: the minimum amount of data we expect. This is useful
+//   becaus we may get a character that by chance was the delimiter but
+//   the message was not finished.
+//
+// - retryCb: the callback to be called when retrying. Default to
+//   writeThenRead with the same arguments as before (except for
+//   minPureData that is decremented). This callback accepts a single
+//   argument that is the number of remaining retries.
+STK500Transaction.prototype.writeThenRead = function (data, cb, kwargs) {
+  kwargs = kwargs || {};
+
+  var self = this,
+      minPureData = kwargs.minPureData || 0,
+      retryCount = typeof kwargs.retryCount !== 'undefined' ?
+        kwargs.retryCount : this.maxMessageRetries,
+      defaultRetryCb = function (retryCount) {
+        kwargs.retryCount = retryCount;
+        self.writeThenRead(data, cb, kwargs);
+      },
+      retryCb = (kwargs.retryCb || defaultRetryCb).bind(null, retryCount - 1);
+
+  // ATTENTION: This is passed as the reader of this function
   function modifyDatabuffer () {
+    log.log("Minimum data length for reader:", minPureData + 2,
+            "(current buffer:", this.buffer.databuffer.length,")");
+
     // The weird binding of the reader.
     var reader = this,
         start = reader.buffer.databuffer
           .indexOf(self.STK.INSYNC);
 
-    if (start < 0) return false;
+    // XXX: In some rare cases we dont get the 2nd byte for some
+    // reason. This is definintely a bug but I can't figure out from
+    // where. This happens for larger sketches. Patches welcome.
+    if (reader.buffer.databuffer.length == 1 && reader.buffer[0] == self.STK.OK) {
+      log.warn("Bad message. I can handle it but this is a bug.");
+      reader.buffer.databuffer = [];
+      cb(setTimeout([]));
+      return true;
+    }
 
-    var db = reader.buffer.databuffer.slice(start),
-        end = db.indexOf(self.STK.OK);
+    if (start < 0) {
+      reader.buffer.databuffer = [];
+      return false;
+    };
+
+    // Everything before start is garbadge
+    reader.buffer.databuffer = reader.buffer.databuffer.slice(start);
+    // Skip the data that is minimally essential
+    var end = reader.buffer.databuffer.slice(minPureData + 1).indexOf(self.STK.OK);
 
     if (end < 0) return false;
 
-    end++;
-    reader.buffer.databuffer = db.slice(end);
+    // We skipped the minimally essential data so take it back as well
+    // as the final byte.
+    end += minPureData + 2;
+
     // Don't include the packet head and tail
+    var db = reader.buffer.databuffer;
+    reader.buffer.databuffer = reader.buffer.databuffer.slice(end);
     setTimeout(function () {
       cb(db.slice(1,end - 1));
-    }, 0);
+    });
 
     return true;
   }
 
   function retryThenErrcb () {
     // When we fail retry
-    if (_retryCnt == 0) {
+    if (retryCount == 0) {
       self.errCb(errno.READER_TIMEOUT, "STK read timed out");
       return;
     }
-
-    self.buffer.drain(function () {
-      log.log("Retrying read/write:", data);
-      self.writeThenRead(data, cb, _retryCnt - 1);
-    });
+    self.buffer.drain(retryCb);
   }
 
   this.writeThenRead_({
@@ -84,6 +124,7 @@ STK500Transaction.prototype.writeThenRead = function (data, cb, _retryCnt) {
 };
 
 STK500Transaction.prototype.initializationMsg = function (maj, min) {
+  log.log("Dev major:", maj, "minor:", min);
   var defmem = {readback: [0xff, 0xff],
                 pageSize: 0,
                 size: 0},
@@ -177,7 +218,7 @@ STK500Transaction.prototype.flash = function (deviceName, sketchData) {
     function () {
       self.serial.connect(deviceName,
                           {bitrate: self.config.speed || 19200, name: deviceName},
-                          self.transitionCb('megaHack', sketchData));
+                          self.transitionCb('connectDone', sketchData));
     });
 };
 
@@ -192,15 +233,19 @@ STK500Transaction.prototype.eraseThenFlash  = function (deviceName, sketchData, 
   });
 };
 
-// Silence the device with megahack/sync
-STK500Transaction.prototype.megaHack = function (hexCode, connectArg) {
-  var self = this;
-  if (connectArg && connectArg.connectionId) {
-    this.connectionId = connectArg.connectionId;
-    this.justWrite([self.STK.GET_SYNC, self.STK.CRC_EOP],
-                   self.transitionCb('connectDone', hexCode, connectArg));
-  } else
-    this.errCb(1, "Connection failed");
+// Silence the device with megahack/sync.
+STK500Transaction.prototype.megaHack = function (cb, kwargs) {
+  kwargs = kwargs || {};
+  var self = this, justWrite = kwargs.justWrite;
+
+  self.buffer.drain(function () {
+    (justWrite ? self.justWrite.bind(self) : self.writeThenRead.bind(self))
+    ([self.STK.GET_SYNC, self.STK.CRC_EOP], function () {
+      self.buffer.drain(function () {
+        cb();
+      });
+    });
+  });
 };
 
 STK500Transaction.prototype.connectDone = function (hexCode, connectArg) {
@@ -209,22 +254,22 @@ STK500Transaction.prototype.connectDone = function (hexCode, connectArg) {
   if (typeof(connectArg) == "undefined" ||
       typeof(connectArg.connectionId) == "undefined" ||
       connectArg.connectionId == -1) {
-    this.errCb(errno.CONNECTION_FAIL, "Bad connectionId / Couldn't connect to board");
+    this.errCb(errno.CONNECTION_FAIL,
+               "Bad connectionId / Couldn't connect to board");
     return;
   }
 
   this.connectionId = connectArg.connectionId;
   log.log("Connected to board:", connectArg);
   if (connectArg.connectionId)
-    // Mega hack
-    this.justWrite([this.STK.GET_SYNC, this.STK.CRC_EOP], function () {
-      self.buffer.drain(function () {
-        (self.config.avoidTwiggleDTR ? setTimeout : self.onOffDTR.bind(self))(function () {
-          self.writeThenRead([self.STK.GET_SYNC, self.STK.CRC_EOP],
-                             self.transitionCb('inSyncWithBoard'));
-        });
-      });
-    });
+    // Make the device shut up
+    self.megaHack(function () {
+      (self.config.avoidTwiggleDTR ?
+       setTimeout : self.onOffDTR.bind(self)) (function () {
+         self.writeThenRead([self.STK.GET_SYNC, self.STK.CRC_EOP],
+                            self.transitionCb('inSyncWithBoard'));
+       });
+    }, {justWrite: true});                   //Just write, dont expect a valid response
 };
 STK500Transaction.prototype.inSyncWithBoard = function (data) {
   this.inSync_ = true;
@@ -264,7 +309,7 @@ STK500Transaction.prototype.readSoftwareMinorVersion = function (data) {
               });
           });
      });
-}
+};
 
 STK500Transaction.prototype.enterProgmode = function (data) {
   this.writeThenRead([this.STK.ENTER_PROGMODE, this.STK.CRC_EOP],
@@ -273,10 +318,14 @@ STK500Transaction.prototype.enterProgmode = function (data) {
                                        null));
 };
 
-STK500Transaction.prototype.programFlash = function (pgSize, offset) {
-  var data = this.sketchData.data, memOffset = this.config.offset || 0;
+// confirmPages is an array of functions that each checks the pages
+// already written.
+STK500Transaction.prototype.programFlash = function (pgSize, offset, confirmPages) {
+  var self = this, data = this.sketchData.data, memOffset = this.config.offset || 0;
   if (offset === null)
     offset = this.sketchData.addr;
+
+  confirmPages = confirmPages || [];
 
   log.log("program flash: data.length: ", data.length,
           ", offset: ", offset,
@@ -284,28 +333,104 @@ STK500Transaction.prototype.programFlash = function (pgSize, offset) {
 
   if (offset >= data.length) {
     log.log("Done programming flash: ", offset, " vs. " + data.length);
-    this.transition('doneProgramming', this.connectionId);
+    if (this.config.confirmPages) {
+      // XXX: this drains, doesnt run readers, we really want sync.
+      this.megaHack(this.transitionCb('confirmPages', confirmPages));
+    } else {
+      this.transition('doneProgramming');
+    }
     return;
   }
 
-  var payload = this.padOrSlice(data, offset, pgSize),
+  var payload = data.slice(offset, offset + pgSize),
       addressBytes = buffer.storeAsTwoBytes((memOffset + offset) / 2),
-      sizeBytes = buffer.storeAsTwoBytes(pgSize),
-      kFlashMemoryType = 0x46;
+      sizeBytes = buffer.storeAsTwoBytes(payload.length),
+      kFlashMemoryType = 0x46;  // ord('F')
 
   var loadAddressMessage = [
-    this.STK.LOAD_ADDRESS, addressBytes[1], addressBytes[0], this.STK.CRC_EOP];
-  var programMessage = [
-    this.STK.PROG_PAGE, sizeBytes[0], sizeBytes[1], kFlashMemoryType]
-        .concat(payload);
-  programMessage.push(this.STK.CRC_EOP);
+    this.STK.LOAD_ADDRESS, addressBytes[1], addressBytes[0], this.STK.CRC_EOP],
+      programMessage = [
+        this.STK.PROG_PAGE, sizeBytes[0], sizeBytes[1], kFlashMemoryType]
+        .concat(payload).concat([this.STK.CRC_EOP]),
+      readPage = [this.STK.READ_PAGE, sizeBytes[0], sizeBytes[1],
+                  kFlashMemoryType, this.STK.CRC_EOP];
 
-  var self = this;
-  self.writeThenRead(loadAddressMessage, function(reponse) {
-    self.writeThenRead(programMessage,
-                       // Program the next section
-                       self.transitionCb('programFlash', pgSize, offset + pgSize));
-  });
+  // Check the current page and call cb if it is fine.
+  function checkPage (cb, retryCount) {
+    var badByte = -1, checkByte = function (b, i) {
+      if (b != payload[i]) {
+        badByte = i; return true;
+      } else {
+        return false;
+      }
+    };
+
+    self.writeThenRead(loadAddressMessage, function () {
+      self.writeThenRead(readPage, function (chkData) {
+
+        log.log("Checking page [", offset/pgSize, "/",
+                Math.ceil(data.length/pgSize), "]:", chkData);
+        if (chkData.some(checkByte)) {
+          if (chkData.length == payload.length)
+            self.errCb(1, "Page confirmation failed. Page:",
+                       offset/pgSize, "byte:", badByte,
+                       "(", chkData[badByte], "!=", payload[badByte], ")" );
+          else
+            self.errCb(1, "Page confirmation failed. Expected len:",
+                       payload.length, "but got:", chkData.length);
+
+          return;
+        } else {
+          cb();
+        }
+      }, {minPureData: payload.length,
+          retryCount: retryCount,
+          retryCb: function (retryCount) {
+            setTimeout(function () {
+              self.megaHack(function () {
+                checkPage(cb, retryCount);
+              }, 1000);
+            });
+          }
+         });
+    });
+  }
+
+
+  function writePage (retryCount) {
+    log.log("Writing page [", offset/pgSize, "/",
+            Math.ceil(data.length/pgSize), "]:", payload);
+
+    self.writeThenRead(loadAddressMessage, function () {
+      self.writeThenRead(programMessage, function () {
+        setTimeout(function () {
+          self.transition('programFlash', pgSize, offset + pgSize,
+                          confirmPages.concat([checkPage]));
+        }, Math.ceil(self.config.avrdude.memory.flash.max_write_delay/1000));
+      }, {retryCount: retryCount,
+          retryCb: function (retryCount) {
+            setTimeout(function () {
+              self.megaHack(function () {
+                writePage(retryCount);
+              }, 1000);
+            });
+          }
+         });
+    });
+  }
+
+  writePage();
+};
+
+// confirmPagesCbs an array of functions accepting a callback that
+// each checks a written page.
+STK500Transaction.prototype.confirmPages = function (confirmPagesCbs) {
+  var self = this, ccb = confirmPagesCbs[0];
+  if (ccb) {
+    ccb(this.transitionCb('confirmPages', confirmPagesCbs.slice(1)));
+  } else {
+    this.transition('doneProgramming');
+  }
 };
 
 STK500Transaction.prototype.doneProgramming = function () {
@@ -317,6 +442,20 @@ STK500Transaction.prototype.doneProgramming = function () {
 STK500Transaction.prototype.leftProgmode = function (data) {
   var self = this;
   this.cleanup(this.finishCallback);
+};
+
+// Ignore the intermediate values of the chain and call cb at the
+// end. defaultArg is the default data to be passed to the cb.
+STK500Transaction.prototype.chainWrites = function (chain, cb, defaultArg) {
+  var self = this;
+  if (chain.length == 0) {
+    cb(defaultArg);
+    return;
+  };
+
+  this.writeThenRead(chain[0], function (data) {
+    self.chainWrites(chain.slice(1), cb, data);
+  });
 };
 
 module.exports.STK500Transaction = STK500Transaction;

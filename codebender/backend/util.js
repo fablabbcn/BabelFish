@@ -131,7 +131,23 @@ function assert(val, msg) {
     throw Error("AssertionError: " + msg);
 }
 
+// Non destructive. Makes a copy of each object. object o2 overrides
+// o1.
+function merge(o1, o2) {
+  var ret = {};
+  Object.getOwnPropertyNames(o1).forEach(function (k) {
+    ret[k] = o1[k];
+  });
+
+  Object.getOwnPropertyNames(o2).forEach(function (k) {
+    ret[k] = o2[k];
+  });
+
+  return ret;
+}
+
 module.exports.makeArrayOf = makeArrayOf;
+module.exports.merge = merge;
 module.exports.arraify = arraify;
 module.exports.assert = assert;
 module.exports.chain = chain;

@@ -175,7 +175,7 @@ Buffer.prototype = {
 
   write: function (readArg, errorCb) {
     var hexData = bufToBin(readArg.data);
-    log.log("Dev said:", hexData);
+    log.log("Dev said:", hexRep(hexData));
     this.databuffer = this.databuffer.concat(hexData);
     if (this.databuffer.length > this.maxBufferSize) {
       if (errorCb)
@@ -184,7 +184,6 @@ Buffer.prototype = {
         throw Error("Receive buffer larger than " + this.maxBufferSize);
     }
 
-    log.log("Pushing to buffer [", hexData.length, "]: ", hexData);
     if (this.readers.length > 0)
       this.runAsyncReaders();
   },

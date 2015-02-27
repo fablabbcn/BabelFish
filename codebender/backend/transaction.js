@@ -17,6 +17,9 @@ function Transaction (config, finishCallback, errorCallback) {
   this.finishCallback = finishCallback;
   this.errorCallback = errorCallback;
   this.previousErrors = [];
+
+  if (this.log)
+    this.log.resetTimeOffset();
 }
 
 Transaction.prototype = {
