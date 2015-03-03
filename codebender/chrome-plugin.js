@@ -199,9 +199,15 @@ Plugin.prototype = {
           self.serial.onReceiveError.addListener(self._rcvError);
         } else {
           console.error("Failed to connect serial:", {bitrate: baudrate, name: port});
+          returnCb(-22);
         }
       });
     });
+    setTimeout(function () {
+      // Close the monitor if we couldn't open it
+      if (!self.readingInfo)
+        returnCb(-22);
+    }, 2000);
   },
 
   flashWithProgrammer: function (device, code, maxsize, string,
