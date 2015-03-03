@@ -134,14 +134,16 @@ SerialTransaction.prototype.justWrite = function (data, cb) {
     if (!writeArg) self.errCb(errno.CONNECTION_LOST, "Connection lost");
 
     if (!self.config.disableFlushing)
-      self.serial.flush(self.connectionId, function (ok) {
-        if (!ok) {
-          self.errCb(errno.FLUSH_FAIL,'Failed to flush');
-          return;
-        }
+      setTimeout(function () {
+        self.serial.flush(self.connectionId, function (ok) {
+          if (!ok) {
+            self.errCb(errno.FLUSH_FAIL,'Failed to flush');
+            return;
+          }
 
-        cb();
-      });
+          cb();
+        });
+      }, 200);
     else
       cb();
   });
