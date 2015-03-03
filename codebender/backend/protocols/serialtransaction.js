@@ -278,11 +278,11 @@ SerialTransaction.prototype.onOffDTR = function (cb) {
                 self.buffer.drain(function () {
                   cb.apply(null, args);
                 });
-              }, 500);
+              }, 50);
             });
-        }, 250);
+        }, 50);
       });
-  }, 0);
+  }, 50);
 };
 
 SerialTransaction.prototype.cmdChain = function (chain, cb) {
