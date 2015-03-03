@@ -253,7 +253,7 @@ SerialTransaction.prototype.destroyOtherConnections = function (name, cb) {
 SerialTransaction.prototype.onOffDTR = function (cb) {
   var args = arraify(arguments, 1),
       self = this,
-      before = true,
+      before = false,
       after = !before;
 
   setTimeout(function() {
