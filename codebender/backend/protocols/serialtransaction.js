@@ -272,7 +272,7 @@ SerialTransaction.prototype.onOffDTR = function (cb, _cbArgs) {
       }
 
       // Wait a while
-      var beforeTimeout = 10000;
+      var beforeTimeout = 50;
       setTimeout(function() {
         // Set the signals to reset
         self.serial.setControlSignals(
@@ -284,7 +284,7 @@ SerialTransaction.prototype.onOffDTR = function (cb, _cbArgs) {
             }
 
             // Give it some time to reset
-            var devResetTimeout = 10000;
+            var devResetTimeout = 50;
             setTimeout(function() {
 
               // Revert signals to initial state
