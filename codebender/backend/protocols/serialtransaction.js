@@ -133,6 +133,9 @@ SerialTransaction.prototype.justWrite = function (data, cb) {
   this.serial.send(this.connectionId, dataBuf, function(writeArg) {
     if (!writeArg) self.errCb(errno.CONNECTION_LOST, "Connection lost");
 
+    // XXX: turns out flush means tcflush not fflush, ie discard the
+    // buffers, not write any pending writes. This is probably never
+    // what we mean.
     if (0 && !self.config.disableFlushing)
       self.serial.flush(self.connectionId, function (ok) {
         if (!ok) {
@@ -234,15 +237,17 @@ SerialTransaction.prototype.destroyOtherConnections = function (name, cb) {
           next();
         else {
           self.log.log("Closing connection ", c.connectionId);
-          self.serial.disconnect(c.connectionId, function (ok) {
-            if (!ok) {
-              self.errCb(errno.FORCE_DISCONNECT_FAIL, "Failed to close connection ", c.connectionId);
-            } else {
-              self.log.log('Destroying connection:', c.connectionId);
-              self.serial.onReceiveError.forceDispatch(
-                {connectionId: c.connectionId, error: "device_lost"});
-              next();
-            }
+          self.serial.flush(c.connectionId, function () {
+            self.serial.disconnect(c.connectionId, function (ok) {
+              if (!ok) {
+                self.errCb(errno.FORCE_DISCONNECT_FAIL, "Failed to close connection ", c.connectionId);
+              } else {
+                self.log.log('Destroying connection:', c.connectionId);
+                self.serial.onReceiveError.forceDispatch(
+                  {connectionId: c.connectionId, error: "device_lost"});
+                next();
+              }
+            });
           });
         }
       }, cb);
@@ -250,40 +255,60 @@ SerialTransaction.prototype.destroyOtherConnections = function (name, cb) {
   });
 };
 
-SerialTransaction.prototype.onOffDTR = function (cb) {
+SerialTransaction.prototype.onOffDTR = function (cb, _cbArgs) {
   var args = arraify(arguments, 1),
       self = this,
-      before = false,
-      after = !before;
+      before = true,            //Default to high
+      set = !before,
+      after = before;
 
-  setTimeout(function() {
-    self.serial.setControlSignals(
-      self.connectionId, {dtr: before, rts: before},
-      function (ok) {
-        if (!ok) {
-          self.errCb(errno.DTR_RTS_FAIL, "Couldn't send DTR");
-          return;
-        }
-        setTimeout(function() {
-          self.serial.setControlSignals(
-            self.connectionId, {dtr: after, rts: after},
-            function(ok) {
-              self.log.log("Raised DTR/RTS, done: ", ok);
-              if (!ok) {
-                self.errCb(errno.DTR_RTS_FAIL,"Failed to set flags");
-                return;
-              }
+  // Make sure we are on the correct voltage
+  self.serial.setControlSignals(
+    self.connectionId, {dtr: before, rts: before}, function (ok) {
+      if (!ok) {
+        self.errCb(errno.DTR_RTS_FAIL,
+                   "Couldn't set rs232 signals on before stage");
+        return;
+      }
 
-              setTimeout(function () {
-                self.buffer.drain(function () {
-                  cb.apply(null, args);
+      // Wait a while
+      var beforeTimeout = 500;
+      setTimeout(function() {
+        // Set the signals to reset
+        self.serial.setControlSignals(
+          self.connectionId, {dtr: set, rts: set}, function (ok) {
+            if (!ok) {
+              self.errCb(errno.DTR_RTS_FAIL,
+                         "Couldn't set rs232 signals to reset device");
+              return;
+            }
+
+            // Give it some time to reset
+            var setTimeout = 50;
+            setTimeout(function() {
+
+              // Revert signals to initial state
+              self.serial.setControlSignals(
+                self.connectionId, {dtr: after, rts: after}, function(ok) {
+                  self.log.log("Raised DTR/RTS, done: ", ok);
+                  if (!ok) {
+                    self.errCb(errno.DTR_RTS_FAIL,
+                               "Couldn't revert rs232 signals from reset device");
+                    return;
+                  }
+
+                  // Give it a bit more time
+                  setTimeout(function () {
+                    self.buffer.drain(function () {
+                      cb.apply(null, args);
+                    });
+                  }, 50);
                 });
-              }, 50);
-            });
-        }, 50);
-      });
-  }, 50);
-};
+            }, setTimeout);
+          });
+      }, beforeTimeout);
+    });
+}
 
 SerialTransaction.prototype.cmdChain = function (chain, cb) {
   if (chain.length == 0) {
