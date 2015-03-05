@@ -263,51 +263,54 @@ SerialTransaction.prototype.onOffDTR = function (cb, _cbArgs) {
       after = before;
 
   // Make sure we are on the correct voltage
-  self.serial.setControlSignals(
-    self.connectionId, {dtr: before, rts: before}, function (ok) {
-      if (!ok) {
-        self.errCb(errno.DTR_RTS_FAIL,
-                   "Couldn't set rs232 signals on before stage");
-        return;
-      }
+  self.serial.getControlSignals(self.connectionId, function (signals) {
+    self.log.log("Flags of device are:", signals);
+    self.serial.setControlSignals(
+      self.connectionId, {dtr: before, rts: before}, function (ok) {
+        if (!ok) {
+          self.errCb(errno.DTR_RTS_FAIL,
+                     "Couldn't set rs232 signals on before stage");
+          return;
+        }
 
-      // Wait a while
-      var beforeTimeout = 50;
-      setTimeout(function() {
-        // Set the signals to reset
-        self.serial.setControlSignals(
-          self.connectionId, {dtr: set, rts: set}, function (ok) {
-            if (!ok) {
-              self.errCb(errno.DTR_RTS_FAIL,
-                         "Couldn't set rs232 signals to reset device");
-              return;
-            }
+        // Wait a while
+        var beforeTimeout = 50;
+        setTimeout(function() {
+          // Set the signals to reset
+          self.serial.setControlSignals(
+            self.connectionId, {dtr: set, rts: set}, function (ok) {
+              if (!ok) {
+                self.errCb(errno.DTR_RTS_FAIL,
+                           "Couldn't set rs232 signals to reset device");
+                return;
+              }
 
-            // Give it some time to reset
-            var devResetTimeout = 50;
-            setTimeout(function() {
+              // Give it some time to reset
+              var devResetTimeout = 50;
+              setTimeout(function() {
 
-              // Revert signals to initial state
-              self.serial.setControlSignals(
-                self.connectionId, {dtr: after, rts: after}, function(ok) {
-                  self.log.log("Raised DTR/RTS, done: ", ok);
-                  if (!ok) {
-                    self.errCb(errno.DTR_RTS_FAIL,
-                               "Couldn't revert rs232 signals from reset device");
-                    return;
-                  }
+                // Revert signals to initial state
+                self.serial.setControlSignals(
+                  self.connectionId, {dtr: after, rts: after}, function(ok) {
+                    self.log.log("Raised DTR/RTS, done: ", ok);
+                    if (!ok) {
+                      self.errCb(errno.DTR_RTS_FAIL,
+                                 "Couldn't revert rs232 signals from reset device");
+                      return;
+                    }
 
-                  // Give it a bit more time
-                  setTimeout(function () {
-                    self.buffer.drain(function () {
-                      cb.apply(null, args);
-                    });
-                  }, 50);
-                });
-            }, setTimeout);
-          });
-      }, beforeTimeout);
-    });
+                    // Give it a bit more time
+                    setTimeout(function () {
+                      self.buffer.drain(function () {
+                        cb.apply(null, args);
+                      });
+                    }, 50);
+                  });
+              }, setTimeout);
+            });
+        }, beforeTimeout);
+      });
+  });
 }
 
 SerialTransaction.prototype.cmdChain = function (chain, cb) {
