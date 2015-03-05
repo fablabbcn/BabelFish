@@ -263,8 +263,8 @@ SerialTransaction.prototype.onOffDTR = function (cb, _cbArgs) {
       after = before;
 
   // Make sure we are on the correct voltage
-  self.serial.getControlSignals(self.connectionId, function (signals) {
-    self.log.log("Flags of device are:", signals);
+  setTimeout(function () {
+    self.log.log("Setting dtr to ", before);
     self.serial.setControlSignals(
       self.connectionId, {dtr: before, rts: before}, function (ok) {
         if (!ok) {
@@ -277,6 +277,7 @@ SerialTransaction.prototype.onOffDTR = function (cb, _cbArgs) {
         var beforeTimeout = 50;
         setTimeout(function() {
           // Set the signals to reset
+          self.log.log("Setting dtr to", set);
           self.serial.setControlSignals(
             self.connectionId, {dtr: set, rts: set}, function (ok) {
               if (!ok) {
@@ -288,7 +289,7 @@ SerialTransaction.prototype.onOffDTR = function (cb, _cbArgs) {
               // Give it some time to reset
               var devResetTimeout = 50;
               setTimeout(function() {
-
+                self.log.log("Setting dtr to", after);
                 // Revert signals to initial state
                 self.serial.setControlSignals(
                   self.connectionId, {dtr: after, rts: after}, function(ok) {
@@ -310,7 +311,7 @@ SerialTransaction.prototype.onOffDTR = function (cb, _cbArgs) {
             });
         }, beforeTimeout);
       });
-  });
+  }, 500);
 }
 
 SerialTransaction.prototype.cmdChain = function (chain, cb) {
