@@ -304,7 +304,7 @@ SerialTransaction.prototype.onOffDTR = function (cb, _cbArgs) {
                     self.buffer.drain(function () {
                       cb.apply(null, args);
                     });
-                  }, 500);
+                  }, config.afterDtrTimeout || 1000);
                 });
             }, setTimeout);
           });
