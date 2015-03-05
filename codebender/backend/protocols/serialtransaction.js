@@ -144,7 +144,7 @@ SerialTransaction.prototype.onOffDTR = function (cb) {
       before = false,
       after = !before;
 
-  self.serial.setControlSignals(self.connectionId, function(signals) {
+  self.serial.getControlSignals(self.connectionId, function(signals) {
     self.log.log("Signals are:", signals);
     self.serial.setControlSignals(
       self.connectionId, {dtr: before, rts: before},
