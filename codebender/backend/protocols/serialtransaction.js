@@ -144,7 +144,8 @@ SerialTransaction.prototype.onOffDTR = function (cb) {
       before = false,
       after = !before;
 
-  setTimeout(function() {
+  self.serial.setControlSignals(self.connectionId, function(signals) {
+    self.log.log("Signals are:", signals);
     self.serial.setControlSignals(
       self.connectionId, {dtr: before, rts: before},
       function (ok) {
@@ -170,7 +171,7 @@ SerialTransaction.prototype.onOffDTR = function (cb) {
             });
         }, 250);
       });
-  }, 0);
+  });
 };
 
 SerialTransaction.prototype.cmdChain = function (chain, cb) {
