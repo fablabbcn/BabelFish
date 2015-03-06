@@ -20,7 +20,7 @@ $(chrome-log-dir):
 
 # Fire up an asynchronous chrome instance
 .PHONY:
-run-chrome: $(dot)/bundles/chrome-client.js | $(dot)/CodebenderChromeDeveloper /tmp $(chrome-log-dir)
+run-chrome: $(dot)/bundles/chrome-client.js | $(dot)/CodebenderChromeDeveloper $(chrome-log-dir)
 	(sleep 3 &&\
 		$(chrome) $(chrome-args) $(URL) 2> $(chrome-log-dir)/chrome-$(shell date "+%s").log) &
 
