@@ -286,7 +286,7 @@ SerialTransaction.prototype.onOffDTR = function (cb, _cbArgs) {
             }
 
             // Give it some time to reset
-            var devResetTimeout = 50;
+            var devResetTimeout = 0;
             setTimeout(function() {
               self.log.log("Setting dtr to", after);
               // Revert signals to initial state
