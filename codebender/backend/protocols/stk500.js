@@ -100,7 +100,7 @@ STK500Transaction.prototype.flash = function (deviceName, sketchData) {
                           function (connArg) {
                             self.setDtr(0, false,
                                         self.transitionCb('connectDone',
-                                                          sketchData, connArg);
+                                                          sketchData, connArg));
                           });
     });
 };
