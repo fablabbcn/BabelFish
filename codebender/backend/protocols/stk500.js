@@ -133,7 +133,7 @@ STK500Transaction.prototype.connectDone = function (hexCode, connectArg) {
     // Mega hack
     this.justWrite([this.STK.GET_SYNC, this.STK.CRC_EOP], function () {
       self.buffer.drain(function () {
-        self.twiggleDTR(function () {
+        self.twiggleDtr(function () {
           self.writeThenRead([self.STK.GET_SYNC, self.STK.CRC_EOP],
                              self.transitionCb('inSyncWithBoard'));
         });
