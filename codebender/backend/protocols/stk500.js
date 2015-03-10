@@ -102,7 +102,7 @@ STK500Transaction.prototype.flash = function (deviceName, sketchData) {
                               self.transition('connectDone',
                                               sketchData, connArg);
                             });
-                          });
+                          }, 3);
     });
 };
 

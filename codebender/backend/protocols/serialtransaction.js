@@ -255,15 +255,22 @@ SerialTransaction.prototype.destroyOtherConnections = function (name, cb) {
   });
 };
 
-SerialTransaction.prototype.setDtr = function (timeout, val, cb) {
+// Retries were introduced because in some boards if signals are set
+// too soon after connection, the callback is just not called.
+SerialTransaction.prototype.setDtr = function (timeout, val, cb, _retries) {
   var self = this;
-
-  var waitTooLong = setTimeout(function () {
-    self.errCb(1, "Waited too long to set DTR.");
-  }, 2000);
 
 
   setTimeout(function() {
+    var waitTooLong = setTimeout(function () {
+      if (_retries) {
+        self.setDtr(timeout, val, cb, _retries-1);
+        return;
+      }
+
+      self.errCb(1, "Waited too long to set DTR.");
+    }, 50);
+
     self.log.log("Setting DTR/DTS to", val);
     self.serial.setControlSignals(
       self.connectionId, {dtr: val, rts: val},
