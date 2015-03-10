@@ -258,11 +258,18 @@ SerialTransaction.prototype.destroyOtherConnections = function (name, cb) {
 SerialTransaction.prototype.setDtr = function (timeout, val, cb) {
   var self = this;
 
+  var waitTooLong = setTimeout(function () {
+    self.errCb(1, "Waited too long to set DTR.");
+  }, 2000);
+
+
   setTimeout(function() {
     self.log.log("Setting DTR/DTS to", val);
     self.serial.setControlSignals(
       self.connectionId, {dtr: val, rts: val},
       function(ok) {
+        clearTimeout(waitTooLong);
+
         if (!ok) {
           self.errCb(errno.DTR_RTS_FAIL,"Failed to set flags");
           return;
@@ -281,7 +288,6 @@ SerialTransaction.prototype.twiggleDtr = function (cb, _cbArgs) {
 
   self.serial.getControlSignals(self.connectionId, function(signals) {
     self.log.log("Signals are:", signals);
-
     self.setDtr(250, before, function () {
       self.setDtr(500, after, cb);
     });
