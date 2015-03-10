@@ -259,6 +259,7 @@ SerialTransaction.prototype.setDtr = function (timeout, val, cb) {
   var self = this;
 
   setTimeout(function() {
+    self.log.log("Setting DTR/DTS to", val);
     self.serial.setControlSignals(
       self.connectionId, {dtr: val, rts: val},
       function(ok) {
