@@ -238,7 +238,7 @@ STK500v2Transaction.prototype.connectDone = function (hexCode, connectArg) {
   this.connectionId = connectArg.connectionId;
   log.log("Connected to board. ID: " + connectArg.connectionId);
   this.buffer.drain(function () {
-    self.onOffDTR(self.transitionCb('signOn'));
+    self.twiggleDTR(self.transitionCb('signOn'));
   });
 };
 
