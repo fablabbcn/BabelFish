@@ -93,7 +93,7 @@ STK500Transaction.prototype.flash = function (deviceName, sketchData) {
   log.log("Flashing. Config is:", this.config);
   var self = this,
       connectCb = function (connArg) {
-
+        log.log("Connected to device");
         if (typeof(connArg) == "undefined" ||
             typeof(connArg.connectionId) == "undefined" ||
             connArg.connectionId == -1) {
