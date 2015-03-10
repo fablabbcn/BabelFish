@@ -256,6 +256,8 @@ SerialTransaction.prototype.destroyOtherConnections = function (name, cb) {
 };
 
 SerialTransaction.prototype.setDtr = function (timeout, val, cb) {
+  var self = this;
+
   setTimeout(function() {
     self.serial.setControlSignals(
       self.connectionId, {dtr: val, rts: val},
