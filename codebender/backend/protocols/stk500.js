@@ -91,18 +91,30 @@ STK500Transaction.prototype.flash = function (deviceName, sketchData) {
   this.refreshTimeout();
   this.sketchData = sketchData;
   log.log("Flashing. Config is:", this.config);
-  var self = this;
+  var self = this,
+      connectCb = function (connArg) {
+
+        if (typeof(connArg) == "undefined" ||
+            typeof(connArg.connectionId) == "undefined" ||
+            connArg.connectionId == -1) {
+          this.errCb(errno.CONNECTION_FAIL, "Bad connectionId / Couldn't connect to board");
+          return;
+        }
+
+        this.connectionId = connArg.connectionId;
+
+        self.setDtr(0, false, function() {
+          self.transition('connectDone',
+                          sketchData, connArg);
+        });
+      };
+
   self.destroyOtherConnections(
     deviceName,
     function () {
       self.serial.connect(deviceName,
                           {bitrate: self.config.speed, name: deviceName},
-                          function (connArg) {
-                            self.setDtr(0, false, function() {
-                              self.transition('connectDone',
-                                              sketchData, connArg);
-                            });
-                          }, 3);
+                          connectCb, 3);
     });
 };
 
@@ -119,15 +131,6 @@ STK500Transaction.prototype.eraseThenFlash  = function (deviceName, sketchData, 
 
 STK500Transaction.prototype.connectDone = function (hexCode, connectArg) {
   var self = this;
-
-  if (typeof(connectArg) == "undefined" ||
-      typeof(connectArg.connectionId) == "undefined" ||
-      connectArg.connectionId == -1) {
-    this.errCb(errno.CONNECTION_FAIL, "Bad connectionId / Couldn't connect to board");
-    return;
-  }
-
-  this.connectionId = connectArg.connectionId;
   log.log("Connected to board:", connectArg);
   if (connectArg.connectionId)
     // Mega hack
