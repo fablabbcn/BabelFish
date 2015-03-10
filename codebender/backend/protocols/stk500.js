@@ -98,10 +98,10 @@ STK500Transaction.prototype.flash = function (deviceName, sketchData) {
       self.serial.connect(deviceName,
                           {bitrate: self.config.speed, name: deviceName},
                           function (connArg) {
-                            // self.setDtr(0, false,
-                                        self.transition('connectDone',
-                                                          sketchData, connArg);
-                                       // );
+                            self.setDtr(0, false, function() {
+                              self.transition('connectDone',
+                                              sketchData, connArg);
+                            });
                           });
     });
 };
