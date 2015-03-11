@@ -205,15 +205,19 @@ Plugin.prototype = {
 
   flashWithProgrammer: function (device, code, maxsize, protocol,
                                  communication, speed, force, delay,
-                                 mcu, cb) {
+                                 mcu, cb, _extraConfig) {
+    var extraConfig = util.merge(_extraConfig || {},
+                                 {avoidTwiggleDTR: true, confirmPages: true});
+
     // XXX: maybe fail if this is not a programmer.
-    this.flash(device, code, maxsize, protocol, false, 0, mcu, cb);
+    this.flash(device, code, maxsize, protocol, false, 0, mcu, cb,
+               extraConfig);
   },
 
   flashBootloader: function (device, protocol, communication, speed, force,
                              delay, high_fuses, low_fuses,
                              extended_fuses, unlock_bits, lock_bits, mcu,
-                             cb) {
+                             cb, _extraConfig) {
     // Validate the data
     // Async run doFlashWithProgrammer
 
@@ -230,13 +234,16 @@ Plugin.prototype = {
           lfuse: toint(low_fuses),
           efuse: toint(extended_fuses),
           lock: toint(unlock_bits)
-        };
+        },
+        extraConfig = util.merge(_extraConfig || {},
+                                 {controlBits: controlBits,
+                                  cleanControlBits: {lock: toint(lock_bits)},
+                                  chipErase: true,
+                                  offset:this.savedBlob.addr});
 
-    this.flash(device, this.savedBlob.data, _, protocol, _, _, mcu,
-               cb, {controlBits: controlBits,
-                    cleanControlBits: {lock: toint(lock_bits)},
-                    chipErase: true,
-                    offset:this.savedBlob.addr});
+    this.flashWithProgrammer(device, this.savedBlob.data, _, protocol,
+                             communication, speed, force, delay, mcu,
+                             cb, extraConfig);
   },
 
   // General purpose flashing. User facing for serial flash. The
@@ -268,6 +275,7 @@ Plugin.prototype = {
 
         errorCallback = function (id, msg) {
           setTimeout(function () {
+            self.transaction = null;
             // Error callback accepts (from, message, status (0->error, 1->warning))
             // Make this always be an error
             var warnOrError = (id >= self.warningReturnValueRange[0] &&
@@ -283,6 +291,7 @@ Plugin.prototype = {
     Object.getOwnPropertyNames(_extraConfig || {}).forEach(function (key) {
       config[key] = _extraConfig[key];
     });
+    config.confirmPages = true;
 
     // XXX: Wait for it to finish?
     if(self.transaction)
@@ -290,14 +299,14 @@ Plugin.prototype = {
 
     self.transaction = new protocols[protocol](config, finishCallback, errorCallback),
     setTimeout(function () {
-      dbg("Code length", code.length, typeof code,
+      dbg("Code length", code.length || code.data.length, typeof code,
           "Protocol:", protocols,
           "Device:", device);
 
       // Binary string to byte array if it is actually base64
       if (self.binaryMode && typeof code === 'string') {
-        code = Base64Binary.decode(code);
-        code = Array.prototype.slice.call(code);
+        var _code = Base64Binary.decode(code);
+        code = {data: Array.prototype.slice.call(_code), addr: 0};
       }
 
       self.transaction.flash(device, code);

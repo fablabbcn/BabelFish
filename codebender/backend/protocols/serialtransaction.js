@@ -61,14 +61,14 @@ SerialTransaction.prototype.writeThenRead_ = function (info) {
   var self = this;
 
   self.refreshTimeout();
-  if (!self.registeredBufferListener){
+  if (!self.registeredBufferListener) {
+    // Redirect all device output to the buffer.
     self.registeredBufferListener = true;
     this.log.log("Listening on buffer");
     this.listenerHandler = this.readToBuffer.bind(this);
     this.serial.onReceive.addListener(this.listenerHandler);
   }
 
-  this.log.log("Writing: " + buffer.hexRep(info.outgoingMsg));
   this.justWrite(info.outgoingMsg, function () {
     self.buffer.readAsync(info);
   });
@@ -76,6 +76,7 @@ SerialTransaction.prototype.writeThenRead_ = function (info) {
 
 
 SerialTransaction.prototype.justWrite = function (data, cb) {
+  this.log.log("Writing: " + buffer.hexRep(data));
   var dataBuf = buffer.binToBuf(data),
       self = this;
 
@@ -101,74 +102,12 @@ SerialTransaction.prototype.readToBuffer = function (readArg) {
     return true;
   }
 
+  this.log.log("Read ard:", readArg);
   this.buffer.write(readArg, this.errCb.bind(this, errno.BUFFER_WRITE_FAIL));
 
   // Note that in BabelFish this does not ensure that the listener
   // stops.
   return false;
-};
-
-// Arguments like writheThenRead
-SerialTransaction.prototype.readByte = function (addr, cb) {
-  // XXX: We do not support TPI. See avrdude if you need it.
-
-  var readOp;
-  if (this.memOps.readLow) {
-    if (addr & 1)
-      readOp = this.memoryOps.readLow(addr/2);
-    else
-      readOp = this.memoryOps.readHigh(addr/2);
-  } else {
-    readOp = this.memoryOps.read(addr);
-  }
-
-  var safeCmd = this.cmd.bind(this, readOp, cb);
-
-  if (this.memOps.loadExtAddr)
-    this.cmd(this.memOps.loadExtAddr(addr), function (data) {
-      self.log.log("Ignoring extended addr read.");
-      safeCmd();
-    });
-  else
-    safeCmd();
-};
-
-SerialTransaction.prototype.writeByte = function (data, addr, cb) {
-  // XXX: avrdude first reads to avoid writing if not necessary.
-  var writeOp, self = this;
-
-  if (this.memOps.writeLow) {
-    if (addr & 1)
-      writeOp = this.memoryOps.writeLow(addr/2, data);
-    else
-      writeOp = this.memoryOps.writeHigh(addr/2, data);
-  } else {
-    writeOp = this.memoryOps.write(addr);
-  }
-
-  // Callback gets the next iteration as first
-  function poll (maxRetries, timeout, cb) {
-    var self = this;
-    if (maxRetries < 0)
-      throw Error("(writeByte) Retry limit exceeded");
-
-    cb(function () {
-      setTimeout(function () {
-        self.poll(maxRetries-1, timeout, cb);
-      }, timeout);
-    });
-  }
-
-  self.cmd(writeOp, function (data) {
-    // Check if we wrote the correct byte
-    poll(5, 250, function (tryAgain) {
-      self.readByte(addr, function (readData) {
-        if (readData & 0xff != data & 0xff) {
-          tryAgain();
-        }
-      });
-    });
-  });
 };
 
 SerialTransaction.prototype.destroyOtherConnections = function (name, cb) {
@@ -205,7 +144,8 @@ SerialTransaction.prototype.onOffDTR = function (cb) {
       before = false,
       after = !before;
 
-  setTimeout(function() {
+  self.serial.getControlSignals(self.connectionId, function(signals) {
+    self.log.log("Signals are:", signals);
     self.serial.setControlSignals(
       self.connectionId, {dtr: before, rts: before},
       function (ok) {
@@ -231,7 +171,7 @@ SerialTransaction.prototype.onOffDTR = function (cb) {
             });
         }, 250);
       });
-  }, 0);
+  });
 };
 
 SerialTransaction.prototype.cmdChain = function (chain, cb) {

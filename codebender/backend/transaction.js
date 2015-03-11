@@ -17,6 +17,9 @@ function Transaction (config, finishCallback, errorCallback) {
   this.finishCallback = finishCallback;
   this.errorCallback = errorCallback;
   this.previousErrors = [];
+
+  if (this.log)
+    this.log.resetTimeOffset();
 }
 
 Transaction.prototype = {
@@ -94,10 +97,12 @@ Transaction.prototype = {
   },
 
   transitionCb: function (state, varArgs) {
-    var self = this;
-    return arraify(arguments).reduce(function (cb, a) {
-      return cb.bind(self, a);
-    }, this.transition.bind(this));
+    var self = this, allArgs = arraify(arguments);
+
+    return function () {
+      var newArgs = arraify(arguments);
+      self.transition.apply(self, allArgs.concat(newArgs));
+    };
   },
 
   padOrSlice: function (data, offset, length) {
