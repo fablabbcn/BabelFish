@@ -1,3 +1,7 @@
+// Corresponding avrdude commands for leonardo:
+
+// $ avrdude -Cavrdude.conf -v -v -v -v -patmega32u4 -cusbtiny -Uflash:w:"/home/fakedrake/.mozilla/firefox/c9s245o7.default/extensions/codebender@codebender.cc/plugins/file.bin":r
+
 var _create_chrome_client = require('./../../../chrome-extension/client/rpc-client'),
     USBTransaction = require('./usbtransaction').USBTransaction,
     arraify = require('./../util').arraify,
@@ -58,7 +62,7 @@ USBTinyTransaction.prototype.cmd = function (cmd, cb) {
 // accept the device name.
 USBTinyTransaction.prototype.flash = function (_, hexData) {
   var self = this;
-  this.hexData = hexData;
+  this.hexData = hexData.data || hexData;
 
   self.usb.findDevices(self.device, function (hndls) {
     if (hndls.length == 0) {
@@ -112,7 +116,7 @@ USBTinyTransaction.prototype.programPage = function (offset) {
   var page = this.config.avrdude.memory.flash.page_size,
       end = offset + page,
       info = this.transferOut(this.UT.FLASH_WRITE, 0,
-                              offset + this.config.offset,
+                              offset + this.hexData.length,
                               this.hexData.slice(offset, end));
 
   this.write(info, this.transitionCb('flushPage', offset, end));
@@ -124,10 +128,13 @@ USBTinyTransaction.prototype.flushPage = function (offset, end, ctrlArg) {
       self = this;
 
   this.cmd(cmd, function (res) {
-    if (end > self.hexData.length)
+    if (end > self.hexData.length) {
       self.transition('powerDown');
-    else
-      self.transition('programPage', end);
+      return;
+    }
+
+    log.log("Progress:", end, "/", self.hexData.length);
+    self.transition('programPage', end);
   });
 };
 
