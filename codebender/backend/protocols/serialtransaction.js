@@ -83,7 +83,10 @@ SerialTransaction.prototype.justWrite = function (data, cb) {
   this.serial.send(this.connectionId, dataBuf, function(writeArg) {
     if (!writeArg) self.errCb(errno.CONNECTION_LOST, "Connection lost");
 
-    if (!self.config.disableFlushing)
+    // XXX: turns out flush means tcflush not fflush, ie discard the
+    // buffers, not write any pending writes. This is probably never
+    // what we mean.
+    if (0 && !self.config.disableFlushing)
       self.serial.flush(self.connectionId, function (ok) {
         if (!ok) {
           self.errCb(errno.FLUSH_FAIL,'Failed to flush');
@@ -122,15 +125,17 @@ SerialTransaction.prototype.destroyOtherConnections = function (name, cb) {
           next();
         else {
           self.log.log("Closing connection ", c.connectionId);
-          self.serial.disconnect(c.connectionId, function (ok) {
-            if (!ok) {
-              self.errCb(errno.FORCE_DISCONNECT_FAIL, "Failed to close connection ", c.connectionId);
-            } else {
-              self.log.log('Destroying connection:', c.connectionId);
-              self.serial.onReceiveError.forceDispatch(
-                {connectionId: c.connectionId, error: "device_lost"});
-              next();
-            }
+          self.serial.flush(c.connectionId, function () {
+            self.serial.disconnect(c.connectionId, function (ok) {
+              if (!ok) {
+                self.errCb(errno.FORCE_DISCONNECT_FAIL, "Failed to close connection ", c.connectionId);
+              } else {
+                self.log.log('Destroying connection:', c.connectionId);
+                self.serial.onReceiveError.forceDispatch(
+                  {connectionId: c.connectionId, error: "device_lost"});
+                next();
+              }
+            });
           });
         }
       }, cb);
@@ -138,39 +143,49 @@ SerialTransaction.prototype.destroyOtherConnections = function (name, cb) {
   });
 };
 
-SerialTransaction.prototype.onOffDTR = function (cb) {
+// Retries were introduced because in some boards if signals are set
+// too soon after connection, the callback is just not called.
+SerialTransaction.prototype.setDtr = function (timeout, val, cb, _retries) {
+  var self = this;
+
+
+  setTimeout(function() {
+    var waitTooLong = setTimeout(function () {
+      if (_retries) {
+        self.setDtr(timeout, val, cb, _retries-1);
+        return;
+      }
+
+      self.errCb(1, "Waited too long to set DTR.");
+    }, 50);
+
+    self.log.log("Setting DTR/DTS to", val);
+    self.serial.setControlSignals(
+      self.connectionId, {dtr: val, rts: val},
+      function(ok) {
+        clearTimeout(waitTooLong);
+
+        if (!ok) {
+          self.errCb(errno.DTR_RTS_FAIL,"Failed to set flags");
+          return;
+        }
+        self.log.log("DTR/RTS set to", val);
+        cb();
+      });
+  }, timeout);
+};
+
+SerialTransaction.prototype.twiggleDtr = function (cb, _cbArgs) {
   var args = arraify(arguments, 1),
       self = this,
-      before = false,
+      before = false,           //AVRDUDE always disables the line
       after = !before;
 
   self.serial.getControlSignals(self.connectionId, function(signals) {
     self.log.log("Signals are:", signals);
-    self.serial.setControlSignals(
-      self.connectionId, {dtr: before, rts: before},
-      function (ok) {
-        if (!ok) {
-          self.errCb(errno.DTR_RTS_FAIL, "Couldn't send DTR");
-          return;
-        }
-        setTimeout(function() {
-          self.serial.setControlSignals(
-            self.connectionId, {dtr: after, rts: after},
-            function(ok) {
-              self.log.log("Raised DTR/RTS, done: ", ok);
-              if (!ok) {
-                self.errCb(errno.DTR_RTS_FAIL,"Failed to set flags");
-                return;
-              }
-
-              setTimeout(function () {
-                self.buffer.drain(function () {
-                  cb.apply(null, args);
-                });
-              }, 500);
-            });
-        }, 250);
-      });
+    self.setDtr(250, before, function () {
+      self.setDtr(500, after, cb);
+    });
   });
 };
 

@@ -1,9 +1,6 @@
 # Targets for running chromeb
 
-chrome = $(shell which chromium-dev || which chrome || which chromium || echo  ~/Applications/Chromium.app/Contents/MacOS/Chromium)
-ifneq ($(debug),)
-debug-arg=--enable-logging --v=5 --enable-logging=stderr
-endif
+chrome ?= $(shell which chrome || which chromium || echo  ~/Applications/Chromium.app/Contents/MacOS/Chromium)
 chrome-args = --user-data-dir=/tmp/chromium-user-data				\
 --load-extension=$(dot)/CodebenderChromeDeveloper,$(dot)/chrome-extension	\
 --no-first-run,									\
@@ -23,13 +20,14 @@ $(chrome-log-dir):
 
 # Fire up an asynchronous chrome instance
 .PHONY:
-run-chrome: $(dot)/bundles/chrome-client.js | $(dot)/CodebenderChromeDeveloper /tmp $(chrome-log-dir)
-	(sleep 3 &&\
-		$(chrome) $(chrome-args) $(URL) 2> $(chrome-log-dir)/chrome-$(shell date "+%s").log) &
+run-chrome: $(dot)/bundles/chrome-client.js | $(dot)/CodebenderChromeDeveloper $(chrome-log-dir)
+	$(chrome) $(chrome-args) $(URL) 2> $(chrome-log-dir)/chrome-$(shell date "+%s").log
 
 # Run a nodejs server and run chrome.
 .PHONY:
-serve-chrome: run-chrome serve
+serve-chrome:
+	$(MAKE) async-serve
+	$(MAKE) run-chrome; $(MAKE) kill-server
 
 # Run tests that are chrome specific
 CHROME_TEST =  $(dot)/test/selenium-test.js

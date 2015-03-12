@@ -212,13 +212,30 @@ STK500Transaction.prototype.flash = function (deviceName, sketchData) {
   this.refreshTimeout();
   this.sketchData = sketchData;
   log.log("Flashing. Config is:", this.config);
-  var self = this;
+  var self = this,
+      connectCb = function (connArg) {
+        log.log("Connected to device");
+        if (typeof(connArg) == "undefined" ||
+            typeof(connArg.connectionId) == "undefined" ||
+            connArg.connectionId == -1) {
+          this.errCb(errno.CONNECTION_FAIL, "Bad connectionId / Couldn't connect to board");
+          return;
+        }
+
+        this.connectionId = connArg.connectionId;
+
+        self.setDtr(0, false, function() {
+          self.transition('connectDone',
+                          sketchData, connArg);
+        });
+      };
+
   self.destroyOtherConnections(
     deviceName,
     function () {
       self.serial.connect(deviceName,
-                          {bitrate: self.config.speed || 19200, name: deviceName},
-                          self.transitionCb('connectDone', sketchData));
+                          {bitrate: self.config.speed, name: deviceName},
+                          connectCb, 3);
     });
 };
 
@@ -233,43 +250,19 @@ STK500Transaction.prototype.eraseThenFlash  = function (deviceName, sketchData, 
   });
 };
 
-// Silence the device with megahack/sync.
-STK500Transaction.prototype.megaHack = function (cb, kwargs) {
-  kwargs = kwargs || {};
-  var self = this, justWrite = kwargs.justWrite;
-
-  self.buffer.drain(function () {
-    (justWrite ? self.justWrite.bind(self) : self.writeThenRead.bind(self))
-    ([self.STK.GET_SYNC, self.STK.CRC_EOP], function () {
-      self.buffer.drain(function () {
-        cb();
-      });
-    });
-  });
-};
-
 STK500Transaction.prototype.connectDone = function (hexCode, connectArg) {
   var self = this;
-
-  if (typeof(connectArg) == "undefined" ||
-      typeof(connectArg.connectionId) == "undefined" ||
-      connectArg.connectionId == -1) {
-    this.errCb(errno.CONNECTION_FAIL,
-               "Bad connectionId / Couldn't connect to board");
-    return;
-  }
-
-  this.connectionId = connectArg.connectionId;
   log.log("Connected to board:", connectArg);
   if (connectArg.connectionId)
-    // Make the device shut up
-    self.megaHack(function () {
-      (self.config.avoidTwiggleDTR ?
-       setTimeout : self.onOffDTR.bind(self)) (function () {
-         self.writeThenRead([self.STK.GET_SYNC, self.STK.CRC_EOP],
-                            self.transitionCb('inSyncWithBoard'));
-       });
-    }, {justWrite: true});                   //Just write, dont expect a valid response
+    // Mega hack
+    this.justWrite([this.STK.GET_SYNC, this.STK.CRC_EOP], function () {
+      self.buffer.drain(function () {
+        self.twiggleDtr(function () {
+          self.writeThenRead([self.STK.GET_SYNC, self.STK.CRC_EOP],
+                             self.transitionCb('inSyncWithBoard'));
+        });
+      });
+    });
 };
 STK500Transaction.prototype.inSyncWithBoard = function (data) {
   this.inSync_ = true;

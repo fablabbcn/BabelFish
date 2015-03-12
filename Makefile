@@ -6,6 +6,10 @@ dot = $(call path,$(CURDIR))
 
 MOCHA = mocha $(DEBUG)
 
+# Some morons force you to have parens and spaces in executable paths
+# (i am talking to you fucking Microsoft)
+MAKE:='$(MAKE)'
+
 # URL = http://localhost:8080/web/serialmonitor.html
 ## FIREFOX TESTS
 # URL = http://localhost:8080/test/testpages/plugin-serial/index.html
