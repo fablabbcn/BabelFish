@@ -44,6 +44,9 @@ USBTransaction.prototype.transferIn = function (op, value, index, length) {
 
 // Full fledged write with control
 USBTransaction.prototype.write = function (info, cb) {
+  log.log("Performing control transfer:",
+          buffer.hexRep([info.request, info.index, info.valie]));
+
   this.usb.controlTransfer(
     this.handler,
     info, function (arg) {

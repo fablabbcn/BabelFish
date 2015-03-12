@@ -1,7 +1,10 @@
 var util = require('./../util');
 
-// A op to an array of bytes. Optional parameter addr is the address
-// to fill in the address bits.
+// A op to an array of bytes. Optional parameter param is an object
+// with keys corresponding to avrdude.conf's bitTypes. Some of them
+//
+// - ADDRESS
+//
 function opToBin(op, param) {
   var ret = [];
   param = param || {};

@@ -84,6 +84,26 @@ function zip(varArgs) {
   });
 }
 
+// Python style zip
+function arrEqual(varArgs) {
+  var arrays = arraify(arguments);
+
+  if (arrays.length == 0) {
+    return true;
+  }
+
+  if (arrays.some(function (a) {a.length != arrays[0].length}))
+    return false;
+
+  // Is there an element for which there is an element that is not
+  // equal to it?
+  return !arrays[0].some(function(ele, i) {
+    return arrays.some(function(array) {
+      return array[i] != ele;
+    });
+  });
+}
+
 function pyzip() {
   var args = [].slice.call(arguments);
   var shortest = args.length==0 ? [] : args.reduce(function(a,b){
@@ -157,3 +177,4 @@ module.exports.infinitePoll = infinitePoll;
 module.exports.poll = poll;
 module.exports.dbg = dbg;
 module.exports.forEachWithCallback = forEachWithCallback;
+module.exports.arrEqual = arrEqual;

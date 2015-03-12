@@ -4,7 +4,8 @@
 
 var _create_chrome_client = require('./../../../chrome-extension/client/rpc-client'),
     USBTransaction = require('./usbtransaction').USBTransaction,
-    arraify = require('./../util').arraify,
+    util = require('./../util'),
+    arraify = util.arraify,
     ops = require("./memops"),
     buffer = require("./../buffer"),
     Log = require('./../logging').Log,
@@ -64,15 +65,22 @@ USBTinyTransaction.prototype.flash = function (_, hexData) {
   var self = this;
   this.hexData = hexData.data || hexData;
 
-  self.usb.findDevices(self.device, function (hndls) {
-    if (hndls.length == 0) {
+  self.usb.getDevices(self.device, function (devs) {
+    if (devs.length == 0) {
       self.errCb(1, "No devices found");
       return;
     }
 
-    self.handler = hndls.pop();
-    // Power up to chip erase
-    self.transition('powerUp');
+    var dev = devs.pop();
+
+    // Config 0 is invalid generally but due to the strangenes that is
+    // windows and mac we need to default somewhere.
+    self.usb.openDevice(dev,function (hndl) {
+      self.usb.setConfiguration(hndl, 1, function () {
+        self.handler = hndl;
+        self.transition('powerUp');
+      });
+    });
   });
 };
 
@@ -112,29 +120,68 @@ USBTinyTransaction.prototype.chipErase = function () {
 };
 
 // === Programming superstate ===
-USBTinyTransaction.prototype.programPage = function (offset) {
-  var page = this.config.avrdude.memory.flash.page_size,
+USBTinyTransaction.prototype.programPage = function (offset, resp, pageCheckers) {
+  var self = this,
+      page = this.config.avrdude.memory.flash.page_size,
       end = offset + page,
+      pageBin = this.hexData.slice(offset, end),
       info = this.transferOut(this.UT.FLASH_WRITE, 0,
                               offset + this.hexData.length,
-                              this.hexData.slice(offset, end));
+                              pageBin);
 
-  this.write(info, this.transitionCb('flushPage', offset, end));
+  function checkPage (cb) {
+    var info = self.transferIn(self.UT.FLASH_READ, 0,
+                               offset + self.hexData.length,
+                               page);
+
+    self.write(info, function (data) {
+      log.log("Comaring", data.data, pageBin);
+      if (!util.arrEqual(data.data, pageBin)) {
+        // Should we try to rewrite it?
+        self.errCb(1, "Page check at", offset, "failed");
+        return;
+      }
+
+      cb();
+    });
+  }
+
+  this.write(info, this.transitionCb('flushPage', offset, end,
+                                     (pageCheckers || []).concat([checkPage])));
 };
 
-USBTinyTransaction.prototype.flushPage = function (offset, end, ctrlArg) {
+USBTinyTransaction.prototype.flushPage = function (offset, end, pageCheckers,
+                                                   ctrlArg) {
   var writePageArr = this.config.avrdude.memory.flash.memops.WRITEPAGE,
       cmd = ops.opToBin(writePageArr, {ADDRESS: offset / 2}),
       self = this;
 
   this.cmd(cmd, function (res) {
     if (end > self.hexData.length) {
-      self.transition('powerDown');
+      self.transition('checkPages', pageCheckers);
       return;
     }
 
     log.log("Progress:", end, "/", self.hexData.length);
-    self.transition('programPage', end);
+    self.transition('programPage', end, res, pageCheckers);
+  });
+};
+
+// Just chain the checkers. As a thought experiment we could have them
+// run in parallel and have a barrier function as a callback to call
+// the checkPages. This way we could be comparing
+USBTinyTransaction.prototype.checkPages = function (checkers) {
+  if (checkers.length == 0) {
+    this.transition("powerDown");
+    return;
+  }
+
+  var car = checkers[0],
+      cdr = checkers.slice(1),
+      self = this;
+
+  car(function () {
+    self.transition("checkPages", cdr);
   });
 };
 

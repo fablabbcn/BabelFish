@@ -18,10 +18,21 @@ function path2callable (object, name) {
   var names =  name.split('.'),
       method = names.pop(),
       obj = (names.reduce(function (ob, meth) {return ob[meth];}, object)
-	     || object);
+             || object),
+      self = this;
 
-  if (!obj[method])
-    throw new Error('Bad object chrome.*.'+name);
+  if (!obj[method]) {
+    throw Error("Bad object: " + name);
+
+    // Continue execution if we made a horrible mistake
+    // return function (varArgs) {
+    //   [].forEach.call(varArgs, function (a) {
+    //     if (typeof a === 'function') {
+    //       a();
+    //       throw Error("Called bad method: " +  name);
+    //     }
+    //   });
+  }
 
   return obj[method].bind(obj);
 };
