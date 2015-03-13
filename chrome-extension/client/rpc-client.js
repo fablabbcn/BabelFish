@@ -78,7 +78,7 @@ if (!window.chrome) {
       } else {
         dbg("Sending:", msg);
         this.runtime_.sendMessage (
-          this.config.extensionId, msg, {}, (function (rsp) {
+          this.config.extensionId, msg, {}, (function _removeMeFromStack (rsp) {
             dbg("BUS received: ", rsp);
             callbackWrap(rsp);
           }).bind(this));
@@ -173,9 +173,29 @@ if (!window.chrome) {
       if (!callback)
         return callback;
 
+      // STACK TRACE: Chrome overrides the stack trace when an error
+      // is raised from within a message listener callback. For this
+      // reason we maintain a list of stacktraces at creation time of
+      // each callback wrapper (let's call it a thread).
+      //
+      // When a thread is triggered it's topmost function has an
+      // attribute called 'stackList' whose car is the stacktrace at
+      // the time of it's creation and cdr is the traces at the time
+      // of each of it's parent's creation.
+      //
+      // In other words you may think of all this like maintaining a
+      // stacktrace (l) of threads creating each other let's call it
+      // threadTrace. Each element of the thread trace is the stack
+      // trace of the parent trhead at the time of the child thread
+      // invokation. Concatenating the threadTrace and filtering out
+      // the thread management code (in this case this file, the rpc
+      // manager). We get a readable stack trace.
+      //
+
       callback.rpcErrorHandler = this.customErrorHandler;
       var self = this,
-          goodErr = new Error("Error in API callback."),
+          stackList = [new Error("Stack tracing error").stack],
+          stackItem = this.msgCallbackFactory,
           ret = function (resp) {
             // Ignore free resoponses
             try {
@@ -193,11 +213,37 @@ if (!window.chrome) {
               }
               return true;
             } catch(e) {
-              goodErr.message = e.message;
-              throw goodErr;
+              console.warn("REAL STACK:");
+              // The stacklist is missing the last stack.
+              [e.stack].concat(ret.stackList).forEach(function (s) {
+                // Filter out the ones coming from us and the ones
+                // coming from chrome internals
+                s.split("\n").filter(function (l) {
+                  return l.indexOf("extensions::") == -1 &&
+                    l.indexOf("RPCClient") == -1 &&
+                    l.indexOf("_removeMeFromStack") == -1 &&
+                    l.indexOf("Stack tracing error") == -1;
+                }).forEach(function (l) {
+                  console.warn(l);
+                });
+              });
+              throw e;
             }
           };
 
+      // Walk up the stack and find someone who owns a stacklist
+      while(stackItem) {
+        if (stackItem.stackList) {
+          stackList = stackList.concat(stackItem.stackList);
+          break;
+        }
+
+        stackItem = stackItem.caller;
+      }
+
+      // When the thread is spawned it will know the stacks of the
+      // parent threads
+      ret.stackList = stackList;
       ret.callbackId = callback.callbackId;
       return ret;
     },
