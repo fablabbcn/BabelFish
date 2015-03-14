@@ -39,7 +39,7 @@ function RPCHost (name, obj) {
   // Check the methods
   this.supportedMethods.forEach((function (m) {
     if (typeof(path2callable(this.obj, m)) != 'function')
-      throw new Error("Not callable " + m);
+      console.warn("Not callable " + m + ", probably old chrome.");
   }).bind(this));
 
   if (!bus) bus = new HostBus();
@@ -252,6 +252,6 @@ RPCHost.prototype = {
         console.warn("Dont know how to clean callbacks of:", ls);
       }
     });
-   this.garbageCollectCallbacks();
+    this.garbageCollectCallbacks();
   }
 };
