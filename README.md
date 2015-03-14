@@ -4,6 +4,24 @@ RPC protocol to provide selective access to the chrome api to the
 front end code. More simply it is an extension that allows you to run
 restricted chrome API calls from regular fetched javascript.
 
+## Creating Packages
+
+To create a package to be uploaded to chrome store run
+
+    make store-zip
+
+and the right thing will happen (regarding developer mode
+aswell). Note that developer mode will be reenabled when the process
+finishes regardless of wether you were in developer mode. Don't forget
+to update the version
+
+## Developer mode
+
+In normal mode the website knows the ID of the extension and
+communicates with it. In developer mode the extension sends it's id
+the nodejs server (eg `make async-serve`) and the client reads the
+extensonid from there.
+
 ## Usage
 
 And in config.js (unless you want something strage it should be setup:
