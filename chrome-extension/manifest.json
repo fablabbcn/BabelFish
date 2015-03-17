@@ -16,6 +16,7 @@
     "externally_connectable": {
 	"matches": [
             "http://localhost:8080/*",
+            "http://localhost/*",
             "http://staging.codebender.cc/*",
             "https://staging.codebender.cc/*",
             "http://codebender.cc/*",

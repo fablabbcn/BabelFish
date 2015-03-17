@@ -111,4 +111,8 @@ CodebenderPlugin.prototype.initCb = function (cb) {
   });
 };
 
+CodebenderPlugin.prototype.getVersion = function (cb) {
+  cb(this.version);
+};
+
 module.exports = CodebenderPlugin;
