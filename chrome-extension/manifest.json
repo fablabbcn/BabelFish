@@ -1,6 +1,6 @@
 {
     "name": "babel-fish",
-    "version": "0.1.0.5",
+    "version": "0.1.0.8",
     "manifest_version": 2,
     "minimum_chrome_version": "38",
     "author": "Codebender.cc",
@@ -16,8 +16,8 @@
     "externally_connectable": {
 	"matches": [
             "http://localhost:8080/*",
-            "http://staging.codebender.cc/*",
-            "https://staging.codebender.cc/*",
+            "http://*.codebender.cc/*",
+            "https://*.codebender.cc/*",
             "http://codebender.cc/*",
             "https://codebender.cc/*"
 	],
@@ -34,8 +34,8 @@
         "usb",
         "http://localhost:8080/*",
         "http://localhost/*",
-        "http://staging.codebender.cc/*",
-        "https://staging.codebender.cc/*",
+        "http://*.codebender.cc/*",
+        "https://*.codebender.cc/*",
         "http://codebender.cc/*",
         "https://codebender.cc/*"
     ]

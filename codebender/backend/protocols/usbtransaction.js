@@ -7,13 +7,16 @@ var _create_chrome_client = require('./../../../chrome-extension/client/rpc-clie
     buffer = require("./../buffer"),
     ops = require("./memops"),
     Log = require('./../logging').Log,
-    log = new Log('USBTiny');
+    log = new Log('USBTransaction');
 
 function USBTransaction(config, finishCallback, errorCallback) {
   Transaction.apply(this, arraify(arguments));
-  // Default product and vendor IDs
+
+  this.log = log;
   this.usb = chrome.usb;
   this.sck = 10;
+
+  this.log.resetTimeOffset();
 }
 
 USBTransaction.prototype = new Transaction();
@@ -26,7 +29,8 @@ USBTransaction.prototype.transferOut = function (op, value, index, data) {
     request: op,
     value: value,
     index: index,
-    data: buffer.binToBuf(data || [])
+    data: buffer.binToBuf(data || []),
+    length: data ? data.length : 0
   };
 };
 
@@ -44,17 +48,24 @@ USBTransaction.prototype.transferIn = function (op, value, index, length) {
 
 // Full fledged write with control
 USBTransaction.prototype.write = function (info, cb) {
-  log.log("Performing control transfer:",
-          buffer.hexRep([info.request, info.index, info.valie]));
+  var self = this;
 
-  this.usb.controlTransfer(
-    this.handler,
-    info, function (arg) {
-      arg.data = buffer.bufToBin(arg.data);
+  log.log("Performing control transfer", info.direction,
+          buffer.hexRep([info.request, info.value, info.index]),
+          "len:", info.length);
 
-      log.log('sent:', buffer.hexRep([info.request, info.value, info.index]));
-      cb(arg);
-    });
+  this.refreshTimeout();
+
+  setTimeout(function (){
+    self.usb.controlTransfer(
+      self.handler,
+      info, function (arg) {
+        arg.data = buffer.bufToBin(arg.data);
+
+        log.log('sent:', buffer.hexRep([info.request, info.value, info.index]));
+        cb(arg);
+      });
+  }, 500);
 };
 
 // A simple control message with 2 values (index, value that is)
@@ -63,7 +74,6 @@ USBTransaction.prototype.control = function (op, v1, v2, cb) {
 };
 
 USBTransaction.prototype.localCleanup = function (callback) {
-
   function doCleanup () {
     log.log("Handler closed");
     self.handler = null;

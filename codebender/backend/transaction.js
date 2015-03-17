@@ -4,6 +4,8 @@ var utilModule = require("./util"),
     chain = utilModule.chain,
     ops = require("./protocols/memops"),
     buffer = require("./buffer"),
+    Log = require("./logging").Log,
+    log = new Log("Generic Transaction");
     errno = require("./errno");
 
 function Transaction (config, finishCallback, errorCallback) {
@@ -18,8 +20,8 @@ function Transaction (config, finishCallback, errorCallback) {
   this.errorCallback = errorCallback;
   this.previousErrors = [];
 
-  if (this.log)
-    this.log.resetTimeOffset();
+  this.log = log;
+  this.log.resetTimeOffset();
 }
 
 Transaction.prototype = {
@@ -35,7 +37,8 @@ Transaction.prototype = {
     }
 
     this.timeout = setTimeout(function () {
-      self.errCb(errno.IDLE_HOST, "No communication with device for over ", self.timeoutSecs, "s");
+      self.errCb(errno.IDLE_HOST, "No communication with device for over ",
+                 self.timeoutSecs, "s");
     }, this.timeoutSecs * 1000);
   },
 

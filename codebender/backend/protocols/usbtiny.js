@@ -38,6 +38,7 @@ function USBTinyTransaction(config, finishCallback, errorCallback) {
   // Default product and vendor IDs
   this.device = {productId: 0xc9f, vendorId: 0x1781};
   this.log = log;
+  this.log.resetTimeOffset();
 }
 
 USBTinyTransaction.prototype = new USBTransaction();
@@ -86,7 +87,7 @@ USBTinyTransaction.prototype.flash = function (_, hexData) {
 
 // The callback to use to program(it may be chipErase)
 USBTinyTransaction.prototype.powerUp = function () {
-  log.log(this.handler);
+  log.log("Powering up:", this.handler);
   this.control(this.UT.POWERUP, this.sck, this.UT.RESET_LOW,
                this.transitionCb('programEnable'));
 };
@@ -126,20 +127,24 @@ USBTinyTransaction.prototype.programPage = function (offset, resp, pageCheckers)
       end = offset + page,
       pageBin = this.hexData.slice(offset, end),
       info = this.transferOut(this.UT.FLASH_WRITE, 0,
-                              offset + this.hexData.length,
-                              pageBin);
+                              offset, pageBin);
 
-  function checkPage (cb) {
+  function checkPage (cb, _retries) {
     var info = self.transferIn(self.UT.FLASH_READ, 0,
-                               offset + self.hexData.length,
-                               page);
+                               offset, page);
 
+    _retries = _retries || 3;
     self.write(info, function (data) {
-      log.log("Comaring", data.data, pageBin);
+      log.log("Comparing:", data.data, pageBin);
       if (!util.arrEqual(data.data, pageBin)) {
-        // Should we try to rewrite it?
-        self.errCb(1, "Page check at", offset, "failed");
-        return;
+        if (_retries > 1){
+          checkPage(cb, _retries - 1);
+          return;
+        } else{
+          // Should we try to rewrite it?
+          self.errCb(1, "Page check at", offset, "failed");
+          return;
+        }
       }
 
       cb();
@@ -183,6 +188,7 @@ USBTinyTransaction.prototype.checkPages = function (checkers) {
   car(function () {
     self.transition("checkPages", cdr);
   });
+
 };
 
 // === Final superstate
