@@ -1,6 +1,12 @@
 // Corresponding avrdude commands for leonardo:
 
-// $ avrdude -Cavrdude.conf -v -v -v -v -patmega32u4 -cusbtiny -Uflash:w:"/home/fakedrake/.mozilla/firefox/c9s245o7.default/extensions/codebender@codebender.cc/plugins/file.bin":r
+// # generate some data
+// $ for i in {0..511}; do echo $(($i % 256)); done | (while read i; do printf "\\x$(printf '%02x' $i)"; done) > /tmp/file.bin
+// # Throw it in with avrdude
+// $ avrdude -Cavrdude.conf -v -v -v -v -patmega32u4 -cusbtiny -Uflash:w:"/tmp/file.bin":r
+//
+// The arduino wont do anything after this obviously but the pages
+// should be.
 
 var _create_chrome_client = require('./../../../chrome-extension/client/rpc-client'),
     USBTransaction = require('./usbtransaction').USBTransaction,
@@ -43,6 +49,16 @@ function USBTinyTransaction(config, finishCallback, errorCallback) {
 
 USBTinyTransaction.prototype = new USBTransaction();
 
+
+USBTinyTransaction.prototype.writeMaybe = function (info, callback) {
+  if (this.config.dryRun) {
+    callback({data: [0xde, 0xad, 0xbe, 0xef]});
+    return;
+  }
+
+  this.write(info, callback);
+};
+
 USBTinyTransaction.prototype.cmd = function (cmd, cb) {
 
   var info = this.transferIn(this.UT.SPI,
@@ -50,7 +66,7 @@ USBTinyTransaction.prototype.cmd = function (cmd, cb) {
                              (cmd[3] << 8) | cmd[2],
                              4);
 
-  this.write(info, function (resp) {
+  this.writeMaybe(info, function (resp) {
     log.log("CMD:", buffer.hexRep(cmd), buffer.hexRep(resp.data));
     cb(resp);
   });
@@ -133,11 +149,11 @@ USBTinyTransaction.prototype.programPage = function (offset, resp, pageCheckers)
     var info = self.transferIn(self.UT.FLASH_READ, 0,
                                offset, page);
 
-    _retries = _retries || 3;
+    _retries = typeof _retries === 'undefined' ?  3 : _retries;
     self.write(info, function (data) {
-      log.log("Comparing:", data.data, pageBin);
+      log.log("Comparing [attempt:", 3 - _retries, "/", 3, "]:", data.data, pageBin);
       if (!util.arrEqual(data.data, pageBin)) {
-        if (_retries > 1){
+        if (_retries > 0){
           checkPage(cb, _retries - 1);
           return;
         } else{
@@ -151,7 +167,7 @@ USBTinyTransaction.prototype.programPage = function (offset, resp, pageCheckers)
     });
   }
 
-  this.write(info, this.transitionCb('flushPage', offset, end,
+  this.writeMaybe(info, this.transitionCb('flushPage', offset, end,
                                      (pageCheckers || []).concat([checkPage])));
 };
 
