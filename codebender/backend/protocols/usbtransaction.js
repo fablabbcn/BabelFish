@@ -53,6 +53,9 @@ USBTransaction.prototype.write = function (info, cb) {
   log.log("Performing control transfer", info.direction,
           buffer.hexRep([info.request, info.value, info.index]),
           "len:", info.length);
+  if (info.direction == "out") {
+    log.log("Data:", buffer.hexRep(buffer.bufToBin(info.data)));
+  }
 
   this.refreshTimeout();
 
@@ -60,12 +63,17 @@ USBTransaction.prototype.write = function (info, cb) {
     self.usb.controlTransfer(
       self.handler,
       info, function (arg) {
+        if (arg.resultCode != 0) {
+          self.errCb(1, "Bad resultCode from libusb:", arg.resultCode);
+          return;
+        }
+
         arg.data = buffer.bufToBin(arg.data);
 
-        log.log('sent:', buffer.hexRep([info.request, info.value, info.index]));
+        log.log('Response was:', arg);
         cb(arg);
       });
-  }, 500);
+  });
 };
 
 // A simple control message with 2 values (index, value that is)

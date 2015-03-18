@@ -213,7 +213,7 @@ Plugin.prototype = {
                                  communication, speed, force, delay,
                                  mcu, cb, _extraConfig) {
     var extraConfig = util.merge(_extraConfig || {},
-                                 {avoidTwiggleDTR: true, confirmPages: true});
+                                 {avoidTwiggleDTR: true, confirmPages: true, dryRun: window.dryRun});
 
     // XXX: maybe fail if this is not a programmer.
     this.flash(device, code, maxsize, protocol, false, 0, mcu, cb,
