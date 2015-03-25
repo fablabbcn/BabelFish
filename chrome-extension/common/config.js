@@ -19,7 +19,7 @@ var config = {
                    cleaner: 'onChanged.removeListener'}]
     },
     runtime: {
-      methods: ['getManifestAsync']
+      methods: ['getManifestAsync', 'getPlatformInfo']
     }
   }
 },
