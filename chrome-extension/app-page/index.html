@@ -1,24 +1,125 @@
-<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<!DOCTYPE html>
 <html>
   <head>
-    <title>BabelFish</title>
+    <meta charset="UTF-8">
+    <title>Codebender app</title>
+
+    <style>
+      body {
+        width: 500px;
+        height: 400px;
+        margin: 0;
+        padding: 0;
+        font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+        overflow: none;
+        background-image: url('blizzard.png');
+        background-size: 100%;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+        background-position: 0 0;
+      }
+
+      header, footer {
+        height: 40px;
+        display: block;
+        margin: 0;
+        font-size: 20px;
+        line-height: 20px;
+
+        text-shadow: 0 1px 0 #ffffff;
+
+        -webkit-box-shadow: 0 1px 10px rgba(0,0,0,.1);
+        -moz-box-shadow: 0 1px 10px rgba(0,0,0,.1);
+        box-shadow: 0 1px 10px rgba(0,0,0,.1);
+
+        background-color: #fafafa;
+
+        background-image: -moz-linear-gradient(top, #ffffff, #f2f2f2);
+        background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#ffffff), to(#f2f2f2));
+        background-image: -webkit-linear-gradient(top, #ffffff, #f2f2f2);
+        background-image: -o-linear-gradient(top, #ffffff, #f2f2f2);
+        background-image: linear-gradient(to bottom, #ffffff, #f2f2f2);
+        background-repeat: repeat-x;
+      }
+
+      .banner p {
+        display: inline-block;
+        color: #777777;
+        text-decoration: none;
+        vertical-align: middle;
+      }
+
+      #codebender-banner a {
+        display: block;
+        width: 136px;
+        height: 40px;
+      }
+
+      #codebender-banner p {
+        margin: 10px 2px 24px 2px;
+      }
+
+      #codebender-banner img {
+        display: inline-block;
+        width: 22px;
+        margin: 8px 2px 0 2px;
+      }
+
+      #happy-hacking {
+        display: inline-block;
+        text-align: center;
+        margin-left: 320px;
+      }
+
+      #main-container {
+        height: -moz-calc(100% - 100px);
+        height: -webkit-calc(100% - 100px);
+        height: calc(100% - 100px);
+        margin: 5px;
+        font-size: 16px;
+      }
+
+      #codebender-logo {
+        display: inline-block;
+        margin-left: 345px;
+      }
+      #codebender-logo img {
+        width: 80px;
+        margin: 0 20px 0 0;
+      }
+
+      #github-link {
+        font-size: 12px;
+      }
+
+      .small {
+        font-size: 12px;
+      }
+    </style>
   </head>
   <body>
-    <h1>BabelFish</h1>
-    <p><i>"The Babel fish is small, yellow, leech-like, and probably the
-    oddest thing in the universe. It feeds on brain wave energy,
-    absorbing all unconscious frequencies and then excreting
-    telepathically a matrix formed from the conscious frequencies and
-    nerve signals picked up from the speech centres of the brain, the
-    practical upshot of which is that if you stick one in your ear,
-    you can instantly understand anything said to you in any form of
-    language: the speech you hear decodes the brain wave matrix."</i></p>
+    <header>
+      <div id="codebender-banner" class="banner">
+        <a href="https://codebender.cc/?referrer=chrome_extension" target="_blank" title="Visit codebender">
+            <img src="codebender-transparent.png"><p>codebender</p>
+        </a>
+      </div>
+    </header>
 
-    <p>This app is made by the monkeys of <a
-    href="http://codebender.cc">Codebender.cc</a> so you can program
-    your arduino like a baws.</p>
+    <div id="main-container">
+      <p>Now you can access Arduinos, Arduino-like devices and program them through your browser.</p>
+      <p>Visit codebender: <a href="https://codebender.cc/?referrer=chrome_extention" target="_blank">https://codebender.cc</a> the on-line Arduino code editor and IDE, to develop faster and easier, without installing and managing software from multiple computers, while easily uploading your sketch/program to your Arduino.</p>
 
-    <p>Happy hacking</p>
+      <div id="happy-hacking">
+        <p>Happy hacking</p>
+        <p class="small">The Codebender team</p>
+      </div>
 
+      <div id="codebender-logo">
+        <img src="codebender-transparent.png">
+      </div>
+
+      <p id="github-link">Wanna have a look what this app does? We are open source. View our code on <a href="https://github.com/codebendercc/BabelFish"  target="_blank">GitHub</a>.</p>
+    </div>
   </body>
 </html>
