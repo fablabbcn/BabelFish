@@ -10,7 +10,9 @@ HOST_FILES = $(dot)/chrome-extension/manifest.json	\
 	$(dot)/chrome-extension/host/background.js	\
 	$(dot)/chrome-extension/common/config.js	\
 	$(dot)/chrome-extension/common/rpc-args.js	\
-	$(dot)/chrome-extension/app-page/index.html
+	$(dot)/chrome-extension/app-page/index.html	\
+	$(dot)/chrome-extension/app-page/blizzard.png	\
+	$(dot)/chrome-extension/app-page/codebender-transparent.png
 
 HOST_META = $(dot)/chrome-extension/logo128.png \
 	$(dot)/chrome-extension/logo16.png	\
