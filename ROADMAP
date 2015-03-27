@@ -1,0 +1,14 @@
+# Roadmap
+
+- Programmers
+    - Bootloaders
+    - USBASP
+    - Serial
+
+- Test boards against the programmer branch
+- Logging to server
+- Windows serial bug
+- Code quality
+- Unit tests
+- Documentation
+- Firefox Serial/USB API
