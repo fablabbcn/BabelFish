@@ -84,10 +84,10 @@ compilerflasher = function(lf){
         this.eventManager.addListener(type, listener);
     }
 
-
+	var cb = this;
     this.pluginHandler = new function(){
 
-        this.owner;
+        this.owner = cb;
         if (window.CodebenderPlugin !== undefined) {
             this.codebender_plugin = new window.CodebenderPlugin();
         }
@@ -229,7 +229,7 @@ compilerflasher = function(lf){
                 $.get(url);
 
                 var supportedOsMessage = '<i class="icon-warning-sign"></i> To program your Arduino from your browser, please use <a href="http://www.google.com/chrome/" target="_blank">Google Chrome (version 39 or newer)</a> or <a href="http://www.mozilla.org/en-US/firefox/" target="_blank">Mozilla Firefox</a>.';
-                var unsupportedOsMessage = '<i class="icon-warning-sign"></i> To program your Arduino from your browser, please use <a href="http://www.google.com/chrome/" target="_blank">Google Chrome (version 39 or newer)</a> or <a href="http://www.mozilla.org/en-US/firefox/" target="_blank">Mozilla Firefox</a> from Windows, Mac or Linux.';
+                var unsupportedOsMessage = '<i class="icon-warning-sign"></i> To program your Arduino from your browser, please use <a href="http://www.google.com/chrome/" target="_blank">Google Chrome (version 39 or newer)</a> or <a href="http://www.mozilla.org/en-US/firefox/" target="_blank">Mozilla Firefox</a> from Windows, Mac, Linux or Chrome OS.';
                 var supportedOS = Browsers.isOs('Mac OS X') ||
                                 Browsers.isOs('Windows') ||
                                 Browsers.isOs('Unix') ||
@@ -237,6 +237,7 @@ compilerflasher = function(lf){
                                 Browsers.isOs('OpenBSD') ||
                                 Browsers.isOs('NetBSD') ||
                                 Browsers.isOs('Solaris') ||
+                                Browsers.isOs('Chrome OS') ||
                                 Browsers.isOs('Linux') ||
                                 Browsers.isOs('Debian') ||
                                 Browsers.isOs('Fedora') ||
@@ -272,45 +273,81 @@ compilerflasher = function(lf){
                 this.plugin_version = null;
                 window.plugin_version = null;
 
-                this.searchPlugin();
+	            var self = this;
+	            this.searchPlugin(function (ok)
+	            {
+		            if (!self.plugin_found)
+		            {
+			            var alert = self.browserSpecificPluginInstall("To program your Arduino from your browser, install the Codebender Plugin. ");
+			            self.owner.setOperationOutput(alert);
+			            self.owner.eventManager.fire('plugin_notification', alert);
 
-                if (!this.plugin_found)
-                {
-                    var alert = this.browserSpecificPluginInstall("To program your Arduino from your browser, install the Codebender Plugin. ");
-                    this.owner.setOperationOutput(alert);
-                    this.owner.eventManager.fire('plugin_notification', alert);
-
-                    url = "http\x3A\x2F\x2Flocalhost\x2Futilities\x2Flogdb\x2F35\x2FPLUGIN_META";
-                    url = url.replace("PLUGIN_META", JSON.stringify({ "plugin" : false, "message": "Not on navigator plugins."} ));
-                    $.get(url);
-                    var pl = this;
-                    window.pluginSearchInterval =  setInterval(function(){
-                        pl.searchPlugin();
-                        if (pl.plugin_found)
-                        {
-                            clearInterval(window.pluginSearchInterval);
-                            pl.runPlugin();
-                        }
-                    },2000);
-                    return;
-                }
-                else
-                {
-                    this.runPlugin();
-                }
-
+			            url = "http\x3A\x2F\x2Flocalhost\x2Futilities\x2Flogdb\x2F35\x2FPLUGIN_META";
+			            url = url.replace("PLUGIN_META", JSON.stringify({
+				            "plugin": false,
+				            "message": "Not on navigator plugins."
+			            }));
+			            $.get(url);
+			            			            			            				            				            				            					            					            				            			            			            return;
+		            }
+		            else
+		            {
+			            self.runPlugin();
+		            }
+	            });
             }
-
         }
 
-        this.searchPlugin = function()
+	    // If version of extention/plugin found within 5 sec: callback(true) else: callback(false)
+	    // Side-effects: this.plugin_found and this.plugin_searched
+        this.searchPlugin = function(callback)
         {
-            for (i = 0; i < navigator.plugins.length; i++)
-                if (navigator.plugins[i].name == "Codebender.cc" || navigator.plugins[i].name == "Codebendercc")
-                    this.plugin_found = true;
+            var self = this;
+	        var pluginFound = Array.prototype.some.call(navigator.plugins, function (p) {
+		        return (p.name == "Codebender.cc" || p.name == "Codebendercc");
+	        });
+	        if (pluginFound)
+	        {
+		        this.plugin_found = true;
+		        this.plugin_searched = true;
+		        callback(true);
+		        return;
+	        }
+
             if (window.extentionAvailable)
-                this.plugin_found = true;
-            this.plugin_searched = true;
+            {
+                // The extention methods may become active after some time
+                // in developer mode, due to availability of ajax calls
+                // getting the extention id
+	            var pollExtention = setInterval(function () {
+                    self.codebender_plugin.getVersion(function (version) {
+                        clearInterval(pollExtention);
+                        // clearTimeout(versionFail);
+                        if (version)
+                        {
+                            self.plugin_found = true;
+                            self.plugin_searched = true;
+                            callback(true);
+                            return;
+                        }
+                        else
+                        {
+                            self.plugin_searched = true;
+                            callback(false);
+                        }
+                    });
+                }, 500);
+
+                setTimeout(function () {
+                    clearInterval(pollExtention);
+                    callback(false);
+                }, 5000);
+            }
+	        else
+            {
+	            this.plugin_searched = true;
+	            callback(false);
+            }
         }
 
         this.runPlugin = function()
@@ -933,13 +970,8 @@ compilerflasher = function(lf){
             }
 
         }
-
-
     }
 
-    this.pluginHandler.owner = this;
-
-    var cb = this;
     if($("#cb_cf_operation_output").length > 0)
     {
         this.loaded_elements.push("cb_cf_operation_output");
@@ -1579,32 +1611,29 @@ function logging()
 }
 
 window.flashing_errors =
-    {
-        1: "Could not connect to your device. Make sure that you have connected it properly, that you have selected the correct settings (device type and port) and try again.",
-        256: "Could not connect to your device. Make sure that you have connected it properly, that you have selected the correct settings (device type and port) and try again.",
+	{
         "-1": "Couldn’t find an Arduino on the selected port. If you are using Leonardo check that you have the correct port selected. If it is correct, try pressing the board’s reset button after initiating the upload.",
         "-2": "There was a problem programming your Arduino. If you are using a non-English Windows version, or username please contact us.",
-        "-204": "Could not program your device, the process timed out. Make sure that you have connected it properly, that you have selected the correct settings (device type and port) and try again.",
         "-22": "The selected port seems to be in use. Please check your board connection, and make sure that you are not using it from some other application or you don't have an open serial monitor.",
         "-23": "Another flashing process is still active. Please wait until it is done and try again.",
         "-55": "The specified port might not be available. Please check if it is used by another application. If the problem persists, unplug your device and plug it again.",
         "-56": "The specified port is in use or you do not have enough permissions to use the device. Please check if it is used by another application or correct its permissions.",
         "-57": "The specified port might not be available. Please check if it is used by another application. If the problem persists, unplug your device and plug it again.",
-        "126": "Something seems to be wrong with the plugin installation. You need to install the plugin again.",
-        "127": "Something seems to be wrong with the plugin installation. You need to install the plugin again.",
-        "-200": "There was a problem during the flashing process. Please try again, or contact us if the problem persists.",
-        100 : "Could not connect to your device. Make sure that you have connected it properly, that you have selected the correct settings (device type and port) and try again.",
-        32001: "The selected port seems to be in use. Please make sure that you are not using it from some other program.",
-        33005: "This baudrate is not supported by the operating system.",
-        2001: "The selected port seems to be in use. Please make sure that you are not using it from some other program.",
-        3005: "This baudrate is not supported by the operating system.",
-        36000: "Could not connect to your device. Make sure that you have connected it properly, that you have selected the correct settings (device type and port) and try again.",
+        "-200": "There was a problem during the flashing process. Please make sure you have selected the correct device, close other tabs that may use it, reload the page and try again. If the problem persists, please contact us.",
+        "-204": "Could not program your device, the process timed out. Make sure that you have connected it properly, that you have selected the correct settings (device type and port) and try again.",
+        1: "Could not connect to your device. Make sure that you have connected it properly, that you have selected the correct settings (device type and port) and try again.",
+        100: "Could not connect to your device. Make sure that you have connected it properly, that you have selected the correct settings (device type and port) and try again.",
+        126: "Something seems to be wrong with the plugin installation. You need to install the plugin again.",
+        127: "Something seems to be wrong with the plugin installation. You need to install the plugin again.",
+        256: "Could not connect to your device. Make sure that you have connected it properly, that you have selected the correct settings (device type and port) and try again.",
         1001: "Your device is unresponsive. Please make sure you have selected the correct device and it is connected properly.",
         1002: "Your device is unresponsive. Please make sure you have selected the correct device and it is connected properly.",
+        2001: "The selected port seems to be in use. Please make sure that you are not using it from some other program.",
+        3005: "This baudrate is not supported by the operating system.",
         20000: "Your device is unresponsive. Please make sure you have selected the correct device and it is connected properly.",
         20001: "There was a problem during the flashing process. Please make sure you have selected the correct device, close other tabs that may use it, reload the page and try again. If the problem persists, please contact us.",
         20002: "There was a problem during the flashing process. Please make sure you have selected the correct device, close other tabs that may use it, reload the page and try again. If the problem persists, please contact us.",
-        20003: "The connection to your device was lost unexpectedly during the transaction. Please try again.",
+        20003: "There was a problem during the flashing process. Please make sure you have selected the correct device, close other tabs that may use it, reload the page and try again. If the problem persists, please contact us.",
         20004: "There was a problem during the flashing process. Please make sure you have selected the correct device, close other tabs that may use it, reload the page and try again. If the problem persists, please contact us.",
         20005: "There was a problem during the flashing process. Please make sure you have selected the correct device, close other tabs that may use it, reload the page and try again. If the problem persists, please contact us.",
         20006: "There was a problem during the flashing process. Please make sure you have selected the correct device, close other tabs that may use it, reload the page and try again. If the problem persists, please contact us.",
@@ -1612,7 +1641,10 @@ window.flashing_errors =
         20008: "There was a problem during the flashing process. Please make sure you have selected the correct device, close other tabs that may use it, reload the page and try again. If the problem persists, please contact us.",
         20009: "There was a problem during the flashing process. Please make sure you have selected the correct device, close other tabs that may use it, reload the page and try again. If the problem persists, please contact us.",
         20010: "Your device sends data faster than your computer can proccess.",
-        20500: "There was a problem during the flashing process. Please make sure you have selected the correct device, close other tabs that may use it, reload the page and try again. If the problem persists, please contact us."
+        20500: "There was a problem during the flashing process. Please make sure you have selected the correct device, close other tabs that may use it, reload the page and try again. If the problem persists, please contact us.",
+        32001: "The selected port seems to be in use. Please make sure that you are not using it from some other program.",
+        33005: "This baudrate is not supported by the operating system.",
+        36000: "Could not connect to your device. Make sure that you have connected it properly, that you have selected the correct settings (device type and port) and try again."
     };
 
     //Scrolling function

@@ -421,13 +421,20 @@ Plugin.prototype = {
     self.disconnectCallback(null, 'disconnect');
   },
 
-  init: function (cb) {
+  getVersion: function (cb) {
     var self = this;
-    // Constructor did everything.
     chrome.runtime.getManifestAsync(function (manifest) {
       self.version = manifest.version;
-      cb();
+      cb(self.version);
     });
+  },
+
+  init: function (cb) {
+    cb();
+  },
+
+  saveToHex: function (strData) {
+    console.error("Not implemented");
   },
 
   serialWrite: function (strData, cb) {
