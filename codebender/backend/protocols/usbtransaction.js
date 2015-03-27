@@ -29,6 +29,7 @@ USBTransaction.prototype.transferOut = function (op, value, index, data) {
     request: op,
     value: value,
     index: index,
+    timeout: 5000,
     data: buffer.binToBuf(data || []),
     length: data ? data.length : 0
   };
@@ -42,6 +43,7 @@ USBTransaction.prototype.transferIn = function (op, value, index, length) {
     request: op,
     index: index,
     value: value,
+    timeout: 5000,
     length: length || 0
   };
 };
