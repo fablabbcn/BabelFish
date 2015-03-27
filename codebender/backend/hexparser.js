@@ -89,7 +89,6 @@ function ParseHexFile(hexString) {
 
     switch (type) {
     case DATA:
-      console.log(addr);
       return {addr: addr + offsetLin, data: byteData};
       break;
     case EXTENDED_LIN_ADDR:

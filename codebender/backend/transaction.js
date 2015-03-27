@@ -1,3 +1,4 @@
+
 var utilModule = require("./util"),
     arraify = utilModule.arraify,
     deepCopy = utilModule.deepCopy,
@@ -6,7 +7,7 @@ var utilModule = require("./util"),
     buffer = require("./buffer"),
     Log = require("./logging").Log,
     log = new Log("Generic Transaction");
-    errno = require("./errno");
+errno = require("./errno");
 
 function Transaction (config, finishCallback, errorCallback) {
   this.hooks_ = {};
@@ -136,8 +137,9 @@ Transaction.prototype = {
   // (see avrdude.conf)
   writeMemory: function (mem, addr, val, cb) {
     var writeByteArr = this.config.avrdude.memory[mem].memops.WRITE,
-        cmd = ops.opToBin(writeByteArr, {ADDRESS: addr, OUTPUT: val});
-
+        cmd = ops.opToBin(writeByteArr, {ADDRESS: addr, INPUT: val});
+    this.log.log("Writing ", buffer.hexRep([val]),
+                 "->", mem, "(",writeByteArr, "=>", buffer.hexRep(cmd),")");
     this.cmd(cmd, cb);
   },
 
@@ -163,9 +165,6 @@ Transaction.prototype = {
 
       return function (nextCallback) {
         if (controlBits[memName] !== null) {
-          self.log.log("Writing ", buffer.hexRep([controlBits[memName]]),
-                       "->", memName);
-
           function verifyMem (cb) {
             self.readMemory(memName, addr, function (resp) {
               console.log("Read memory", memName, ":", buffer.hexRep(resp));

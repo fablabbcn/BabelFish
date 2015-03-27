@@ -75,7 +75,7 @@ STK500Transaction.prototype.writeThenRead = function (data, cb, kwargs) {
     if (reader.buffer.databuffer.length == 1 && reader.buffer[0] == self.STK.OK) {
       log.warn("Bad message. I can handle it but this is a bug.");
       reader.buffer.databuffer = [];
-      cb(setTimeout([]));
+      cb();
       return true;
     }
 

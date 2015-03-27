@@ -8,6 +8,10 @@
 // The arduino wont do anything after this obviously but the pages
 // should be.
 
+// For bootloader:
+// avrdude -Cavrdude.conf -vvvv -patmega32u4 -cusbtiny -e -Ulock:w:0x3F:m -Uefuse:w:0xcb:m -Uhfuse:w:0xd8:m -Ulfuse:w:0xff:m
+//
+
 var _create_chrome_client = require('./../../../chrome-extension/client/rpc-client'),
     USBTransaction = require('./usbtransaction').USBTransaction,
     util = require('./../util'),
@@ -51,12 +55,13 @@ USBTinyTransaction.prototype = new USBTransaction();
 
 
 USBTinyTransaction.prototype.writeMaybe = function (info, callback) {
+  var self = this;
   if (this.config.dryRun) {
     callback({data: [0xde, 0xad, 0xbe, 0xef]});
     return;
   }
 
-  this.write(info, callback);
+  self.write(info, callback);
 };
 
 USBTinyTransaction.prototype.cmd = function (cmd, cb) {
@@ -81,23 +86,11 @@ USBTinyTransaction.prototype.cmd = function (cmd, cb) {
 USBTinyTransaction.prototype.flash = function (_, hexData) {
   var self = this;
   this.hexData = hexData.data || hexData;
+  // this.hexData = [0x11, 0x22, 0x33, 0x44];
 
-  self.usb.getDevices(self.device, function (devs) {
-    if (devs.length == 0) {
-      self.errCb(1, "No devices found");
-      return;
-    }
-
-    var dev = devs.pop();
-
-    // Config 0 is invalid generally but due to the strangenes that is
-    // windows and mac we need to default somewhere.
-    self.usb.openDevice(dev,function (hndl) {
-      self.usb.setConfiguration(hndl, 1, function () {
-        self.handler = hndl;
-        self.transition('powerUp');
-      });
-    });
+  self.smartOpenDevice(self.device, function (hndl) {
+    self.handler = hndl;
+    self.transition('powerUp');
   });
 };
 
@@ -147,11 +140,13 @@ USBTinyTransaction.prototype.programPage = function (offset, resp, pageCheckers)
 
   function checkPage (cb, _retries) {
     var info = self.transferIn(self.UT.FLASH_READ, 0,
-                               offset, page);
+                               offset, pageBin.length);
 
     _retries = typeof _retries === 'undefined' ?  3 : _retries;
     self.write(info, function (data) {
-      log.log("Comparing [attempt:", 3 - _retries, "/", 3, "]:", data.data, pageBin);
+      log.log("Comparing [attempt:", 3 - _retries, "/", 3, "]:");
+      log.log("Found:", buffer.hexRep(data.data));
+      log.log("Expec:", buffer.hexRep(pageBin));
       if (!util.arrEqual(data.data, pageBin)) {
         if (_retries > 0){
           checkPage(cb, _retries - 1);
@@ -168,7 +163,7 @@ USBTinyTransaction.prototype.programPage = function (offset, resp, pageCheckers)
   }
 
   this.writeMaybe(info, this.transitionCb('flushPage', offset, end,
-                                     (pageCheckers || []).concat([checkPage])));
+                                          (pageCheckers || []).concat([checkPage])));
 };
 
 USBTinyTransaction.prototype.flushPage = function (offset, end, pageCheckers,
