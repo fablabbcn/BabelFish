@@ -406,9 +406,7 @@ Plugin.prototype = {
   },
 
   init: function (cb) {
-    this.getVersion(function () {
-        cb();
-    });
+    cb();
   },
 
   saveToHex: function (strData) {
