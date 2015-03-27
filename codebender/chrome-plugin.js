@@ -213,7 +213,9 @@ Plugin.prototype = {
                                  communication, speed, force, delay,
                                  mcu, cb, _extraConfig) {
     var extraConfig = util.merge(_extraConfig || {},
-                                 {avoidTwiggleDTR: true, confirmPages: true});
+                                 {avoidTwiggleDTR: true, confirmPages: true,
+                                  chipErase: true,
+                                  dryRun: window.dryRun});
 
     // XXX: maybe fail if this is not a programmer.
     this.flash(device, code, maxsize, protocol, false, 0, mcu, cb,
@@ -236,16 +238,16 @@ Plugin.prototype = {
     // the control bits after the flash.
     var _ = null,          //Dont care values
         controlBits = {
-          hfuse: toint(high_fuses),
           lfuse: toint(low_fuses),
           efuse: toint(extended_fuses),
-          lock: toint(unlock_bits)
+          lock: toint(unlock_bits),
+          hfuse: toint(high_fuses)
         },
         extraConfig = util.merge(_extraConfig || {},
                                  {controlBits: controlBits,
                                   cleanControlBits: {lock: toint(lock_bits)},
                                   chipErase: true,
-                                  offset:this.savedBlob.addr});
+                                  offset: this.savedBlob.addr});
 
     this.flashWithProgrammer(device, this.savedBlob.data, _, protocol,
                              communication, speed, force, delay, mcu,

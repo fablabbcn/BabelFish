@@ -1,6 +1,16 @@
 // Corresponding avrdude commands for leonardo:
 
-// $ avrdude -Cavrdude.conf -v -v -v -v -patmega32u4 -cusbtiny -Uflash:w:"/home/fakedrake/.mozilla/firefox/c9s245o7.default/extensions/codebender@codebender.cc/plugins/file.bin":r
+// # generate some data
+// $ for i in {0..511}; do echo $(($i % 256)); done | (while read i; do printf "\\x$(printf '%02x' $i)"; done) > /tmp/file.bin
+// # Throw it in with avrdude
+// $ avrdude -Cavrdude.conf -v -v -v -v -patmega32u4 -cusbtiny -Uflash:w:"/tmp/file.bin":r
+//
+// The arduino wont do anything after this obviously but the pages
+// should be.
+
+// For bootloader:
+// avrdude -Cavrdude.conf -vvvv -patmega32u4 -cusbtiny -e -Ulock:w:0x3F:m -Uefuse:w:0xcb:m -Uhfuse:w:0xd8:m -Ulfuse:w:0xff:m
+//
 
 var _create_chrome_client = require('./../../../chrome-extension/client/rpc-client'),
     USBTransaction = require('./usbtransaction').USBTransaction,
@@ -43,6 +53,17 @@ function USBTinyTransaction(config, finishCallback, errorCallback) {
 
 USBTinyTransaction.prototype = new USBTransaction();
 
+
+USBTinyTransaction.prototype.writeMaybe = function (info, callback) {
+  var self = this;
+  if (this.config.dryRun) {
+    callback({data: [0xde, 0xad, 0xbe, 0xef]});
+    return;
+  }
+
+  self.write(info, callback);
+};
+
 USBTinyTransaction.prototype.cmd = function (cmd, cb) {
 
   var info = this.transferIn(this.UT.SPI,
@@ -50,7 +71,7 @@ USBTinyTransaction.prototype.cmd = function (cmd, cb) {
                              (cmd[3] << 8) | cmd[2],
                              4);
 
-  this.write(info, function (resp) {
+  this.writeMaybe(info, function (resp) {
     log.log("CMD:", buffer.hexRep(cmd), buffer.hexRep(resp.data));
     cb(resp);
   });
@@ -65,23 +86,11 @@ USBTinyTransaction.prototype.cmd = function (cmd, cb) {
 USBTinyTransaction.prototype.flash = function (_, hexData) {
   var self = this;
   this.hexData = hexData.data || hexData;
+  // this.hexData = [0x11, 0x22, 0x33, 0x44];
 
-  self.usb.getDevices(self.device, function (devs) {
-    if (devs.length == 0) {
-      self.errCb(1, "No devices found");
-      return;
-    }
-
-    var dev = devs.pop();
-
-    // Config 0 is invalid generally but due to the strangenes that is
-    // windows and mac we need to default somewhere.
-    self.usb.openDevice(dev,function (hndl) {
-      self.usb.setConfiguration(hndl, 1, function () {
-        self.handler = hndl;
-        self.transition('powerUp');
-      });
-    });
+  self.smartOpenDevice(self.device, function (hndl) {
+    self.handler = hndl;
+    self.transition('powerUp');
   });
 };
 
@@ -131,13 +140,15 @@ USBTinyTransaction.prototype.programPage = function (offset, resp, pageCheckers)
 
   function checkPage (cb, _retries) {
     var info = self.transferIn(self.UT.FLASH_READ, 0,
-                               offset, page);
+                               offset, pageBin.length);
 
-    _retries = _retries || 3;
+    _retries = typeof _retries === 'undefined' ?  3 : _retries;
     self.write(info, function (data) {
-      log.log("Comparing:", data.data, pageBin);
+      log.log("Comparing [attempt:", 3 - _retries, "/", 3, "]:");
+      log.log("Found:", buffer.hexRep(data.data));
+      log.log("Expec:", buffer.hexRep(pageBin));
       if (!util.arrEqual(data.data, pageBin)) {
-        if (_retries > 1){
+        if (_retries > 0){
           checkPage(cb, _retries - 1);
           return;
         } else{
@@ -151,8 +162,8 @@ USBTinyTransaction.prototype.programPage = function (offset, resp, pageCheckers)
     });
   }
 
-  this.write(info, this.transitionCb('flushPage', offset, end,
-                                     (pageCheckers || []).concat([checkPage])));
+  this.writeMaybe(info, this.transitionCb('flushPage', offset, end,
+                                          (pageCheckers || []).concat([checkPage])));
 };
 
 USBTinyTransaction.prototype.flushPage = function (offset, end, pageCheckers,

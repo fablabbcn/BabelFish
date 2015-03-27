@@ -21,6 +21,36 @@ function USBTransaction(config, finishCallback, errorCallback) {
 
 USBTransaction.prototype = new Transaction();
 
+USBTransaction.prototype.smartOpenDevice = function (device, cb) {
+  var self = this;
+  self.usb.getDevices(device, function (devs) {
+    if (devs.length == 0) {
+      self.errCb(1, "No devices found");
+      return;
+    }
+
+    var dev = devs.pop();
+
+    // Config 0 is invalid generally but due to the strangenes that is
+    // windows and mac we need to default somewhere.
+    self.usb.openDevice(dev,function (hndl) {
+      var _callback = cb.bind(null, hndl);
+      chrome.runtime.getPlatformInfo(function (platform) {
+        if (typeof self.config.configureDevice === 'undefined') {
+          self.config.configureDevice = (platform.os == "mac") + 0;
+        }
+
+        if (self.config.configureDevice) {
+          return self.usb.setConfiguration(hndl, self.config.deviceConfiguratiuon,
+                                           _callback);
+        }
+
+        return _callback();
+      });
+    });
+  });
+};
+
 USBTransaction.prototype.transferOut = function (op, value, index, data) {
   return {
     recipient: "device",
@@ -55,6 +85,9 @@ USBTransaction.prototype.write = function (info, cb) {
   log.log("Performing control transfer", info.direction,
           buffer.hexRep([info.request, info.value, info.index]),
           "len:", info.length);
+  if (info.direction == "out") {
+    log.log("Data:", buffer.hexRep(buffer.bufToBin(info.data)));
+  }
 
   this.refreshTimeout();
 
@@ -62,12 +95,17 @@ USBTransaction.prototype.write = function (info, cb) {
     self.usb.controlTransfer(
       self.handler,
       info, function (arg) {
+        if (arg.resultCode != 0) {
+          self.errCb(1, "Bad resultCode from libusb:", arg.resultCode);
+          return;
+        }
+
         arg.data = buffer.bufToBin(arg.data);
 
-        log.log('sent:', buffer.hexRep([info.request, info.value, info.index]));
+        log.log('Response was:', arg);
         cb(arg);
       });
-  }, 500);
+  });
 };
 
 // A simple control message with 2 values (index, value that is)
