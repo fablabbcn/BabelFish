@@ -13,6 +13,7 @@ dbg("Looks like we are on chrome.");
 // A plugin object implementing the plugin interface.
 function Plugin() {
   dbg("Initializing plugin.");
+  window.debugBabelfish = false;
   this.serial = chrome.serial;
   var self = this;
 

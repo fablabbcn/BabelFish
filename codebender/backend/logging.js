@@ -1,7 +1,7 @@
 var arraify = require('./util').arraify;
 
 function Log (name, verbosity) {
-  this.verbosity = verbosity || 3;
+  this.verbosity = verbosity || 1;
   this.name = name;
 }
 
@@ -26,19 +26,19 @@ Log.prototype = {
   },
 
   error: function (var_args) {
-    if (this.verbosity > 0)
+    if (this.verbosity > 0 || window.debugBabelfish)
       this.console_('error', arraify(arguments, 0, this.prefix()));
   },
   warn: function (var_args) {
-    if (this.verbosity > 1)
+    if (this.verbosity > 1 || window.debugBabelfish)
       this.console_('warn', arraify(arguments, 0, this.prefix()));
   },
   info: function (var_args) {
-    if (this.verbosity > 2)
+    if (this.verbosity > 2 || window.debugBabelfish)
       this.console_('log', arraify(arguments, 0, this.prefix()));
   },
   log: function (var_args) {
-    if (this.verbosity > 2)
+    if (this.verbosity > 2 || window.debugBabelfish)
       this.console_('log', arraify(arguments, 0, this.prefix()));
   }
 };
