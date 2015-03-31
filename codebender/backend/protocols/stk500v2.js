@@ -315,7 +315,7 @@ STK500v2Transaction.prototype.programFlash = function (offset, pgSize) {
 
   var self = this,
       payload = this.padOrSlice(data, offset, pgSize),
-      addressBytes = buffer.storeAsNBytes(4, (memOffset + offset) / 2),
+      addressBytes = buffer.storeAsFourBytes((memOffset + offset) / 2),
       sizeBytes = buffer.storeAsTwoBytes(pgSize),
       memMode = 0xc1,
       delay = 10,
