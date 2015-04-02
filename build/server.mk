@@ -8,10 +8,10 @@ serve: browserify
 async-serve: kill-server browserify
 	$(MAKE) serve & echo $$! | tee server_pid
 
-.ONESHELL:
 .PHONY:
+.ONESHELL:
 kill-server:
-	if [ -f server_pid ]; then
-		kill $(shell cat server_pid);
+	if [ -f server_pid ]; then \
+		kill $$(cat server_pid); \
 	fi
 	rm -f server_pid

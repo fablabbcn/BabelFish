@@ -108,7 +108,36 @@ USBTransaction.prototype.write = function (info, cb) {
   });
 };
 
-// A simple control message with 2 values (index, value that is)
+
+USBTransaction.prototype.writeMaybe = function (info, callback) {
+  var self = this;
+  if (this.config.dryRun) {
+    callback({data: [0xde, 0xad, 0xbe, 0xef]});
+    return;
+  }
+
+  self.write(info, callback);
+};
+
+USBTransaction.prototype.cmd = function (cmd, cb) {
+
+  if (typeof this.cmd_function === 'undefined') {
+    this.errCb(1, "Command function (cmd_function) not implemented.");
+    return;
+  }
+
+  var info = this.transferIn(this.cmd_function,
+                             (cmd[1] << 8) | cmd[0],
+                             (cmd[3] << 8) | cmd[2],
+                             4);
+
+  this.writeMaybe(info, function (resp) {
+    log.log("CMD:", buffer.hexRep(cmd), buffer.hexRep(resp.data));
+    cb(resp);
+  });
+};
+
+// A simple in control message with 2 values (index, value that is)
 USBTransaction.prototype.control = function (op, v1, v2, cb) {
   this.write(this.transferIn(op, v1, v2), cb);
 };
@@ -129,6 +158,49 @@ USBTransaction.prototype.localCleanup = function (callback) {
       doCleanup();
     });
   }
+};
+
+
+// Chip erase destroys the flash, the lock bits and maybe the eeprom
+// (depending on the value of the fuses). The fuses themselves are
+// untouched.
+USBTransaction.prototype.chipErase = function (cb) {
+  var self = this;
+
+  setTimeout( function () {
+    self.operation("CHIP_ERASE", function () {
+                   self.setupSpecialBits(self.config.controlBits, cb);
+    });
+  }, self.config.avrdude.chipEraseDelay / 1000);
+};
+
+USBTransaction.prototype.flash = function (_, hexData) {
+  var self = this;
+  this.hexData = hexData.data || hexData;
+
+  self.smartOpenDevice(self.device, function (hndl) {
+    self.handler = hndl;
+    self.transition(self.entryState);
+  });
+};
+
+// Just chain the checkers. As a thought experiment we could have them
+// run in parallel and have a barrier function as a callback to call
+// the checkPages. This way we could be comparing
+USBTransaction.prototype.checkPages = function (checkers, cb) {
+  if (checkers.length == 0) {
+    cb();
+    return;
+  }
+
+  var car = checkers[0],
+      cdr = checkers.slice(1),
+      self = this;
+
+  car(function () {
+    self.transition("checkPages", cdr, cb);
+  });
+
 };
 
 module.exports.USBTransaction = USBTransaction;

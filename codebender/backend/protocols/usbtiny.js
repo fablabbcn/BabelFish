@@ -46,6 +46,8 @@ function USBTinyTransaction(config, finishCallback, errorCallback) {
   };
 
   // Default product and vendor IDs
+  this.entryState = 'powerUp';
+  this.cmdFunction = this.UT.SPI;
   this.device = {productId: 0xc9f, vendorId: 0x1781};
   this.log = log;
   this.log.resetTimeOffset();
@@ -54,79 +56,23 @@ function USBTinyTransaction(config, finishCallback, errorCallback) {
 USBTinyTransaction.prototype = new USBTransaction();
 
 
-USBTinyTransaction.prototype.writeMaybe = function (info, callback) {
-  var self = this;
-  if (this.config.dryRun) {
-    callback({data: [0xde, 0xad, 0xbe, 0xef]});
-    return;
-  }
-
-  self.write(info, callback);
-};
-
-USBTinyTransaction.prototype.cmd = function (cmd, cb) {
-
-  var info = this.transferIn(this.UT.SPI,
-                             (cmd[1] << 8) | cmd[0],
-                             (cmd[3] << 8) | cmd[2],
-                             4);
-
-  this.writeMaybe(info, function (resp) {
-    log.log("CMD:", buffer.hexRep(cmd), buffer.hexRep(resp.data));
-    cb(resp);
-  });
-};
-
 // === Initial superstate ===
-// flash -> [powerUp -> programEnable -> chipErase -> setFuses ->]
-//          powerUp -> programEnable -> <program>
-
-// First argument is ignored for compatibility with serial flashes tha
-// accept the device name.
-USBTinyTransaction.prototype.flash = function (_, hexData) {
-  var self = this;
-  this.hexData = hexData.data || hexData;
-  // this.hexData = [0x11, 0x22, 0x33, 0x44];
-
-  self.smartOpenDevice(self.device, function (hndl) {
-    self.handler = hndl;
-    self.transition('powerUp');
-  });
-};
-
-// The callback to use to program(it may be chipErase)
-USBTinyTransaction.prototype.powerUp = function () {
-  log.log("Powering up:", this.handler);
-  this.control(this.UT.POWERUP, this.sck, this.UT.RESET_LOW,
-               this.transitionCb('programEnable'));
-};
+// flash -> [programEnable -> chipErase ->]
+//           programEnable -> <program>
 
 USBTinyTransaction.prototype.programEnable = function () {
-  var cb;
+  var cb, self = this;
 
   // If we are instructed to erse and haven't done so yet.
   if (this.config.chipErase && this.stateHistory.indexOf('chipErase') == -1)
-    cb = this.transitionCb('chipErase');
+    cb = this.transitionCb('chipErase', self.transitionCb('programEnable'));
   else
     cb = this.transitionCb('programPage', 0);
 
-  this.operation("PGM_ENABLE", cb);
-};
-
-USBTinyTransaction.prototype.setFuses = function () {
-  this.setupSpecialBits(this.config.controlBits,
-                        this.transitionCb('powerUp'));
-};
-
-// Chip erase destroys the flash, the lock bits and maybe the eeprom
-// (depending on the value of the fuses). The fuses themselves are
-// untouched.
-USBTinyTransaction.prototype.chipErase = function () {
-  var self = this;
-
-  setTimeout(function () {
-    self.operation("CHIP_ERASE", self.transitionCb('setFuses'));
-  }, self.config.avrdude.chipEraseDelay / 1000);
+  this.control(this.UT.POWERUP, this.sck, this.UT.RESET_LOW, function () {
+    log.log("Powered up. Enabling...");
+    self.operation("PGM_ENABLE", cb);
+  });
 };
 
 // === Programming superstate ===
@@ -144,9 +90,7 @@ USBTinyTransaction.prototype.programPage = function (offset, resp, pageCheckers)
 
     _retries = typeof _retries === 'undefined' ?  3 : _retries;
     self.write(info, function (data) {
-      log.log("Comparing [attempt:", 3 - _retries, "/", 3, "]:");
-      log.log("Found:", buffer.hexRep(data.data));
-      log.log("Expec:", buffer.hexRep(pageBin));
+      log.log("Checking page [attempt:", 3 - _retries, "/", 3, "]:");
       if (!util.arrEqual(data.data, pageBin)) {
         if (_retries > 0){
           checkPage(cb, _retries - 1);
@@ -174,32 +118,13 @@ USBTinyTransaction.prototype.flushPage = function (offset, end, pageCheckers,
 
   this.cmd(cmd, function (res) {
     if (end > self.hexData.length) {
-      self.transition('checkPages', pageCheckers);
+      self.transition('checkPages', pageCheckers, self.transitionCb("powerDown"));
       return;
     }
 
     log.log("Progress:", end, "/", self.hexData.length);
     self.transition('programPage', end, res, pageCheckers);
   });
-};
-
-// Just chain the checkers. As a thought experiment we could have them
-// run in parallel and have a barrier function as a callback to call
-// the checkPages. This way we could be comparing
-USBTinyTransaction.prototype.checkPages = function (checkers) {
-  if (checkers.length == 0) {
-    this.transition("powerDown");
-    return;
-  }
-
-  var car = checkers[0],
-      cdr = checkers.slice(1),
-      self = this;
-
-  car(function () {
-    self.transition("checkPages", cdr);
-  });
-
 };
 
 // === Final superstate

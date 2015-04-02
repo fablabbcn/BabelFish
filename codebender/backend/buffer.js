@@ -2,20 +2,18 @@ var arraify = require('./util').arraify,
     Log = require('./logging').Log,
     log = new Log('Buffer');
 
-function storeAsNBytes(bytes, n) {
-  var ret = [];
-  for (var i=0; i < bytes; i++) {
-    ret.push(n>>(8*i) & 0xff);
-  }
-
-  // Little endian
-  return ret.reverse();
-}
-
 function storeAsTwoBytes(n) {
   var lo = (n & 0x00FF);
   var hi = (n & 0xFF00) >> 8;
   return [hi, lo];
+}
+
+function storeAsFourBytes(n) {
+  return [(n & 0xFF)
+          (n & 0xFF << 8) >> 8,
+          (n & 0xFF << 16) >> 16,
+          (n & 0xFF << 24) >> 24];
+
 }
 
 
@@ -225,5 +223,5 @@ module.exports.Buffer = Buffer;
 module.exports.hexRep = hexRep;
 module.exports.bufToBin = bufToBin;
 module.exports.storeAsTwoBytes = storeAsTwoBytes;
-module.exports.storeAsNBytes = storeAsNBytes;
+module.exports.storeAsFourBytes = storeAsFourBytes;
 module.exports.binToBuf = binToBuf;
