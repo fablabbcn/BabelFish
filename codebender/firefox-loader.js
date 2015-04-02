@@ -1,4 +1,4 @@
-// file: plugin.js
+// file: firefox-loader.js
 require('./../tools/client-util');
 
 window.CodebenderPlugin = require('./firefox-plugin');
