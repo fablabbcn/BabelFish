@@ -1,8 +1,9 @@
 # Targets for running chromeb
 
 chrome = $(shell ls $(chromium-dbg) 2> /dev/null ||	\
-		which chrome 2> /dev/null ||		\
+		which chromium-dev 2> /dev/null ||		\
 		which chromium 2> /dev/null ||		\
+		which chrome 2> /dev/null ||		\
 		echo  ~/Applications/Chromium.app/Contents/MacOS/Chromium)
 
 extensions = $(dot)/CodebenderChromeDeveloper,$(dot)/chrome-extension

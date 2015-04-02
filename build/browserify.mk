@@ -13,18 +13,20 @@ CLIENT_FILES =								\
 	$(dot)/chrome-extension/common/config.js			\
 	$(dot)/chrome-extension/common/rpc-args.js
 
-FIREFOX_FILES=	\
-	$(dot)/codebender/firefox-loader.js
+FIREFOX_FILES = $(dot)/codebender/firefox-loader.js
 
 browserify = $(shell which browserify || echo $(dot)/node_modules/.bin/browserify)
 $(browserify): $(dot)/node_modules
 
 .PHONY:
 browserify: $(dot)/bundles/chrome-client.js $(dot)/bundles/firefox-client.js $(dot)/bundles/client.js
+
+chrome-client-tail=$(dot)/codebender/ad-hoc-changes.js $(dot)/codebender/compilerflasher.js
 $(dot)/bundles/chrome-client.js: $(CLIENT_FILES) $(DEV_FILE) force | $(browserify) $(dot)/bundles
-	($(browserify) -e $(dot)/codebender/chrome-plugin.js | \
-		cat $(DEV_FILE) - \
-		> $(dot)/bundles/chrome-client.js) || (rm $(dot)/bundles/chrome-client.js; echo "Maybe run: make enable-dev-mode";false)
+	($(browserify) -e $(dot)/codebender/chrome-plugin.js |	\
+		cat $(DEV_FILE) - $(chrome-client-tail)		\
+		> $(dot)/bundles/chrome-client.js) ||		\
+	(rm $(dot)/bundles/chrome-client.js; echo "Maybe run: make enable-dev-mode";false)
 
 $(dot)/bundles/firefox-client.js: $(FIREFOX_FILES) $(DEV_FILE) force | $(browserify) $(dot)/bundles
 	($(browserify) -e $(dot)/codebender/firefox-loader.js | \
