@@ -1,7 +1,7 @@
 # Browserify related targets
 force:
 
-CLIENT_FILES =								\
+CHROME_FILES =								\
 	$(dot)/codebender/backend/buffer.js				\
 	$(dot)/codebender/backend/logging.js				\
 	$(dot)/codebender/backend/transaction.js			\
@@ -11,31 +11,42 @@ CLIENT_FILES =								\
 	$(dot)/codebender/backend/protocols/stk500.js			\
 	$(dot)/chrome-extension/client/rpc-client.js			\
 	$(dot)/chrome-extension/common/config.js			\
-	$(dot)/chrome-extension/common/rpc-args.js
+	$(dot)/chrome-extension/common/rpc-args.js			\
+	$(dot)/codebender/chrome-plugin.js
 
-FIREFOX_FILES = $(dot)/codebender/firefox-loader.js
+TARGETS = $(dot)/bundles/compilerflasher.js	\
+	$(dot)/bundles/chrome-client.js		\
+	$(dot)/bundles/firefox-client.js
 
-browserify = $(shell which browserify || echo $(dot)/node_modules/.bin/browserify)
+
+browserify = $(shell which browserify 2> /dev/null || \
+		echo $(dot)/node_modules/.bin/browserify)
 $(browserify): $(dot)/node_modules
 
 .PHONY:
-browserify: $(dot)/bundles/chrome-client.js $(dot)/bundles/firefox-client.js $(dot)/bundles/client.js
+browserify: $(TARGETS)
 
-chrome-client-tail=$(dot)/codebender/ad-hoc-changes.js $(dot)/codebender/compilerflasher.js
-$(dot)/bundles/chrome-client.js: $(CLIENT_FILES) $(DEV_FILE) force | $(browserify) $(dot)/bundles
-	($(browserify) -e $(dot)/codebender/chrome-plugin.js |	\
-		cat $(DEV_FILE) - $(chrome-client-tail)		\
-		> $(dot)/bundles/chrome-client.js) ||		\
+$(dot)/bundles/compilerflasher.js: $(dot)/codebender/ad-hoc-changes.js $(dot)/codebender/compilerflasher.js
+	cat $^ > $@
+
+$(dot)/bundles/chrome-client.js: $(CHROME_FILES) $(dot)/codebender/chrome-loader.js $(DEV_FILE) force | $(browserify) $(dot)/bundles
+	($(browserify) $(CHROME_FILES) -e $(dot)/codebender/chrome-loader.js |	\
+		cat $(DEV_FILE) -  > $@ ) || \
 	(rm $(dot)/bundles/chrome-client.js; echo "Maybe run: make enable-dev-mode";false)
 
-$(dot)/bundles/firefox-client.js: $(FIREFOX_FILES) $(DEV_FILE) force | $(browserify) $(dot)/bundles
+$(dot)/bundles/firefox-client.js: $(dot)/codebender/firefox-loader.js $(DEV_FILE) force | $(browserify) $(dot)/bundles
 	($(browserify) -e $(dot)/codebender/firefox-loader.js | \
-		cat $(DEV_FILE) - \
+		cat $(DEV_FILE) -				\
 		> $(dot)/bundles/firefox-client.js) || (rm $(dot)/bundles/firefox-client.js; echo "Maybe run: make enable-dev-mode";false)
 
+# Replaced by newstyle compilerflasher.
 $(dot)/bundles/client.js: $(CLIENT_FILES) $(DEV_FILE) force | $(browserify) $(dot)/bundles
 	($(browserify) -e $(dot)/codebender/plugin.js | \
 		cat $(DEV_FILE) - \
 		> $(dot)/bundles/client.js) || (rm $(dot)/bundles/client.js; echo "Maybe run: make enable-dev-mode";false)
 
 $(DEV_FILE): enable-dev-mode
+
+.PHONY:
+browserify-clean:
+	rm -f $(TARGETS)
