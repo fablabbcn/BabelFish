@@ -1,9 +1,11 @@
 # Roadmap
 
+- Windows serial monitor bug (https://code.google.com/p/chromium/issues/detail?id=361606)
 - Programmers
     - Bootloaders
     - USBASP
-    - Serial
+    - Stk500v2 USB
+    - Serial (STK500v2)
 
 - Test boards against the programmer branch
 - Logging to server
