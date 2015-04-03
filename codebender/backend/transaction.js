@@ -17,8 +17,14 @@ function Transaction (config, finishCallback, errorCallback) {
   this.context = {};
 
   this.config = config;
-  this.finishCallback = finishCallback;
-  this.errorCallback = errorCallback;
+  this.finishCallback = function () {
+    log.log("Calling finish callback...");
+    finishCallback.apply(null, arraify(arguments));
+  };
+  this.errorCallback = function () {
+    log.log("Calling error callback...");
+    errorCallback.apply(null, arraify(arguments));
+  };
   this.previousErrors = [];
 
   this.log = log;
@@ -45,6 +51,7 @@ Transaction.prototype = {
 
   errCb: function (id, var_message) {
     var self = this;
+
     this.log.error.apply(this.log, arraify(arguments, 1, "[FINAL ERROR]"));
     this.block = true;
     if (this.previousErrors.length > 0)
@@ -60,16 +67,28 @@ Transaction.prototype = {
   },
 
   cleanup: function (callback) {
+    var emergencyCleanupTimeout;
+
+    callback = callback || this.finishCallback.bind(this);
     if (this.timeout){
       this.log.log("Stopping timeout");
       clearTimeout(this.timeout);
     }
     this.timeout = null;
 
-    if (this.localCleanup)
-      this.localCleanup(callback);
-    else if (callback)
+    function doCleanup () {
+      // In case it is called normally clear the timeout
+      clearTimeout(emergencyCleanupTimeout);
       callback();
+    }
+
+    // Cleanup even if closeDevice fails (eg if it was never opened).
+    emergencyCleanupTimeout = setTimeout(doCleanup, 2000);
+
+    if (this.localCleanup) {
+      this.localCleanup(doCleanup);
+      return;
+    }
   },
 
   getHook: function (hookIdArray) {
@@ -190,7 +209,20 @@ Transaction.prototype = {
   operation: function (op, cb) {
     this.log.log("Running operation:", op);
     return this.cmd(ops.opToBin(this.config.avrdude.ops[op]), cb);
+  },
+
+  // Chip erase destroys the flash, the lock bits and maybe the eeprom
+  // (depending on the value of the fuses). The fuses themselves are
+  // untouched.
+  chipErase: function (cb) {
+    var self = this;
+    setTimeout( function () {
+      self.operation("CHIP_ERASE", function () {
+        self.setupSpecialBits(self.config.controlBits, cb);
+      });
+    }, self.config.avrdude.chipEraseDelay / 1000);
   }
+
 };
 
 module.exports.Transaction = Transaction;

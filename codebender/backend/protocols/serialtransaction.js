@@ -29,8 +29,9 @@ SerialTransaction.prototype.localCleanup = function (callback) {
   var self = this;
 
   self.serial.customErrorHandler = null;
-  if (this.listenerHandler)
+  if (this.listenerHandler) {
     this.serial.onReceive.removeListener(this.listenerHandler);
+  }
 
   this.listenerHandler = null;
   if (this.connectionId) {
@@ -44,7 +45,10 @@ SerialTransaction.prototype.localCleanup = function (callback) {
       self.conenctionId = null;
       self.buffer.cleanup(callback);
     });
+    return;
   }
+
+  callback();
 };
 
 // Info is:
@@ -105,7 +109,7 @@ SerialTransaction.prototype.readToBuffer = function (readArg) {
     return true;
   }
 
-  this.log.log("Read ard:", readArg);
+  this.log.log("Read:", buffer.hexRep(buffer.bufToBin(readArg.data)));
   this.buffer.write(readArg, this.errCb.bind(this, errno.BUFFER_WRITE_FAIL));
 
   // Note that in BabelFish this does not ensure that the listener
@@ -175,11 +179,16 @@ SerialTransaction.prototype.setDtr = function (timeout, val, cb, _retries) {
   }, timeout);
 };
 
-SerialTransaction.prototype.twiggleDtr = function (cb, _cbArgs) {
+SerialTransaction.prototype.twiggleDtrMaybe = function (cb, _cbArgs) {
   var args = arraify(arguments, 1),
       self = this,
       before = false,           //AVRDUDE always disables the line
       after = !before;
+
+  if (this.config.avoidTwiggleDTR) {
+    setTimeout(cb);
+    return;
+  }
 
   self.serial.getControlSignals(self.connectionId, function(signals) {
     self.log.log("Signals are:", signals);

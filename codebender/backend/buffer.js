@@ -2,6 +2,8 @@ var arraify = require('./util').arraify,
     Log = require('./logging').Log,
     log = new Log('Buffer');
 
+log.log = function () {};
+
 function storeAsTwoBytes(n) {
   var lo = (n & 0x00FF);
   var hi = (n & 0xFF00) >> 8;
@@ -188,6 +190,8 @@ Buffer.prototype = {
 
   // Dump the entire databuffer
   drain: function(callback) {
+    var ret = this.databuffer, self = this;
+
     log.log("Draining bytes: ", hexRep(this.databuffer));
     // Clean up readers
     this.readers.slice().forEach(function (r) {
@@ -195,7 +199,6 @@ Buffer.prototype = {
       setTimeout(r.timeoutCb, 0);
     });
 
-    var ret = this.databuffer, self = this;
     this.databuffer = [];
     callback({bytesRead: ret.length, data: ret});
   },
@@ -214,6 +217,7 @@ Buffer.prototype = {
         throw Error("Buffer reader survived the cleanup" + this.readers[i]);
       }
     }
+
     this.databuffer = [];
     if (callback) callback();
   }

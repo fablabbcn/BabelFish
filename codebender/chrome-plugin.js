@@ -219,7 +219,7 @@ Plugin.prototype = {
                                   dryRun: window.dryRun});
 
     // XXX: maybe fail if this is not a programmer.
-    this.flash(device, code, maxsize, protocol, false, 0, mcu, cb,
+    this.flash(device, code, maxsize, protocol, false, speed, mcu, cb,
                extraConfig);
   },
 
@@ -306,7 +306,7 @@ Plugin.prototype = {
     if(self.transaction)
       self.transaction.cleanup();
 
-    self.transaction = new protocols[protocol](config, finishCallback, errorCallback),
+    self.transaction = new protocols[protocol](config, finishCallback, errorCallback);
     setTimeout(function () {
       dbg("Code length", code.length || code.data.length, typeof code,
           "Protocol:", protocols,
