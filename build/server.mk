@@ -11,7 +11,5 @@ async-serve: kill-server browserify
 .ONESHELL:
 .PHONY:
 kill-server:
-	if [ -f server_pid ]; then
-		kill $(shell cat server_pid);
-	fi
+	[ -f server_pid ] && kill $(shell cat server_pid) || true
 	rm -f server_pid
