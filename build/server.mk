@@ -1,17 +1,12 @@
 # Targets for handling the local node server
 
-.PHONY:
 serve: browserify
-	node $(dot)/tools/serve.js
+	node tools/serve.js
 
-.PHONY:
-async-serve: kill-server browserify
-	$(MAKE) serve & echo $$! | tee server_pid
+async-serve: browserify
+	node $(dot)/tools/serve.js & \
+	echo $$! | tee server_pid
 
-.PHONY:
-.ONESHELL:
 kill-server:
-	if [ -f server_pid ]; then \
-		kill $$(cat server_pid); \
-	fi
-	rm -f server_pid
+	kill $(shell cat server_pid)
+	rm server_pid
