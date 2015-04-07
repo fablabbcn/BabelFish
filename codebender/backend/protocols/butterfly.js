@@ -315,8 +315,8 @@ AVR109Transaction.prototype.drainBytes = function (readArg) {
 
 // Program to byte 0;
 AVR109Transaction.prototype.prepareToProgramFlash = function () {
-  var addressBytes = buffer.storeAsTwoBytes(self.config.offset || 0),
-      self = this,
+  var self = this,
+      addressBytes = buffer.storeAsTwoBytes(self.config.offset || 0),
       loadAddressMessage = [
         this.AVR.SET_ADDRESS, addressBytes[1], addressBytes[0]];
 
@@ -329,7 +329,7 @@ AVR109Transaction.prototype.prepareToProgramFlash = function () {
 AVR109Transaction.prototype.programFlash = function (offset, length) {
 
   // Butterfly does not send addresses, just the chuncs in sequence.
-  var data = this.sketchData,
+  var data = this.sketchData.data || this.sketchData,
       self = this;
   log.log("program flash: data.length: " + data.length + ", offset: " + offset + ", length: " + length);
 

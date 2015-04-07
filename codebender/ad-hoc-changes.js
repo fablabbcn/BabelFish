@@ -13,5 +13,6 @@ setTimeout(function () {
   window.isSupportedOs = function () {return true; };
   window.osSupported = function () {return true; };
 
-  compilerflasher.pluginHandler.runPlugin();
-}, 10000);
+  // compilerflasher.pluginHandler.runPlugin();
+  window.debugBabelfish = true;
+}, 5000);

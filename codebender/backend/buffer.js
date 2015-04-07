@@ -138,12 +138,13 @@ Buffer.prototype = {
   },
 
   runAsyncReaders: function () {
-    var db;
+    var self = this;
     log.log("Running readers:", this.readers, ":", this.databuffer);
-    while (this.readers[0] &&
-           this.readers[0].modifyDatabuffer(this)) {
-      this.readers[0].destroy();
-    }
+
+    // Walk over the readers untill one modifies the buffer (and is then destroyed.)
+    this.readers.slice().some(function (r) {
+      return r && r.modifyDatabuffer(self) && (r.destroy() || true);
+    });
   },
 
   readAsync: function (maxBytesOrConfig, cb, ttl, timeoutCb) {

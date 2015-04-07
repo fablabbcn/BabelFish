@@ -196,6 +196,7 @@ if (!window.chrome) {
       var self = this,
           stackList = [new Error("Stack tracing error").stack],
           stackItem = this.msgCallbackFactory,
+          maxStack = 10,
           ret = function (resp) {
             // Ignore free resoponses
             try {
@@ -232,7 +233,7 @@ if (!window.chrome) {
           };
 
       // Walk up the stack and find someone who owns a stacklist
-      while(stackItem) {
+      while(stackItem && --maxStack) {
         if (stackItem.stackList) {
           stackList = stackList.concat(stackItem.stackList);
           break;

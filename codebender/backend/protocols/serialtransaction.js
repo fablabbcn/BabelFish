@@ -68,9 +68,9 @@ SerialTransaction.prototype.writeThenRead_ = function (info) {
   if (!self.registeredBufferListener) {
     // Redirect all device output to the buffer.
     self.registeredBufferListener = true;
-    this.log.log("Listening on buffer");
     this.listenerHandler = this.readToBuffer.bind(this);
     this.serial.onReceive.addListener(this.listenerHandler);
+    this.log.log("Listening on buffer...");
   }
 
   this.justWrite(info.outgoingMsg, function () {

@@ -18,11 +18,11 @@ function Transaction (config, finishCallback, errorCallback) {
 
   this.config = config;
   this.finishCallback = function () {
-    log.log("Calling finish callback...");
+    console.log("Calling finish callback...");
     finishCallback.apply(null, arraify(arguments));
   };
   this.errorCallback = function () {
-    log.log("Calling error callback...");
+    console.log("Calling error callback...");
     errorCallback.apply(null, arraify(arguments));
   };
   this.previousErrors = [];
@@ -60,7 +60,7 @@ Transaction.prototype = {
     var logargs = arraify(arguments, 1, "state: ", this.state, " - ");
     this.previousErrors.push(logargs);
     this.cleanup(function () {
-      self.log.error.apply(this.log.error, logargs);
+      self.log.error.apply(this.log, logargs);
       if (self.errorCallback)
         self.errorCallback(id, logargs.join(''));
     });
@@ -173,7 +173,7 @@ Transaction.prototype = {
     });
   },
 
-  // Setup the special bits that configuration has values for
+  // Setup the special bits that configuration has values for.
   setupSpecialBits: function (controlBits, cb) {
     var self = this,
         knownBits = Object.getOwnPropertyNames(controlBits || {});
