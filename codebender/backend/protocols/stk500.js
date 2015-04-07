@@ -231,13 +231,9 @@ STK500Transaction.prototype.flash = function (deviceName, sketchData) {
         self.transition('connectDone', sketchData, connArg);
       };
 
-  self.destroyOtherConnections(
-    deviceName,
-    function () {
-      self.serial.connect(deviceName,
-                          {bitrate: self.config.speed, name: deviceName},
-                          connectCb);
-    });
+  self.serial.connect(deviceName,
+                      {bitrate: self.config.speed, name: deviceName},
+                      connectCb);
 };
 
 STK500Transaction.prototype.connectDone = function (hexCode, connectArg) {

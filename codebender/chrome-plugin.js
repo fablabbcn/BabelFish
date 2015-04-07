@@ -128,14 +128,15 @@ Plugin.prototype = {
         if (self._getBufferSize(self.readingInfo.buffer_) > self.bufferSize) {
           console.log("Buffer overflow, info:", self.readingInfo);
           __flushBuffer();
-        } else {
-          setTimeout(function () {
-            if (self.readingInfo && self.readingInfo.buffer_.length > 0) {
-              self.readingInfo.overflowCount = 0;
-              __flushBuffer();
-            }
-          }, 50);
+          return;
         }
+
+        setTimeout(function () {
+          if (self.readingInfo && self.readingInfo.buffer_.length > 0) {
+            self.readingInfo.overflowCount = 0;
+            __flushBuffer();
+          }
+        }, 50);
       }.bind(this);
     }
 
@@ -174,40 +175,49 @@ Plugin.prototype = {
   // Async methods
   serialRead: function (port, baudrate, cb, retCb) {
     dbg("SerialRead connecting to port:", port);
-    var self = this;
+    var self = this, closed = false;
     if (typeof baudrate !== "number") baudrate = Number(baudrate);
 
     function returnCb (val) {
+      // Explicitly set that for this transaction we handled the
+      // closing of the device.
+      closed = true;
+
+      dbg("Serial monitor return value:", val);
       retCb("monitor", String(val));
+
       self.disconnect();
     }
 
-    this.serial.getConnections(function (cnxs){
+    setTimeout(function () {
+      // Close the monitor if we couldn't open it and didn't close it
+      if (!self.readingInfo && !closed) {
+        returnCb(errno.UNKNOWN_MONITOR_ERROR);
+      }
+    }, 2000);
 
+    this.serial.getConnections(function (cnxs){
       if (cnxs.some(function (c) {return c.name == port;})) {
-        returnCb(-22);
+        console.error("Serial monitor connection already open.");
+        returnCb(errno.RESOURCE_BUSY);
         return;
       }
 
       self.serial.connect(port, {bitrate: baudrate, name: port}, function (info) {
-        if (info) {
-          dbg("Serial connected to: ", info);
-          self.readingInfo = info;
-          self.serial.onReceive.addListener(
-            self.readingHandlerFactory(self.readingInfo.connectionId, cb, returnCb)
-          );
-          self.serial.onReceiveError.addListener(self._rcvError);
-        } else {
+        if (!info) {
           console.error("Failed to connect serial:", {bitrate: baudrate, name: port});
-          returnCb(-22);
+          returnCb(errno.RESOURCE_BUSY);
+          return;
         }
+
+        dbg("Serial connected to: ", info);
+        self.readingInfo = info;
+        self.serial.onReceive.addListener(
+          self.readingHandlerFactory(self.readingInfo.connectionId, cb, returnCb)
+        );
+        self.serial.onReceiveError.addListener(self._rcvError);
       });
     });
-    setTimeout(function () {
-      // Close the monitor if we couldn't open it
-      if (!self.readingInfo)
-        returnCb(-22);
-    }, 2000);
   },
 
   flashWithProgrammer: function (device, code, maxsize, protocol,
@@ -306,20 +316,24 @@ Plugin.prototype = {
     if(self.transaction)
       self.transaction.cleanup();
 
-    self.transaction = new protocols[protocol](config, finishCallback, errorCallback);
-    setTimeout(function () {
-      dbg("Code length", code.length || code.data.length, typeof code,
-          "Protocol:", protocols,
-          "Device:", device);
+    self.transaction = new protocols[protocol](config, finishCallback,
+                                               errorCallback);
 
-      // Binary string to byte array if it is actually base64
-      if (self.binaryMode && typeof code === 'string') {
-        var _code = Base64Binary.decode(code);
-        code = {data: Array.prototype.slice.call(_code), addr: 0};
-      }
+    self.transaction.destroyOtherConnections(
+      device,
+      function () {
+        dbg("Code length", code.length || code.data.length, typeof code,
+            "Protocol:", protocols,
+            "Device:", device);
 
-      self.transaction.flash(device, code);
-    });
+        // Binary string to byte array if it is actually base64
+        if (self.binaryMode && typeof code === 'string') {
+          var _code = Base64Binary.decode(code);
+          code = {data: Array.prototype.slice.call(_code), addr: 0};
+        }
+
+        self.transaction.flash(device, code);
+      });
   },
 
 
