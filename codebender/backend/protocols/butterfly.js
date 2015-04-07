@@ -65,7 +65,8 @@ AVR109Transaction.prototype.writeThenRead = function (data, rcvSize, cb) {
                                                   "AVR109 reader failed timeout")});
 };
 
-
+// Retry connecting with the magic baudrate that kicks off the
+// bootloader and then reconnecting when the device reappears.
 AVR109Transaction.prototype.magicRetry = function (devName, hexData) {
   var self = this;
   log.log("Device", devName, "did not disappear, trying again in",
@@ -111,6 +112,8 @@ AVR109Transaction.prototype.magicBaudReset = function (devName, hexData) {
   self.hexData = hexData;
   self.serial.getDevices(function(iniDevices) {
     self.refreshTimeout();
+
+    // Magic connect
     self.serial.connect(devName, { bitrate: kMagicBaudRate, name: devName}, function(connectInfo) {
       log.log("Made sentinel connection: (baud: 1200)", connectInfo,
               "waiting", self.timeouts.magicBaudConnected, "ms");
@@ -124,16 +127,20 @@ AVR109Transaction.prototype.magicBaudReset = function (devName, hexData) {
       setTimeout(function () {
         log.log("Disconnecting from " + devName);
         self.serial.disconnect(connectInfo.connectionId, function(ok) {
-          if (ok) {
-            log.log("Disconnected from", devName);
-            poll(self.timeouts.disconnectPollCount,
-                 self.timeouts.disconnectPoll,
-                 self.transitionCb("checkDisappearance",
-                                   devName, connectInfo, iniDevices),
-                 self.transitionCb('magicRetry', devName, hexData));
-          } else {
-            self.errCb(erron.LEONARDO_MAGIC_DISCONNECT_FAIL, "Failed to disconnect from " + devName);
+          if (!ok) {
+            self.errCb(errno.LEONARDO_MAGIC_DISCONNECT_FAIL, "Failed to disconnect from " + devName);
+            return;
           }
+
+          log.log("Disconnected from", devName);
+
+          // Poll for the device to reappear
+          poll(self.timeouts.disconnectPollCount,
+               self.timeouts.disconnectPoll,
+               self.transitionCb("checkDisappearance",
+                                 devName, connectInfo, iniDevices),
+               self.transitionCb('magicRetry', devName, hexData));
+
         });
       }, self.timeouts.magicBaudConnected);
     });
