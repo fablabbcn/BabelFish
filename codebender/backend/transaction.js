@@ -60,7 +60,7 @@ Transaction.prototype = {
     var logargs = arraify(arguments, 1, "state: ", this.state, " - ");
     this.previousErrors.push(logargs);
     this.cleanup(function () {
-      self.log.error.apply(this.log, logargs);
+      self.log.error.apply(self.log, logargs);
       if (self.errorCallback)
         self.errorCallback(id, logargs.join(''));
     });
