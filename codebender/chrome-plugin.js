@@ -397,7 +397,7 @@ Plugin.prototype = {
   },
 
   probeUSB: function () {
-    // Not used
+    this.availablePorts(cb);
   },
 
   getFlashResult: function (cb) {
