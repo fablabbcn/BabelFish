@@ -396,7 +396,7 @@ Plugin.prototype = {
     });
   },
 
-  probeUSB: function () {
+  probeUSB: function (cb) {
     this.availablePorts(cb);
   },
 
