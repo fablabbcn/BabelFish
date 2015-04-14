@@ -206,6 +206,8 @@ if (!window.chrome) {
               // Raise an error if the server reports one.
               if (resp.error) {
                 self.errorHandler("RPC call failed:" + resp.error, callback);
+                chrome.runtime.lastError = resp.error;
+                callback();
               } else {
                 // If there is a callback call it.
                 if (callback) {

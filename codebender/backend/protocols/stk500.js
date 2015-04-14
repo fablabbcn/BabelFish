@@ -213,8 +213,10 @@ STK500Transaction.prototype.cmd = function (cmd, cb) {
 
 STK500Transaction.prototype.flash = function (deviceName, sketchData) {
   this.refreshTimeout();
-  this.sketchData = sketchData;
-  log.log("Flashing. Config is:", this.config);
+  this.sketchData = {data: sketchData.data || sketchData,
+                     addr: sketchData.addr || this.config.offset || 0};
+  log.log("Flashing. Config is:", this.config, "data:", this.sketchData);
+  debugger;
   var self = this,
       connectCb = function (connArg) {
         log.log("Connected to device");
@@ -228,7 +230,7 @@ STK500Transaction.prototype.flash = function (deviceName, sketchData) {
         }
 
         self.connectionId = connArg.connectionId;
-        self.transition('connectDone', sketchData, connArg);
+        self.transition('connectDone', connArg);
       };
 
   self.serial.connect(deviceName,
@@ -236,7 +238,7 @@ STK500Transaction.prototype.flash = function (deviceName, sketchData) {
                       connectCb);
 };
 
-STK500Transaction.prototype.connectDone = function (hexCode, connectArg) {
+STK500Transaction.prototype.connectDone = function (connectArg) {
   var self = this;
   log.log("Connected to board:", connectArg);
   if (connectArg.connectionId)
@@ -308,7 +310,7 @@ STK500Transaction.prototype.enterProgmode = function (data) {
 STK500Transaction.prototype.programFlash = function (pgSize, offset, confirmPages) {
   var self = this, data = this.sketchData.data, memOffset = this.config.offset || 0;
   if (offset === null)
-    offset = this.sketchData.addr;
+    offset = this.sketchData.addr || 0;
 
   confirmPages = confirmPages || [];
 
@@ -343,7 +345,7 @@ STK500Transaction.prototype.programFlash = function (pgSize, offset, confirmPage
 
   // Check the current page and call cb if it is fine.
   function checkPage (cb, retryCount) {
-    var badByte = -1, checkByte = function (b, i) {
+    var badByte = -1, isBadByte = function (b, i) {
       if (b != payload[i]) {
         badByte = i; return true;
       } else {
@@ -356,7 +358,7 @@ STK500Transaction.prototype.programFlash = function (pgSize, offset, confirmPage
 
         log.log("Checking page [", offset/pgSize, "/",
                 Math.ceil(data.length/pgSize), "]:", buffer.hexRep(chkData));
-        if (chkData.some(checkByte)) {
+        if (chkData.some(isBadByte)) {
           if (chkData.length == payload.length)
             self.errCb(1, "Page confirmation failed. Page:",
                        offset/pgSize, "byte:", badByte,
