@@ -47,15 +47,14 @@ function Plugin() {
   this.binaryMode = true;
 
   this._rcvError = function (info) {
+    console.warn('Receive error:', info);
     if (info.connectionId == self.readingInfo.connectionId) {
-      console.warn('Receive error:', info);
       self.disconnect();
     }
 
     if (self.transaction &&
         self.transaction.connectionId &&
         info.connectionId == self.transaction.connectionId) {
-      console.warn('Receive error:', info);
       self.transaction.errCb(1, "An unknown error occured");
     }
   };
