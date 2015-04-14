@@ -317,6 +317,7 @@ STK500Transaction.prototype.programFlash = function (pgSize, dataOffset,
 
   log.log("program flash: data.length: ", data.length,
           ", data offset: ", dataOffset,
+          ", memory offset: ", memOffset + dataOffset,
           ", page size: ", pgSize);
 
   if (dataOffset >= data.length) {
