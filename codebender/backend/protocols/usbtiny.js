@@ -3,13 +3,17 @@
 // # generate some data
 // $ for i in {0..511}; do echo $(($i % 256)); done | (while read i; do printf "\\x$(printf '%02x' $i)"; done) > /tmp/file.bin
 // # Throw it in with avrdude
-// $ avrdude -Cavrdude.conf -v -v -v -v -patmega32u4 -cusbtiny -Uflash:w:"/tmp/file.bin":r
+// $ avrdude -Cavrdude.conf -vvvv -patmega32u4 -cusbtiny -Uflash:w:"/tmp/file.bin":r
 //
 // The arduino wont do anything after this obviously but the pages
 // should be.
 
 // For bootloader:
-// avrdude -Cavrdude.conf -vvvv -patmega32u4 -cusbtiny -e -Ulock:w:0x3F:m -Uefuse:w:0xcb:m -Uhfuse:w:0xd8:m -Ulfuse:w:0xff:m
+//
+// $ avrdude -Cavrdude.conf -vvvv -patmega32u4 -cusbtiny -e -Ulock:w:0x3F:m -Uefuse:w:0xcb:m -Uhfuse:w:0xd8:m -Ulfuse:w:0xff:m
+//
+// That means perform chip erase (Although I couldn't get it to work
+// without it anyway)
 //
 
 var _create_chrome_client = require('./../../../chrome-extension/client/rpc-client'),

@@ -169,7 +169,7 @@ Transaction.prototype = {
         cmd = ops.opToBin(readByteArr, {ADDRESS: addr});
 
     this.cmd(cmd, function (resp) {
-      cb(ops.extractOpData('OUTPUT', readByteArr, resp.data));
+      cb(ops.extractOpData('OUTPUT', readByteArr, resp.data || resp));
     });
   },
 

@@ -5,6 +5,8 @@ chrome-args = --user-data-dir=/tmp/chromium-user-data				\
 --load-extension=$(dot)/CodebenderChromeDeveloper,$(dot)/chrome-extension	\
 --no-first-run,									\
 --no-default-browser-check							\
+--allow-insecure-localhost 							\
+--allow-running-insecure-content 						\
 --disable-web-security								\
 --no-sandbox
 chrome-log-dir = $(dot)/chrome-logs

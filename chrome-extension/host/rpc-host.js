@@ -119,6 +119,7 @@ RPCHost.prototype = {
         self = this,
         ret = function (var_args) {
           if (chrome.runtime.lastError) {
+            console.error("RPC got runtime error:", chrome.runtime.lastError);
             self.sendError(chrome.runtime.lastError, sendResp);
             return false;
           }

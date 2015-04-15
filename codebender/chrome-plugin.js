@@ -219,18 +219,6 @@ Plugin.prototype = {
     });
   },
 
-  flashWithProgrammer: function (device, code, maxsize, protocol,
-                                 communication, speed, force, delay,
-                                 mcu, cb, _extraConfig) {
-    var extraConfig = util.merge(_extraConfig || {},
-                                 {avoidTwiggleDTR: true, confirmPages: true,
-                                  chipErase: true,
-                                  dryRun: window.dryRun});
-
-    // XXX: maybe fail if this is not a programmer.
-    this.flash(device, code, maxsize, protocol, false, speed, mcu, cb,
-               extraConfig);
-  },
 
   flashBootloader: function (device, protocol, communication, speed, force,
                              delay, high_fuses, low_fuses,
@@ -262,6 +250,21 @@ Plugin.prototype = {
     this.flashWithProgrammer(device, this.savedBlob.data, _, protocol,
                              communication, speed, force, delay, mcu,
                              cb, extraConfig);
+  },
+
+
+  flashWithProgrammer: function (device, code, maxsize, protocol,
+                                 communication, speed, force, delay,
+                                 mcu, cb, _extraConfig) {
+    var extraConfig = util.merge(_extraConfig || {},
+                                 {avoidTwiggleDTR: true, confirmPages: true,
+                                  readSwVersion: true,
+                                  chipErase: true,
+                                  dryRun: window.dryRun});
+
+    // XXX: maybe fail if this is not a programmer.
+    this.flash(device, code, maxsize, protocol, false, speed, mcu, cb,
+               extraConfig);
   },
 
   // General purpose flashing. User facing for serial flash. The
