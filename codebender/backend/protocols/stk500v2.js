@@ -213,20 +213,21 @@ STK500v2Transaction.prototype.cmd = function (cmd, cb) {
 };
 
 STK500v2Transaction.prototype.flash = function (deviceName, sketchData) {
-  this.sketchData = sketchData;
+  this.sketchData = {data: sketchData.data || sketchData,
+                     addr: sketchData.addr || this.config.offset || 0};
 
-  log.log("Will be sending sketch:", buffer.hexRep(sketchData));
+  log.log("Will be sending sketch:", buffer.hexRep(sketchData.data));
   var self = this;
   self.destroyOtherConnections(
     deviceName,
     function  () {
       self.serial.connect(deviceName,
                           {bitrate: self.config.speed, name: deviceName},
-                          self.transitionCb('connectDone', sketchData));
+                          self.transitionCb('connectDone'));
     });
 };
 
-STK500v2Transaction.prototype.connectDone = function (hexCode, connectArg) {
+STK500v2Transaction.prototype.connectDone = function (connectArg) {
   if (typeof(connectArg) == "undefined" ||
       typeof(connectArg.connectionId) == "undefined" ||
       connectArg.connectionId == -1) {
@@ -302,20 +303,20 @@ STK500v2Transaction.prototype.preProgramHack = function () {
   ], this.transitionCb("programFlash", 0, 256));
 };
 
-STK500v2Transaction.prototype.programFlash = function (offset, pgSize) {
-  var data = this.sketchData, memOffset = this.config.offset || 0;
+STK500v2Transaction.prototype.programFlash = function (dataOffset, pgSize) {
+  var data = this.sketchData.data, memOffset = this.sketchData.addr;
   log.log("program flash: data.length: ", data.length,
-          ", offset: ", offset, ", page size: ", pgSize);
+          ", dataOffset: ", dataOffset, ", page size: ", pgSize);
 
-  if (offset >= data.length) {
-    log.log("Done programming flash: ", offset, " vs. " + data.length);
+  if (dataOffset >= data.length) {
+    log.log("Done programming flash: ", dataOffset, " vs. " + data.length);
     this.transition('doneProgramming', this.connectionId);
     return;
   }
 
   var self = this,
-      payload = this.padOrSlice(data, offset, pgSize),
-      addressBytes = buffer.storeAsFourBytes((memOffset + offset) / 2),
+      payload = this.padOrSlice(data, dataOffset, pgSize),
+      addressBytes = buffer.storeAsFourBytes((memOffset + dataOffset) / 2),
       sizeBytes = buffer.storeAsTwoBytes(pgSize),
       memMode = 0xc1,
       delay = 10,
@@ -348,7 +349,7 @@ STK500v2Transaction.prototype.programFlash = function (offset, pgSize) {
         self.errCb(errno.BAD_RESPONSE, "Error in response while programming");
         return;
       }
-      self.transition('programFlash', offset + pgSize, pgSize);
+      self.transition('programFlash', dataOffset + pgSize, pgSize);
     });
   });
 };

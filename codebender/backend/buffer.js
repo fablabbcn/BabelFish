@@ -5,16 +5,16 @@ var arraify = require('./util').arraify,
 log.log = function () {};
 
 function storeAsTwoBytes(n) {
-  var lo = (n & 0x00FF);
-  var hi = (n & 0xFF00) >> 8;
+  var lo = (n & 0xff);
+  var hi = (n >> 8) & 0xff;
   return [hi, lo];
 }
 
 function storeAsFourBytes(n) {
-  return [(n & 0xFF)
-          (n & 0xFF << 8) >> 8,
-          (n & 0xFF << 16) >> 16,
-          (n & 0xFF << 24) >> 24];
+  return [(n & 0xff),
+          (n >> 8) & 0xff,
+          (n >> 16) & 0xff,
+          (n >> 24) & 0xff];
 
 }
 
