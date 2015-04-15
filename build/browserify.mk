@@ -1,6 +1,7 @@
 # Browserify related targets
 force:
-
+CODEBENDER_CC ?= $(dot)/bundles
+codebender-twig-dir = $(CODEBENDER_CC)/Symfony/src/Codebender/GenericBundle/Resources/views/CompilerFlasher
 CHROME_FILES =								\
 	$(dot)/codebender/backend/buffer.js				\
 	$(dot)/codebender/backend/logging.js				\
@@ -18,6 +19,9 @@ TARGETS = $(dot)/bundles/compilerflasher.js	\
 	$(dot)/bundles/chrome-client.js		\
 	$(dot)/bundles/firefox-client.js
 
+TWIG_TARGETS = $(codebender-twig-dir)/chrome-client.js.twig		\
+	$(codebender-twig-dir)/firefox-client.js.twig
+
 
 browserify = $(shell which browserify 2> /dev/null || \
 		echo $(dot)/node_modules/.bin/browserify)
@@ -25,6 +29,12 @@ $(browserify): $(dot)/node_modules
 
 .PHONY:
 browserify: $(TARGETS)
+
+browserify-twig: $(TWIG_TARGETS)
+
+$(codebender-twig-dir)/%.twig: $(dot)/bundles/%
+	@echo "Generating: $@"
+	cp $@ $<
 
 $(dot)/bundles/compilerflasher.js: $(dot)/codebender/ad-hoc-changes.js $(dot)/codebender/compilerflasher.js
 	cat $^ > $@
