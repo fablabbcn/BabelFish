@@ -261,18 +261,17 @@ STK500Transaction.prototype.readHardwareVersion = function (data) {
   this.writeThenRead([this.STK.GET_PARAMETER,
                       this.STK.HW_VER,
                       this.STK.CRC_EOP],
-                     this.transitionCb('readSoftwareMajorVersion'));
+                     this.transitionCb('maybeReadSoftwareVersion'));
 };
 
-STK500Transaction.prototype.readSoftwareMajorVersion = function (data) {
-  this.writeThenRead([this.STK.GET_PARAMETER,
-                      this.STK.HW_VER,
-                      this.STK.CRC_EOP],
-                     this.transitionCb('readSoftwareMinorVersion'));
-};
 
-STK500Transaction.prototype.readSoftwareMinorVersion = function (data) {
+STK500Transaction.prototype.maybeReadSoftwareVersion = function (data) {
   var self = this;
+  if (!this.config.readSwVersion) {
+    self.transition('enterProgmode');
+    return;
+  }
+
   this.writeThenRead(
     [this.STK.GET_PARAMETER,
      this.STK.SW_VER_MAJOR,
