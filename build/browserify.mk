@@ -1,6 +1,6 @@
 # Browserify related targets
 force:
-CODEBENDER_CC ?= $(dot)/bundles
+CODEBENDER_CC ?= $(dot)/../codebender.cc
 codebender-twig-dir = $(CODEBENDER_CC)/Symfony/src/Codebender/GenericBundle/Resources/views/CompilerFlasher
 CHROME_FILES =								\
 	$(dot)/codebender/backend/buffer.js				\
@@ -30,11 +30,14 @@ $(browserify): $(dot)/node_modules
 .PHONY:
 browserify: $(TARGETS)
 
-browserify-twig: $(TWIG_TARGETS)
+browserify-twig:
+	$(MAKE) disable-dev-mode
+	$(MAKE) $(TWIG_TARGETS)
+	$(MAKE) enable-dev-mode
 
 $(codebender-twig-dir)/%.twig: $(dot)/bundles/%
 	@echo "Generating: $@"
-	cp $@ $<
+	echo "// Commit: $(shell git rev-parse)"| cat - $< > $@
 
 $(dot)/bundles/compilerflasher.js: $(dot)/codebender/ad-hoc-changes.js $(dot)/codebender/compilerflasher.js
 	cat $^ > $@
