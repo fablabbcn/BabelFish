@@ -1,6 +1,7 @@
 node_modules/
 bundles/
 chrome-logs/
+chromium-user-data/
 npm-debug.log
 TAGS
 bundles/
@@ -8,3 +9,4 @@ bundles/
 *.tmp
 chrome-extension/common/developer.js
 .dir-locals.el
+.DS_Store
