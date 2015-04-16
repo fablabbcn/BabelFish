@@ -359,6 +359,7 @@ STK500Transaction.prototype.programFlash = function (pgSize, dataOffset,
 
         log.log("Checking page [", dataOffset/pgSize, "/",
                 Math.ceil(data.length/pgSize), "]:", buffer.hexRep(chkData));
+        // XXX: use !util.arrEqual(data.data, pageBin)
         if (chkData.some(isBadByte)) {
           if (chkData.length == payload.length)
             self.errCb(1, "Page confirmation failed. Page:",

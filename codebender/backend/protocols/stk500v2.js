@@ -5,7 +5,9 @@ var SerialTransaction = require('./serialtransaction'),
     log = new Log('STK500v2'),
     arraify = require('./../util').arraify,
     zip = require('./../util').zip,
+    util = require('./../util'),
     buffer = require("./../buffer"),
+    memops = require("./memops"),
     errno = require("./../errno");
 
 
@@ -324,12 +326,14 @@ STK500v2Transaction.prototype.programFlash = function (dataOffset, pgSize) {
       writepageCmd = 0x4c,
       avrOpReadLo = 0x20;
 
-  addressBytes[0] |= 0x80;      // We use high addresses only
+  if (this.config.avrdude.memory.flash.memops.LOAD_EXT_ADDR) {
+    addressBytes[0] |= 0x80;      // We use high addresses only
+  }
 
   // The load address message is optional, the device can increment
   // and assume correct positions but just to be sure.
   var loadAddressMessage = [this.STK2.CMD_LOAD_ADDRESS]
-        .concat(addressBytes),
+        .concat(addressBytes),  // C: use_ext_addr | (addr >> addrshift)
       programMessage = [
         this.STK2.CMD_PROGRAM_FLASH_ISP,
         sizeBytes[0],
@@ -340,7 +344,28 @@ STK500v2Transaction.prototype.programFlash = function (dataOffset, pgSize) {
         writepageCmd,
         avrOpReadLo,
         0x00, 0x00,              // Readback
-      ].concat(payload);
+      ].concat(payload),
+      readCmds = memops.opToBin(
+        this.config.avrdude.memory.flash.memops.READ_LO),
+      loadMessage = [
+        this.STK2.CMD_READ_FLASH_ISP,
+        sizeBytes[1],
+        sizeBytes[0],
+        readCmds[0],
+      ];
+
+  function checkPage(cb) {
+    self.writeThenRead(loadAddressMessage, function(reponse) {
+      self.writeThenRead(loadMessage, function(response) {
+        if (!util.arrEqual(payload, response.slice(2))) {
+          self.errCb(1, "Page check at", memOffset, "failed");
+          return;
+        }
+
+        cb();
+      });
+    });
+  }
 
   self.writeThenRead(loadAddressMessage, function(reponse) {
     self.writeThenRead(programMessage, function(response) {
