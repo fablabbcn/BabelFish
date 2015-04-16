@@ -221,8 +221,8 @@ if (!window.chrome) {
               [e.stack].concat(ret.stackList).forEach(function (s) {
                 // Filter out the ones coming from us and the ones
                 // coming from chrome internals
-                s.split("\n").filter(function (l) {
-                  return l.indexOf("extensions::") == -1 &&
+                (s || "").split("\n").filter(function (l) {
+                  return l && l.indexOf("extensions::") == -1 &&
                     l.indexOf("RPCClient") == -1 &&
                     l.indexOf("_removeMeFromStack") == -1 &&
                     l.indexOf("Stack tracing error") == -1;
