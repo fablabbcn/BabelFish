@@ -6,14 +6,15 @@ compilerflasher = function (loadFiles) {
                         path = "\x2Fembed\x2Fchrome\x2Dclient.js";
                 }
                 $.getScript(path)
-                        .done(function () {
+            .done(function () {
+              debugger;
                                 compilerflasher.pluginHandler.codebenderPlugin = new window.CodebenderPlugin();
                         })
                         .fail(function () {
                                 compilerflasher.pluginHandler.codebenderPlugin = function () {};
                         })
                         .always(function () {
-                                initializeCallback();
+                          initializeCallback();
                         });
         }
 
