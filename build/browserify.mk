@@ -37,7 +37,7 @@ browserify-twig:
 
 $(codebender-twig-dir)/%.twig: $(dot)/bundles/%
 	@echo "Generating: $@"
-	echo "// Commit: $(shell git rev-parse)"| cat - $< > $@
+	echo "// Commit: $(shell git rev-parse HEAD)"| cat - $< > $@
 
 $(dot)/bundles/compilerflasher.js: $(dot)/codebender/ad-hoc-changes.js $(dot)/codebender/compilerflasher.js
 	cat $^ > $@
