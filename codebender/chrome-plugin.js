@@ -23,23 +23,7 @@ function Plugin() {
   // this.instance_id = window.plugins_initialized++;
 
   this.bufferSize = 100;
-
-  // self.serial.onReceiveError.addListener(function (info) {
-  //   console.warn("Failed connection: " + info.connectionId +" ( " + info.error + " )");
-  //   self.serial.getConnections(function (connections) {
-  //     connections.forEach(function (ci) {
-  //       if (ci.connectionId == info.connectionId) {
-  //         self.serial.disconnect(info.connectionId, function (ok) {
-  //           if (!ok) {
-  //             console.warn("Failed to disconnect serial from", info);
-  //           }
-  //         });
-  //       }
-  //     });
-  //   });
-  // });
   this.serial.errorHandler = function (message) {
-
   };
   this.readingInfo = null;
 
@@ -70,36 +54,42 @@ Plugin.prototype = {
 
     dbg("Reading Info:",this.readingInfo);
     if (cb !== this.readingInfo.callbackUsedInHandler) {
-      this.readingInfo.callbackUsedInHandler = cb;
-
       // This will fail if:
       // - More than 3 of this are running simultaneously
       // - More than 10 sonsecutive buffer overflows occur
-      this.readingInfo.handler = function (readArg) {
-        if (!self.readingInfo) {
-          console.warn("Recovering from a spamming device.");
-          return;
-        }
-
+      function singleResponseHanlder (readArg) {
         if (!readArg) {
           console.warn("Bad readArg from serial monitor.");
           return;
         }
 
-        if (readArg.connectionId != connectionId)
+        if (!self.readingInfo) {
+          console.warn("Recovering from a spamming device.");
           return;
+        }
 
-        var bufferView = new Uint8Array(readArg.data),
-            chars = [];
+        if (readArg.connectionId != connectionId) {
+          return;
+        }
 
-        for (var i = 0; i < bufferView.length; ++i)
-          chars.push(bufferView[i]);
+        // If we use the BabelFish overloaded versions of addListener
+        // we will receive an array instead of ArrayBuffer.
+        var chars = readArg.data;
+        if (readArg.data instanceof ArrayBuffer) {
+          // If we use the raw chrome api calls we should check for a
+          // spamming device.
+          if (self.spamGuard(returnCb)) {
+            console.warn("Spamguard blocks communication.");
+            return;
+          }
 
-        if (!self.readingInfo.buffer_)
+          var bufferView = new Uint8Array(readArg.data);
+          chars = [].slice.call(bufferView);
+        }
+
+        if (!self.readingInfo.buffer_) {
           self.readingInfo.buffer_ = [];
-
-        if (self.spamGuard(returnCb))
-          return;
+        }
 
         // FIXME: if the last line does not end in a newline it should
         // be buffered
@@ -121,11 +111,12 @@ Plugin.prototype = {
         function __flushBuffer() {
           var ret = self.readingInfo.buffer_.join("\n");
           self.readingInfo.buffer_ = [];
+          dbg("Flushing to serial monitor: ", ret);
           cb("chrome-serial", ret);
         }
 
         if (self._getBufferSize(self.readingInfo.buffer_) > self.bufferSize) {
-          console.log("Buffer overflow, info:", self.readingInfo);
+          console.log("SerialMonitor buffer overflow, info:", self.readingInfo);
           __flushBuffer();
           return;
         }
@@ -136,17 +127,44 @@ Plugin.prototype = {
             __flushBuffer();
           }
         }, 50);
-      }.bind(this);
+      };
+
+      this.readingInfo.callbackUsedInHandler = cb;
+      // this.readingInfo.handler = handler; // For non burst mode
+      this.readingInfo.handler = function (burst) {
+        dbg("Serial monitor burst:", burst.length);
+        burst.forEach(function (args) {
+          singleResponseHanlder.apply(null, args);
+        });
+      };
     }
 
     return this.readingInfo.handler;
   },
 
+  // Return true if this method is spammed. Enter means
   spamGuard: function (returnCb) {
+
+    // NOTE: to test this you can:
+    //
+    // socat PTY,link=$HOME/cu.fake PTY,link=$HOME/COM
+    // sudo ln -s $HOME/cu.fake /dev/cu.fake
+    // <open serial monitor>
+    // for i in {0..1000}; do echo $i > COM; sleep 0.01; done
+    //
+    // Watch the serial monitro go bananas
+    //
     if (!Number.isInteger(this.readingInfo.samultaneousRequests))
       this.readingInfo.samultaneousRequests = 0;
 
-    if (++this.readingInfo.samultaneousRequests > 100) {
+    var self = this;
+    setTimeout(function () {
+      if (self.readingInfo) {
+        self.readingInfo.samultaneousRequests--;
+      }
+    }, 1000);
+
+    if (++this.readingInfo.samultaneousRequests > 500) { //This is the requests/sec
       console.log("Too many requests, reading info:",this.readingInfo);
       // The speed of your device is too high for this serial,
       // may I suggest minicom or something. This happens if we
@@ -155,12 +173,6 @@ Plugin.prototype = {
       returnCb(errno.SPAMMING_DEVICE);
       return true;
     }
-
-    var self = this;
-    setTimeout(function () {
-      if (self.readingInfo)
-        self.readingInfo.samultaneousRequests--;
-    }, 1000);
 
     return false;
   },
@@ -212,7 +224,8 @@ Plugin.prototype = {
         dbg("Serial connected to: ", info);
         self.readingInfo = info;
         self.serial.onReceive.addListener(
-          self.readingHandlerFactory(self.readingInfo.connectionId, cb, returnCb)
+          self.readingHandlerFactory(self.readingInfo.connectionId, cb, returnCb),
+          200
         );
         self.serial.onReceiveError.addListener(self._rcvError);
       });
