@@ -23,11 +23,7 @@ chrome.runtime.getManifestAsync = function (cb) {
 // readArg.data.
 var realReceiveListener = chrome.serial.onReceive.addListener.bind(chrome.serial.onReceive);
 chrome.serial.onReceive.addListener = function (cb, interval) {
-  var args = [], timeout = null;
-  function callback() {
-    var cbargs = [].slice.call(arguments);
-    return cb.apply(null, cbargs);
-  }
+  var args = [], timeout = null, callback = cb;
 
   // Fallback for backwards compatibility.
   if (!interval) {
@@ -36,8 +32,8 @@ chrome.serial.onReceive.addListener = function (cb, interval) {
   }
 
   function storeArg (readArg) {
-    if (args.length > 100){
-      throw Error("Too many args:", args.length);
+    if (args.length > 1000){
+      console.error("Too many messages from dev: ", args.length);
     }
 
     var bufferView = new Uint8Array(readArg.data);
