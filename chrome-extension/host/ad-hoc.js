@@ -33,7 +33,7 @@ chrome.serial.onReceive.addListener = function (cb, interval) {
 
   function storeArg (readArg) {
     if (args.length > 1000){
-      console.error("Too many messages from dev: ", args.length);
+      console.warn("Many messages from dev: ", args.length);
     }
 
     var bufferView = new Uint8Array(readArg.data);
