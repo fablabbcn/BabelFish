@@ -221,8 +221,18 @@ Transaction.prototype = {
         self.setupSpecialBits(self.config.controlBits, cb);
       });
     }, self.config.avrdude.chipEraseDelay / 1000);
-  }
+  },
 
+  // confirmPagesCbs an array of functions accepting a callback that
+  // each checks a written page.
+  confirmPages: function (confirmPagesCbs, cb) {
+    var self = this, ccb = confirmPagesCbs[0];
+    if (ccb) {
+      ccb(this.transitionCb('confirmPages', confirmPagesCbs.slice(1), cb));
+    } else {
+      cb();
+    }
+  }
 };
 
 module.exports.Transaction = Transaction;

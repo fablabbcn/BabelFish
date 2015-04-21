@@ -187,7 +187,6 @@ STK500v2Transaction.prototype.writeThenRead = function (data, cb, retries) {
     return true;
   }
 
-  log.log("Sending:", buffer.hexRep(message));
   this.writeThenRead_({outgoingMsg: message,
                        modifyDatabuffer: modifyDatabuffer,
                        callback: cb,
@@ -273,8 +272,8 @@ STK500v2Transaction.prototype.signedOn  = function (data) {
       pollValue = 0x53,
       pollIndex = 3,
       pgmEnable = [0xac, 0x53, 0x00, 0x00],
-      nextStep = self.transitionCb("programFlash", 0,
-                                   this.config.avrdude.memory.flash.page_size);
+      nextStep = self.transitionCb("preProgramHack", 0,
+                                   this.config.avrdude.memory.flash.page_size, []);
   // nextStep = self.transitionCb("preProgramHack");
 
 
@@ -293,7 +292,8 @@ STK500v2Transaction.prototype.signedOn  = function (data) {
 // Note: This is some commands that avrdude sends to the device. Found
 // them out by sniffing the transaction, couldn't find which code
 // sends them. They dont seem to be necessary but keep them around.
-STK500v2Transaction.prototype.preProgramHack = function () {
+// TODO: Check the bootloader what this is.
+STK500v2Transaction.prototype.preProgramHack = function (offset, pgSize, checkPages) {
   this.cmdChain([
     [0x30, 0x00, 0x00, 0x00],
     [0x30, 0x00, 0x01, 0x00],
@@ -302,17 +302,23 @@ STK500v2Transaction.prototype.preProgramHack = function () {
     [0xa0, 0x0f, 0xfd, 0x00],
     [0xa0, 0x0f, 0xfe, 0x00],
     [0xa0, 0x0f, 0xff, 0x00]
-  ], this.transitionCb("programFlash", 0, 256));
+  ], this.transitionCb("programFlash", offset, 128 || pgSize, checkPages));
 };
 
-STK500v2Transaction.prototype.programFlash = function (dataOffset, pgSize) {
+STK500v2Transaction.prototype.programFlash = function (dataOffset,
+                                                       pgSize, checkPages) {
   var data = this.sketchData.data, memOffset = this.sketchData.addr;
+  if (!checkPages) {
+    checkPages = [];
+  }
+
   log.log("program flash: data.length: ", data.length,
-          ", dataOffset: ", dataOffset, ", page size: ", pgSize);
+          ", dataOffset: ", dataOffset, ", page size: ",
+          pgSize, ", addr sent:", (memOffset + dataOffset) / 2);
 
   if (dataOffset >= data.length) {
     log.log("Done programming flash: ", dataOffset, " vs. " + data.length);
-    this.transition('doneProgramming', this.connectionId);
+    this.transition('doneProgramming', checkPages, this.connectionId, checkPages);
     return;
   }
 
@@ -349,12 +355,13 @@ STK500v2Transaction.prototype.programFlash = function (dataOffset, pgSize) {
         this.config.avrdude.memory.flash.memops.READ_LO),
       loadMessage = [
         this.STK2.CMD_READ_FLASH_ISP,
-        sizeBytes[1],
         sizeBytes[0],
+        sizeBytes[1],
         readCmds[0],
       ];
 
   function checkPage(cb) {
+    log.log("Page check at", memOffset);
     self.writeThenRead(loadAddressMessage, function(reponse) {
       self.writeThenRead(loadMessage, function(response) {
         if (!util.arrEqual(payload, response.slice(2))) {
@@ -374,19 +381,23 @@ STK500v2Transaction.prototype.programFlash = function (dataOffset, pgSize) {
         self.errCb(errno.BAD_RESPONSE, "Error in response while programming");
         return;
       }
-      self.transition('programFlash', dataOffset + pgSize, pgSize);
+      self.transition('programFlash', dataOffset + pgSize, pgSize,
+                      checkPages.concat([checkPage]));
     });
   });
 };
 
-STK500v2Transaction.prototype.doneProgramming = function (cid) {
+STK500v2Transaction.prototype.doneProgramming = function (checkPages, cid) {
   var self = this;
 
-  self.writeThenRead([0x11, 0x01, 0x01], function (data) {
-    setTimeout(function () {
-      self.cleanup(self.finishCallback);
-    }, 1000);
-  });
-};
+  self.transition(
+    'confirmPages', checkPages, function () {
+      self.writeThenRead([0x11, 0x01, 0x01], function (data) {
+        setTimeout(function () {
+          self.cleanup(self.finishCallback);
+        }, 1000);
+      });
+    });
+  };
 
-module.exports.STK500v2Transaction = STK500v2Transaction;
+  module.exports.STK500v2Transaction = STK500v2Transaction;

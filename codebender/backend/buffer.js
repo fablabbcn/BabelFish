@@ -4,17 +4,18 @@ var arraify = require('./util').arraify,
 
 log.log = function () {};
 
+
+// These are all little endian.
 function storeAsTwoBytes(n) {
-  var lo = (n & 0xff);
-  var hi = (n >> 8) & 0xff;
-  return [hi, lo];
+  return [(n >> 8) & 0xff,
+          (n & 0xff)];
 }
 
 function storeAsFourBytes(n) {
-  return [(n & 0xff),
-          (n >> 8) & 0xff,
+  return [(n >> 24) & 0xff,
           (n >> 16) & 0xff,
-          (n >> 24) & 0xff];
+          (n >> 8) & 0xff,
+          (n & 0xff)];
 
 }
 
