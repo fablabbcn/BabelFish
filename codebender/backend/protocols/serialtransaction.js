@@ -160,8 +160,8 @@ SerialTransaction.prototype.setDtr = function (timeout, val, cb, _retries) {
         return;
       }
 
-      self.errCb(1, "Waited too long to set DTR.");
-    }, 100);
+      self.errCb(errno.UNKNOWN_ERROR, "Waited too long to set DTR.");
+    }, 200);
 
     self.log.log("Setting DTR/DTS to", val);
     self.serial.setControlSignals(
