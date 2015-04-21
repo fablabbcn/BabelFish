@@ -34,7 +34,10 @@ browserify-twig:
 	$(MAKE) disable-dev-mode
 	$(MAKE) $(TWIG_TARGETS)
 	$(MAKE) enable-dev-mode
-	@echo 'git -C $(CODEBENDER_CC) commit -a -m "Pull request for BabelFish commit: $(shell git rev-parse HEAD)"'
+
+pull-request: browserify-twig
+	git -C $(CODEBENDER_CC) commit -a -m "Pull request for BabelFish commit: $(shell git rev-parse HEAD)" || echo "===== Nothing to commit ====="
+	git -C $(CODEBENDER_CC) push
 
 $(codebender-twig-dir)/%.twig: $(dot)/bundles/%
 	@echo "Generating: $@"
