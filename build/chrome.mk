@@ -1,6 +1,6 @@
 # Targets for running chromeb
-chrome = $(shell which chrome || which chromium || echo  ~/Applications/Chromium.app/Contents/MacOS/Chromium)
-chrome-args = --user-data-dir=/tmp/chromium-user-data				\
+chrome = $(shell which google-chrome || which chromium || echo  ~/Applications/Chromium.app/Contents/MacOS/Chromium)
+chrome-args = --user-data-dir=./chromium-user-data				\
 --load-extension=$(dot)/CodebenderChromeDeveloper,$(babelfish-app-dir)		\
 --no-first-run,									\
 --no-default-browser-check							\
