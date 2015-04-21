@@ -13,18 +13,6 @@ function SerialMonitor (noBurstingListener) {
   this.noBurstingListener = noBurstingListener;
   // Use this for post-disconnect hook
   this.postDisconnectHook = function () {};
-  this._rcvError = function (info) {
-    console.warn('Receive error:', info);
-    if (info.connectionId == self.readingInfo.connectionId) {
-      self.disconnect();
-    }
-
-    if (self.transaction &&
-        self.transaction.connectionId &&
-        info.connectionId == self.transaction.connectionId) {
-      self.transaction.errCb(1, "An unknown error occured");
-    }
-  };
 }
 
 // - connect to open a serial monitor that behaves well with
@@ -34,63 +22,33 @@ function SerialMonitor (noBurstingListener) {
 
 SerialMonitor.prototype = {
   // === API ===
-  connect: function (port, baudrate, cb, retCb) {
+  connect: function (port, baudrate, readCb, closeCb, connectedCb) {
     dbg("SerialRead connecting to port:", port);
     var self = this, closed = false;
     if (typeof baudrate !== "number") baudrate = Number(baudrate);
 
-    function returnCb (val) {
+    function _closeCb (val) {
       // Explicitly set that for this transaction we handled the
       // closing of the device.
       closed = true;
 
       dbg("Serial monitor return value:", val);
-      retCb("monitor", String(val));
+      closeCb("monitor", String(val));
 
       self.disconnect();
     }
 
-    setTimeout(function () {
-      // Close the monitor if we couldn't open it and didn't close it
-      if (!self.readingInfo && !closed) {
-        returnCb(errno.UNKNOWN_MONITOR_ERROR);
-      }
-    }, 2000);
-
-    this.serial.getConnections(function (cnxs){
-      if (cnxs.some(function (c) {return c.name == port;})) {
-        console.error("Serial monitor connection already open.");
-        returnCb(errno.RESOURCE_BUSY);
-        return;
-      }
-
-      self.serial.connect(port, {bitrate: baudrate, name: port}, function (info) {
-        if (!info) {
-          console.error("Failed to connect serial:", {bitrate: baudrate, name: port});
-          returnCb(errno.RESOURCE_BUSY);
-          return;
-        }
-
-        dbg("Serial connected to: ", info);
-        self.readingInfo = info;
-        var args = [self.readingHandlerFactory(self.readingInfo.connectionId, cb, returnCb)];
-        if (!self.noBurstingListener) {
-          // The burst interval
-          args.push(200);
-        }
-
-        self.serial.onReceive.addListener.apply(self.serial.onReceive, args);
-        self.serial.onReceiveError.addListener(self._rcvError.bind(self));
-      });
+    this.disconnect(function () {
+      self.doConnect(port, baudrate, readCb, _closeCb, connectedCb);
     });
   },
 
-  disconnect: function () {
-    var self = this;
+  disconnect: function (cb) {
+    var self = this, callback = (cb || self.postDisconnectHook);
 
     if (self.readingInfo) {
       self.serial.onReceive.removeListener(self.readingInfo.handler);
-      self.serial.onReceiveError.removeListener(self._rcvError.bind(self));
+      self.serial.onReceiveError.removeListener(self.readingInfo.closeHandler);
 
       var connectionId = self.readingInfo.connectionId;
 
@@ -103,14 +61,29 @@ SerialMonitor.prototype = {
           // XXX: Maybe try again
         } else {
           dbg("Disconnected ok:", connectionId);
+          callback(null, 'disconnect');
         }
       });
 
       // Cleanup syncrhronously
       dbg('Clearing readingInfo:', self.readingInfo.connectionId);
       self.readingInfo = null;
+      return;
     }
-    self.postDisconnectHook(null, 'disconnect');
+
+    callback(null, 'disconnect');
+  },
+
+  reconnect: function (cb) {
+    log.log("Reconnecting...");
+    if (!this.readingInfo) {
+      throw Error("Tried to reconnect a not-connected serial monitor.");
+    }
+
+    var self = this, connArgs = self.readingInfo.connectArgs;
+    this.disconnect(function () {
+      self.connect.apply(self, connArgs);
+    });
   },
 
   write: function (strData, cb) {
@@ -140,94 +113,33 @@ SerialMonitor.prototype = {
 
 
   // === Helpers ===
-  readingHandlerFactory: function (connectionId, cb, returnCb) {
-    var self = this;
+  readingHandlerFactory: function (connectionId, readCb, closeCb) {
+    var self = this,
+        srh = this.singleResponseHanlder.bind(this, connectionId, readCb, closeCb);
 
-    dbg("Reading Info:",this.readingInfo);
-    if (cb !== this.readingInfo.callbackUsedInHandler) {
-      // This will fail if:
-      // - More than 3 of this are running simultaneously
-      // - More than 10 sonsecutive buffer overflows occur
-      function singleResponseHanlder (readArg) {
-        if (!readArg) {
-          console.warn("Bad readArg from serial monitor.");
-          return;
-        }
+    dbg("Reading Info:", this.readingInfo);
+    if (readCb !== this.readingInfo.callbackUsedInHandler) {
+      this.readingInfo.callbackUsedInHandler = readCb;
+      if (this.noBurstingListener) {
+        this.readingInfo.handler = srh; // For non burst mode
+      } else {
+        this.readingInfo.handler = function (burst) {
+          if (burst instanceof Array) {
+            burst.forEach(function (args) {
+              srh.apply(null, args);
+            });
 
-        if (!self.readingInfo) {
-          console.warn("Recovering from a spamming device.");
-          return;
-        }
-
-        if (readArg.connectionId != connectionId) {
-          return;
-        }
-
-        // If we use the BabelFish overloaded versions of addListener
-        // we will receive an array instead of ArrayBuffer.
-        var chars = readArg.data;
-        if (readArg.data instanceof ArrayBuffer) {
-          // If we use the raw chrome api calls we should check for a
-          // spamming device.
-          if (self.spamGuard(returnCb)) {
-            console.warn("Spamguard blocks communication.");
             return;
           }
 
-          var bufferView = new Uint8Array(readArg.data);
-          chars = [].slice.call(bufferView);
-        }
-
-        if (!self.readingInfo.buffer_) {
-          self.readingInfo.buffer_ = [];
-        }
-
-        // FIXME: if the last line does not end in a newline it should
-        // be buffered
-        var msgs = String.fromCharCode.apply(null, chars).split("\n");
-        // return cb("chrome-serial", rcv);
-        // There are three possible issues (solutions):
-        // - Output not readable if it is not delimited by new lines (new line split)
-        // - Large lines creates large buffers (timeout/buffersize)
-        // - Large lines are buffered for ever (timeout)
-
-        // self.readingInfo.buffer_ = self.readingInfo.buffer_.concat(msgs);
-        var buffer_head = self.readingInfo.buffer_;
-        var buffer_tail = self.readingInfo.buffer_.pop() || '';
-        var msgs_head = msgs.shift() || '';
-        var tail_msgs = msgs;
-        self.readingInfo.buffer_ = buffer_head.concat([buffer_tail + msgs_head])
-          .concat(tail_msgs);
-
-        function __flushBuffer() {
-          var ret = self.readingInfo.buffer_.join("\n");
-          self.readingInfo.buffer_ = [];
-          dbg("Flushing to serial monitor bytes: ", ret.length);
-          cb("chrome-serial", ret);
-        }
-
-        if (self._getBufferSize(self.readingInfo.buffer_) > self.bufferSize) {
-          console.log("SerialMonitor buffer overflow, info:", self.readingInfo);
-          __flushBuffer();
-          return;
-        }
-
-        setTimeout(function () {
-          if (self.readingInfo && self.readingInfo.buffer_.length > 0) {
-            self.readingInfo.overflowCount = 0;
-            __flushBuffer();
+          if (typeof burst === "undefined") {
+            log.warn("Old chrome app. Please update for speed.");
+            self.noBurstingListener = true;
+            self.reconnect();
+            return;
           }
-        }, 50);
-      };
 
-      this.readingInfo.callbackUsedInHandler = cb;
-      if (this.noBurstingListener) {
-        this.readingInfo.handler = singleResponseHanlder; // For non burst mode
-      } else {
-        this.readingInfo.handler = function (burst) {
-          burst.forEach(function (args) {
-            singleResponseHanlder.apply(null, args);
-          });
+          srh(burst);
         };
       }
     }
@@ -235,17 +147,15 @@ SerialMonitor.prototype = {
     return this.readingInfo.handler;
   },
 
-  // Deprecated: Return true if this method is spammed.
-  spamGuard: function (returnCb) {
-
+  spamGuard: function (closeCb) {
     // NOTE: to test this you can:
     //
     // socat PTY,link=$HOME/cu.fake PTY,link=$HOME/COM
     // sudo ln -s $HOME/cu.fake /dev/cu.fake
     // <open serial monitor>
-    // for i in {0..1000}; do echo $i > COM; sleep 0.01; done
+    // i=0; sdate=$(date +%s); freq=0.1; while true; do i=$(($i+1)); if [[ $(date +%s) -ne $sdate ]]; then sdate=$(date +%s); echo "Requests/sec: $i"; fi;  echo "Hello $i" > COM2; sleep $freq; done & pid=$!; sleep 10; kill $pid
     //
-    // Watch the serial monitro go bananas
+    // Change the freq var to send at other frequencies.
     //
     if (!Number.isInteger(this.readingInfo.samultaneousRequests)) {
       this.readingInfo.samultaneousRequests = 0;
@@ -264,7 +174,7 @@ SerialMonitor.prototype = {
       // may I suggest minicom or something. This happens if we
       // have more than 3 x 10 rps
       this.disconnect();
-      returnCb(errno.SPAMMING_DEVICE);
+      closeCb(errno.SPAMMING_DEVICE);
       return true;
     }
 
@@ -275,6 +185,137 @@ SerialMonitor.prototype = {
     return buffer_.reduce(function (a, b) {
       return a.length + b.length;
     });
+  },
+
+
+  // closeCb does the right thing (cleaning up) and baudrate is a
+  // number and we are not connected at this point. Use `connect` to
+  // not care about the internal state of SerialMonitor.
+  doConnect: function (port, baudrate, readCb, closeCb, connectedCb) {
+    var self = this, closed = false;
+
+    // Close the monitor if the API blocks for too long.
+    setTimeout(function () {
+      if (!self.readingInfo && !closed) {
+        closeCb(errno.UNKNOWN_MONITOR_ERROR);
+      }
+    }, 2000);
+
+    // Fail if you find an open connection to our port.
+    this.serial.getConnections(function (cnxs){
+      if (cnxs.some(function (c) {return c.name == port;})) {
+        console.error("Serial monitor connection already open.");
+        closeCb(errno.RESOURCE_BUSY);
+        return;
+      }
+
+      self.serial.connect(port, {bitrate: baudrate, name: port}, function (info) {
+        if (!info) {
+          console.error("Failed to connect serial:", {bitrate: baudrate, name: port});
+          closeCb(errno.RESOURCE_BUSY);
+          return;
+        }
+
+        dbg("Serial connected to: ", info);
+        self.readingInfo = info;
+        self.readingInfo.connectArgs = [port, baudrate, readCb, closeCb];
+        var args = [self.readingHandlerFactory(self.readingInfo.connectionId,
+                                               readCb, closeCb)];
+        if (!self.noBurstingListener) {
+          // The burst interval
+          args.push(200);
+        }
+
+        self.readingInfo.closeHandler = function (err) {
+          log.error("Read error:", err);
+          closeCb(errno.UNKNOWN_MONITOR_ERROR);
+        };
+
+        self.serial.onReceive.addListener.apply(self.serial.onReceive, args);
+        self.serial.onReceiveError.addListener(self.readingInfo.closeHandler);
+        if (connectedCb) {
+          connectedCb();
+        }
+      });
+    });
+  },
+
+  bufferedSend: function (chars, cb) {
+    // FIXME: if the last line does not end in a newline it should
+    // be buffered
+    // There are three possible issues (solutions):
+    // - Output not readable if it is not delimited by new lines (new line split)
+    // - Large lines creates large buffers (timeout/buffersize)
+    // - Large lines are buffered for ever (timeout)
+    var msgs = String.fromCharCode.apply(null, chars).split("\n"),
+        buffer_head = this.readingInfo.buffer_,
+        buffer_tail = this.readingInfo.buffer_.pop() || '',
+        msgs_head = msgs.shift() || '',
+        tail_msgs = msgs,
+        self = this;
+
+
+    this.readingInfo.buffer_ = buffer_head.concat([buffer_tail + msgs_head])
+      .concat(tail_msgs);
+
+    function __flushBuffer() {
+      var ret = self.readingInfo.buffer_.join("\n");
+      self.readingInfo.buffer_ = [];
+      dbg("Flushing to serial monitor bytes: ", ret.length);
+      cb("chrome-serial", ret);
+    }
+
+    if (this._getBufferSize(self.readingInfo.buffer_) > self.bufferSize) {
+      console.log("SerialMonitor buffer overflow, info:", self.readingInfo);
+      __flushBuffer();
+      return;
+    }
+
+    setTimeout(function () {
+      if (self.readingInfo && self.readingInfo.buffer_.length > 0) {
+        self.readingInfo.overflowCount = 0;
+        __flushBuffer();
+      }
+    });
+  },
+
+  singleResponseHanlder: function  (connectionId, readCb, closeCb, readArg) {
+    // A message for a different connection. Ignore
+    if (readArg.connectionId != connectionId) {
+      return;
+    }
+
+    if (!readArg) {
+      console.warn("Bad readArg from serial monitor.");
+      return;
+    }
+
+    if (!this.readingInfo) {
+      console.warn("Connection closed but callback not yet unregistered");
+      return;
+    }
+
+    // If we use the BabelFish overloaded versions of addListener
+    // we will receive an array instead of ArrayBuffer.
+    var chars = readArg.data;
+    if (readArg.data instanceof ArrayBuffer) {
+      // If we use the raw chrome api calls we should check for a
+      // spamming device.
+      if (this.spamGuard(closeCb)) {
+        console.warn("Spamguard blocks communication.");
+        this.disconnect();
+        return;
+      }
+
+      var bufferView = new Uint8Array(readArg.data);
+      chars = [].slice.call(bufferView);
+    }
+
+    if (!this.readingInfo.buffer_) {
+      this.readingInfo.buffer_ = [];
+    }
+
+    this.bufferedSend(chars, readCb);
   }
 };
 
