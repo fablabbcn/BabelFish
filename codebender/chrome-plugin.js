@@ -92,7 +92,8 @@ Plugin.prototype = {
 
     // If maxsize is not provided god with us.
     if (maxsize && code.length > maxsize) {
-      cb(1, "Program too large (" + code.length + ">"+ maxsize + ")");
+      dbg("Program too large (" + code.length + ">"+ maxsize + ")");
+      cb(null, errno.PROGRAM_TOO_LARGE);
       return;
     }
 
