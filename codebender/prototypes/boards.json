@@ -815,7 +815,7 @@
     "core": "arduino",
     "variant": "mega"
   },
-  "description": "It’s powerful, it’s portable, it’s Pro! This is a 3.3V microcontroller running a version of the stk500v2 bootloader at 8MHz. Just like the other Pro-series boards this board is built with all SMD components and comes with no headers populated in order to minimize the cost and the board profile. Of course this board has the same pin-configuration as the Arduino Mega so it is dimensionally shield compatible (but do keep in mind that this is a 3.3V board unlike the Arduino Mega).",
+  "description": "It�s powerful, it�s portable, it�s Pro! This is a 3.3V microcontroller running a version of the stk500v2 bootloader at 8MHz. Just like the other Pro-series boards this board is built with all SMD components and comes with no headers populated in order to minimize the cost and the board profile. Of course this board has the same pin-configuration as the Arduino Mega so it is dimensionally shield compatible (but do keep in mind that this is a 3.3V board unlike the Arduino Mega).",
   "personal": false,
   "id": 41
 }, {
@@ -899,7 +899,7 @@
     "core": "arduino:arduino",
     "variant": "promicro"
   },
-  "description": "The Fio v3 is a new spin on the Arduino Fio hardware powered by the ATmega32U4.Not only is it small and LiPo-ready, it’s a very capable XBee-ready development board.",
+  "description": "The Fio v3 is a new spin on the Arduino Fio hardware powered by the ATmega32U4.Not only is it small and LiPo-ready, it�s a very capable XBee-ready development board.",
   "personal": false,
   "id": 44
 }, {
@@ -930,6 +930,31 @@
   "description": "Using the MaKey MaKey you can make anything into a key (get it?) just by connecting a few alligator clips. The MaKey MaKey is an invention kit that tricks your computer into thinking that almost anything is a keyboard. This allows you to hook up all kinds of fun things as an input.",
   "personal": false,
   "id": 45
+}, {
+  "name": "SparkFun Digital Sandbox",
+  "upload": {
+    "protocol": "arduino",
+    "maximum_size": "30720",
+    "speed": "57600"
+  },
+  "bootloader": {
+    "low_fuses": "0xFF",
+    "high_fuses": "0xDA",
+    "extended_fuses": "0x05",
+    "path": "atmega",
+    "file": "ATmegaBOOT_168_atmega328_pro_8MHz.hex",
+    "unlock_bits": "0x3F",
+    "lock_bits": "0x0F"
+  },
+  "build": {
+    "mcu": "atmega328p",
+    "f_cpu": "8000000L",
+    "core": "arduino",
+    "variant": "standard"
+  },
+  "description": "The Digital Sandbox is a learning platform that engages both the software and hardware worlds. It�s powered by a microcontroller that can interact with real-world inputs � like light or temperature sensors � while at the same time controlling LEDs, motors, and other outputs.",
+  "personal": false,
+  "id": 46
 }, {
   "name": "WildFire v2 [stk500]",
   "upload": {
@@ -1273,7 +1298,7 @@
     "core": "arduino",
     "variant": "standard"
   },
-  "description": "For all your tiny e-textile (or just general electronics) needs, the TinyCircuits TinyLily family is an extremely compact and low cost way to add intelligence to your projects. Inspired by the popular Lilypad Arduino, the TinyLily family allows your projects to shrink considerably, allowing you greater creativity in what you can do – yet still has all the power of a standard LilyPad Arduino at 1/12th the size!",
+  "description": "For all your tiny e-textile (or just general electronics) needs, the TinyCircuits TinyLily family is an extremely compact and low cost way to add intelligence to your projects. Inspired by the popular Lilypad Arduino, the TinyLily family allows your projects to shrink considerably, allowing you greater creativity in what you can do � yet still has all the power of a standard LilyPad Arduino at 1/12th the size!",
   "personal": false,
   "id": 70
 }, {
@@ -1395,7 +1420,7 @@
     "core": "arduino:arduino",
     "variant": "tiny8"
   },
-  "description": "Attiny45 uC with the David A. Mellis core, configured with internal clock at 1 MHz. You can use the \"Burn Bootloader\" page to change the ATTiny’s configuration.",
+  "description": "Attiny45 uC with the David A. Mellis core, configured with internal clock at 1 MHz. You can use the \"Burn Bootloader\" page to change the ATTiny�s configuration.",
   "personal": false,
   "id": 85
 }, {
@@ -1414,7 +1439,7 @@
     "core": "arduino:arduino",
     "variant": "tiny8"
   },
-  "description": "Attiny45 uC with the David A. Mellis core, configured with internal clock at 8 MHz. You can use the \"Burn Bootloader\" page to change the ATTiny’s configuration.",
+  "description": "Attiny45 uC with the David A. Mellis core, configured with internal clock at 8 MHz. You can use the \"Burn Bootloader\" page to change the ATTiny�s configuration.",
   "personal": false,
   "id": 86
 }, {
@@ -1433,7 +1458,7 @@
     "core": "arduino:arduino",
     "variant": "tiny8"
   },
-  "description": "Attiny45 uC with the David A. Mellis core, configured with external clock at 20 MHz. You can use the \"Burn Bootloader\" page to change the ATTiny’s configuration.",
+  "description": "Attiny45 uC with the David A. Mellis core, configured with external clock at 20 MHz. You can use the \"Burn Bootloader\" page to change the ATTiny�s configuration.",
   "personal": false,
   "id": 87
 }, {
@@ -1452,7 +1477,7 @@
     "core": "arduino:arduino",
     "variant": "tiny8"
   },
-  "description": "Attiny85 uC with the David A. Mellis core, configured with internal clock at 1 MHz. You can use the \"Burn Bootloader\" page to change the ATTiny’s configuration.",
+  "description": "Attiny85 uC with the David A. Mellis core, configured with internal clock at 1 MHz. You can use the \"Burn Bootloader\" page to change the ATTiny�s configuration.",
   "personal": false,
   "id": 88
 }, {
@@ -1471,7 +1496,7 @@
     "core": "arduino:arduino",
     "variant": "tiny8"
   },
-  "description": "Attiny85 uC with the David A. Mellis core, configured with internal clock at 8 MHz. You can use the \"Burn Bootloader\" page to change the ATTiny’s configuration.",
+  "description": "Attiny85 uC with the David A. Mellis core, configured with internal clock at 8 MHz. You can use the \"Burn Bootloader\" page to change the ATTiny�s configuration.",
   "personal": false,
   "id": 89
 }, {
@@ -1490,7 +1515,7 @@
     "core": "arduino:arduino",
     "variant": "tiny8"
   },
-  "description": "Attiny85 uC with the David A. Mellis core, configured with external clock at 20 MHz. You can use the \"Burn Bootloader\" page to change the ATTiny’s configuration.",
+  "description": "Attiny85 uC with the David A. Mellis core, configured with external clock at 20 MHz. You can use the \"Burn Bootloader\" page to change the ATTiny�s configuration.",
   "personal": false,
   "id": 90
 }, {
@@ -1509,7 +1534,7 @@
     "core": "arduino:arduino",
     "variant": "tiny14"
   },
-  "description": "Attiny44 uC with the David A. Mellis core, configured with internal clock at 1 MHz. You can use the \"Burn Bootloader\" page to change the ATTiny’s configuration.",
+  "description": "Attiny44 uC with the David A. Mellis core, configured with internal clock at 1 MHz. You can use the \"Burn Bootloader\" page to change the ATTiny�s configuration.",
   "personal": false,
   "id": 91
 }, {
@@ -1528,7 +1553,7 @@
     "core": "arduino:arduino",
     "variant": "tiny14"
   },
-  "description": "Attiny44 uC with the David A. Mellis core, configured with internal clock at 8 MHz. You can use the \"Burn Bootloader\" page to change the ATTiny’s configuration.",
+  "description": "Attiny44 uC with the David A. Mellis core, configured with internal clock at 8 MHz. You can use the \"Burn Bootloader\" page to change the ATTiny�s configuration.",
   "personal": false,
   "id": 92
 }, {
@@ -1547,7 +1572,7 @@
     "core": "arduino:arduino",
     "variant": "tiny14"
   },
-  "description": "Attiny44 uC with the David A. Mellis core, configured with external clock at 20 MHz. You can use the \"Burn Bootloader\" page to change the ATTiny’s configuration.",
+  "description": "Attiny44 uC with the David A. Mellis core, configured with external clock at 20 MHz. You can use the \"Burn Bootloader\" page to change the ATTiny�s configuration.",
   "personal": false,
   "id": 93
 }, {
@@ -1566,7 +1591,7 @@
     "core": "arduino:arduino",
     "variant": "tiny14"
   },
-  "description": "Attiny84 uC with the David A. Mellis core, configured with internal clock at 1 MHz. You can use the \"Burn Bootloader\" page to change the ATTiny’s configuration.",
+  "description": "Attiny84 uC with the David A. Mellis core, configured with internal clock at 1 MHz. You can use the \"Burn Bootloader\" page to change the ATTiny�s configuration.",
   "personal": false,
   "id": 94
 }, {
@@ -1585,7 +1610,7 @@
     "core": "arduino:arduino",
     "variant": "tiny14"
   },
-  "description": "Attiny84 uC with the David A. Mellis core, configured with internal clock at 8 MHz. You can use the \"Burn Bootloader\" page to change the ATTiny’s configuration.",
+  "description": "Attiny84 uC with the David A. Mellis core, configured with internal clock at 8 MHz. You can use the \"Burn Bootloader\" page to change the ATTiny�s configuration.",
   "personal": false,
   "id": 95
 }, {
@@ -1604,7 +1629,7 @@
     "core": "arduino:arduino",
     "variant": "tiny14"
   },
-  "description": "Attiny84 uC with the David A. Mellis core, configured with external clock at 20 MHz. You can use the \"Burn Bootloader\" page to change the ATTiny’s configuration.",
+  "description": "Attiny84 uC with the David A. Mellis core, configured with external clock at 20 MHz. You can use the \"Burn Bootloader\" page to change the ATTiny�s configuration.",
   "personal": false,
   "id": 96
 }, {
@@ -1625,7 +1650,7 @@
     "f_cpu": "1000000L",
     "core": "tiny"
   },
-  "description": "Attiny44 uC with the Google Code Arduino-Tiny core, configured with internal clock at 1 MHz. You can use the \"Burn Bootloader\" page to change the ATTiny’s configuration.",
+  "description": "Attiny44 uC with the Google Code Arduino-Tiny core, configured with internal clock at 1 MHz. You can use the \"Burn Bootloader\" page to change the ATTiny�s configuration.",
   "personal": false,
   "id": 121
 }, {
@@ -1646,7 +1671,7 @@
     "f_cpu": "8000000L",
     "core": "tiny"
   },
-  "description": "Attiny44 uC with the Google Code Arduino-Tiny core, configured fwith internal clock at 8 MHz. You can use the \"Burn Bootloader\" page to change the ATTiny’s configuration.",
+  "description": "Attiny44 uC with the Google Code Arduino-Tiny core, configured fwith internal clock at 8 MHz. You can use the \"Burn Bootloader\" page to change the ATTiny�s configuration.",
   "personal": false,
   "id": 122
 }, {
@@ -1667,7 +1692,7 @@
     "f_cpu": "1000000L",
     "core": "tiny"
   },
-  "description": "Attiny45 uC with the Google Code Arduino-Tiny core, configured with internal clock at 1 MHz. You can use the \"Burn Bootloader\" page to change the ATTiny’s configuration.",
+  "description": "Attiny45 uC with the Google Code Arduino-Tiny core, configured with internal clock at 1 MHz. You can use the \"Burn Bootloader\" page to change the ATTiny�s configuration.",
   "personal": false,
   "id": 123
 }, {
@@ -1688,7 +1713,7 @@
     "f_cpu": "8000000L",
     "core": "tiny"
   },
-  "description": "Attiny45 uC with the Google Code Arduino-Tiny core, configured with internal clock at 8 MHz. You can use the \"Burn Bootloader\" page to change the ATTiny’s configuration.",
+  "description": "Attiny45 uC with the Google Code Arduino-Tiny core, configured with internal clock at 8 MHz. You can use the \"Burn Bootloader\" page to change the ATTiny�s configuration.",
   "personal": false,
   "id": 124
 }, {
@@ -1709,7 +1734,7 @@
     "f_cpu": "1000000L",
     "core": "tiny"
   },
-  "description": "Attiny84 uC with the Google Code Arduino-Tiny core, configured with internal clock at 1 MHz. You can use the \"Burn Bootloader\" page to change the ATTiny’s configuration.",
+  "description": "Attiny84 uC with the Google Code Arduino-Tiny core, configured with internal clock at 1 MHz. You can use the \"Burn Bootloader\" page to change the ATTiny�s configuration.",
   "personal": false,
   "id": 125
 }, {
@@ -1730,7 +1755,7 @@
     "f_cpu": "8000000L",
     "core": "tiny"
   },
-  "description": "Attiny84 uC with the Google Code Arduino-Tiny core, configured with internal clock at 8 MHz. You can use the \"Burn Bootloader\" page to change the ATTiny’s configuration.",
+  "description": "Attiny84 uC with the Google Code Arduino-Tiny core, configured with internal clock at 8 MHz. You can use the \"Burn Bootloader\" page to change the ATTiny�s configuration.",
   "personal": false,
   "id": 126
 }, {
@@ -1751,7 +1776,7 @@
     "f_cpu": "16000000L",
     "core": "tiny"
   },
-  "description": "Attiny84 uC with the Google Code Arduino-Tiny core, configured for use with an external crystal at 16 MHz. You can use the \"Burn Bootloader\" page to change the ATTiny’s configuration.",
+  "description": "Attiny84 uC with the Google Code Arduino-Tiny core, configured for use with an external crystal at 16 MHz. You can use the \"Burn Bootloader\" page to change the ATTiny�s configuration.",
   "personal": false,
   "id": 127
 }, {
@@ -1772,7 +1797,7 @@
     "f_cpu": "1000000L",
     "core": "tiny"
   },
-  "description": "Attiny85 uC with the Google Code Arduino-Tiny core, configured with internal clock at 1 MHz. You can use the \"Burn Bootloader\" page to change the ATTiny’s configuration.",
+  "description": "Attiny85 uC with the Google Code Arduino-Tiny core, configured with internal clock at 1 MHz. You can use the \"Burn Bootloader\" page to change the ATTiny�s configuration.",
   "personal": false,
   "id": 129
 }, {
@@ -1793,7 +1818,7 @@
     "f_cpu": "8000000L",
     "core": "tiny"
   },
-  "description": "Attiny85 uC with the Google Code Arduino-Tiny core, configured with internal clock at 8 MHz. You can use the \"Burn Bootloader\" page to change the ATTiny’s configuration.",
+  "description": "Attiny85 uC with the Google Code Arduino-Tiny core, configured with internal clock at 8 MHz. You can use the \"Burn Bootloader\" page to change the ATTiny�s configuration.",
   "personal": false,
   "id": 130
 }, {
@@ -1814,7 +1839,7 @@
     "f_cpu": "16000000L",
     "core": "tiny"
   },
-  "description": "Attiny85 uC with the Google Code Arduino-Tiny core, configured with internal High Frequency PLL clock at 16 MHz. You can use the \"Burn Bootloader\" page to change the ATTiny’s configuration.",
+  "description": "Attiny85 uC with the Google Code Arduino-Tiny core, configured with internal High Frequency PLL clock at 16 MHz. You can use the \"Burn Bootloader\" page to change the ATTiny�s configuration.",
   "personal": false,
   "id": 131
 }, {
@@ -1835,7 +1860,7 @@
     "f_cpu": "16000000L",
     "core": "tiny"
   },
-  "description": "Attiny85 uC with the Google Code Arduino-Tiny core, configured with an external clock at 16 MHz. You can use the \"Burn Bootloader\" page to change the ATTiny’s configuration.",
+  "description": "Attiny85 uC with the Google Code Arduino-Tiny core, configured with an external clock at 16 MHz. You can use the \"Burn Bootloader\" page to change the ATTiny�s configuration.",
   "personal": false,
   "id": 132
 }, {
@@ -1856,7 +1881,7 @@
     "f_cpu": "1000000L",
     "core": "tiny"
   },
-  "description": "Attiny2313 uC with the Google Code Arduino-Tiny core, configured with internal clock at 1 MHz. You can use the \"Burn Bootloader\" page to change the ATTiny’s configuration.",
+  "description": "Attiny2313 uC with the Google Code Arduino-Tiny core, configured with internal clock at 1 MHz. You can use the \"Burn Bootloader\" page to change the ATTiny�s configuration.",
   "personal": false,
   "id": 133
 }, {
@@ -1877,7 +1902,7 @@
     "f_cpu": "8000000L",
     "core": "tiny"
   },
-  "description": "Attiny2313 uC with the Google Code Arduino-Tiny core, configured with internal clock at 8 MHz. You can use the \"Burn Bootloader\" page to change the ATTiny’s configuration.",
+  "description": "Attiny2313 uC with the Google Code Arduino-Tiny core, configured with internal clock at 8 MHz. You can use the \"Burn Bootloader\" page to change the ATTiny�s configuration.",
   "personal": false,
   "id": 134
 }, {
@@ -1905,4 +1930,32 @@
   "description": "Arduino board for geeks.",
   "personal": false,
   "id": 143
+}, {
+  "name": "Hummingbird Duo",
+  "upload": {
+    "protocol": "avr109",
+    "maximum_size": "28672",
+    "speed": "57600",
+    "disable_flushing": "true"
+  },
+  "bootloader": {
+    "low_fuses": "0xff",
+    "high_fuses": "0xd8",
+    "extended_fuses": "0xcb",
+    "path": "caterina",
+    "file": "Caterina-HBDuo.hex",
+    "unlock_bits": "0x3F",
+    "lock_bits": "0x2F"
+  },
+  "build": {
+    "mcu": "atmega32u4",
+    "f_cpu": "16000000L",
+    "vid": "0x2354",
+    "pid": "0x2333",
+    "core": "arduino",
+    "variant": "leonardo"
+  },
+  "description": "A Robotics Kit for Ages 10 to 110. Make and program robots, animatronics, and more with Hummingbird Duo. It may be the first electronics kit that is fun and educational for a fourth grader, a high school student, a college engineering student, or an adult maker.",
+  "personal": false,
+  "id": 144
 }]
