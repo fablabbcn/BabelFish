@@ -11,6 +11,8 @@ function SerialMonitor (noBurstingListener) {
   this.readingInfo = null;
   this.serial = chrome.serial;
   this.noBurstingListener = noBurstingListener;
+  // The prowser % slowdown at which to close the serial monitor.
+  this.spamThresh = 10;
   // Use this for post-disconnect hook
   this.postDisconnectHook = function () {};
 }
@@ -147,6 +149,7 @@ SerialMonitor.prototype = {
     return this.readingInfo.handler;
   },
 
+  // If the system seems slow close the serial monitor
   spamGuard: function (closeCb) {
     // NOTE: to test this you can:
     //
@@ -157,28 +160,19 @@ SerialMonitor.prototype = {
     //
     // Change the freq var to send at other frequencies.
     //
-    if (!Number.isInteger(this.readingInfo.samultaneousRequests)) {
-      this.readingInfo.samultaneousRequests = 0;
+    if (!this.readingInfo.spamGuardCalls) {
+      this.readingInfo.spamGuardCalls = 0;
     }
+    var self = this, sgc = ++self.readingInfo.spamGuardCalls;
 
-    var self = this;
-    setTimeout(function () {
-      if (self.readingInfo) {
-        self.readingInfo.samultaneousRequests--;
+    // Token api call to check responsivenes
+    chrome.serial.getConnections(function (devs) {
+      // Spamguardcalls increased by more than 3 while waiting.
+      if (self.readingInfo.spamGuardCalls - sgc > (window.bfSpamGuard || self.spamThresh)) {
+        log.error("Spamming device:", self.readingInfo.spamGuardCalls - sgc);
+        closeCb(errno.SPAMMING_DEVICE);
       }
-    }, 1000);
-
-    if (++this.readingInfo.samultaneousRequests > 500) { //This is the requests/sec
-      console.log("Too many requests, reading info:",this.readingInfo);
-      // The speed of your device is too high for this serial,
-      // may I suggest minicom or something. This happens if we
-      // have more than 3 x 10 rps
-      this.disconnect();
-      closeCb(errno.SPAMMING_DEVICE);
-      return true;
-    }
-
-    return false;
+    });
   },
 
   _getBufferSize: function (buffer_) {
@@ -295,17 +289,14 @@ SerialMonitor.prototype = {
       return;
     }
 
+
     // If we use the BabelFish overloaded versions of addListener
     // we will receive an array instead of ArrayBuffer.
     var chars = readArg.data;
     if (readArg.data instanceof ArrayBuffer) {
+      this.spamGuard(closeCb);
       // If we use the raw chrome api calls we should check for a
       // spamming device.
-      if (this.spamGuard(closeCb)) {
-        console.warn("Spamguard blocks communication.");
-        this.disconnect();
-        return;
-      }
 
       var bufferView = new Uint8Array(readArg.data);
       chars = [].slice.call(bufferView);
