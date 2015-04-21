@@ -14,3 +14,10 @@
 - Unit tests
 - Documentation
 - Firefox Serial/USB API
+
+
+# High priority
+- Load scripts on DOM dynamically
+- RPC over iframe communication
+- USB programmers (see above)
+- Babelfish over firefox plugin
