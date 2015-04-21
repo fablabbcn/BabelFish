@@ -9,13 +9,31 @@ compilerflasher = new compilerflasher();
 var cf = compilerflasher,
     protocol = "avr109";
 
-// Enable the plugin
-cf.pluginHandler.showPlugin();
-cf.enableCompilerFlasherActions();
-cf.pluginHandler.scan();
+function main () {
+  if (!(cf.pluginHandler || cf.pluginHandler.codebenderPlugin))
+    return false;
 
-// We provide parsed hex
-cf.pluginHandler.codebender_plugin.binaryMode = false;
+  // Enable the plugin
+  cf.pluginHandler.initializePlugin();
+
+  // // We provide parsed hex
+  // cf.pluginHandler.codebender_plugin.binaryMode = false;
+
+
+  $("#flash").click (customFlashSelectedPort);
+  var popInt = setInterval(populateConnections, 1000);
+
+  var send = document.getElementById("send");
+  send.onclick = function () {
+    cf.pluginHandler.serialSend();
+  };
+
+  document.getElementById('monitor').innerHTML = "Connect";
+  document.getElementById('monitor').onclick = startMonitor;
+  return true;
+}
+
+
 function customFlashSelectedPort () {
   var protocol = document.getElementById("protocols").value;
   $.get("/codebender/sketches/blink-" + protocol + ".hex", function (blob) {
@@ -56,14 +74,6 @@ function customFlashSelectedPort () {
   });
 }
 
-$("#flash").click (customFlashSelectedPort);
-
-var send = document.getElementById("send");
-send.onclick = function () {
-  cf.pluginHandler.serialSend();
-};
-
-
 function startMonitor () {
   cf.pluginHandler.connected = false;
   cf.pluginHandler.connect();
@@ -71,11 +81,11 @@ function startMonitor () {
   document.getElementById('monitor').disabled = true;
 
   poll(function () {
-    if (!cf.pluginHandler.codebender_plugin.readingInfo)
+    if (!cf.pluginHandler.codebenderPlugin.readingInfo)
       return false;
 
     document.getElementById('monitor').innerHTML = "Disconnect: " +
-      cf.pluginHandler.codebender_plugin.readingInfo.connectionId;
+      cf.pluginHandler.codebenderPlugin.readingInfo.connectionId;
     document.getElementById('monitor').onclick = killMonitor;
     document.getElementById('monitor').disabled = false;
     return true;
@@ -88,9 +98,6 @@ function killMonitor () {
   document.getElementById('monitor').onclick = startMonitor;
 }
 
-document.getElementById('monitor').innerHTML = "Connect";
-document.getElementById('monitor').onclick = startMonitor;
-
 function populateConnections() {
   var cnxul = document.getElementById('connections'),
       devMsg;
@@ -101,14 +108,14 @@ function populateConnections() {
 
   document.getElementById('title').innerHTML = devMsg;
 
-  cf.pluginHandler.codebender_plugin.serial.getConnections(function (cnxs) {
+  cf.pluginHandler.codebenderPlugin.serial.getConnections(function (cnxs) {
     cnxul.innerHTML = "";
     cnxs.forEach(function (cnx) {
       var li = document.createElement("li"), btn = document.createElement("button");
       li.innerHTML += cnx.name + " : " + cnx.connectionId;
       btn.innerHTML = "Disconnect";
       btn.onclick = function () {
-        cf.pluginHandler.codebender_plugin.serial.disconnect(cnx.connectionId, function (ok) {
+        cf.pluginHandler.codebenderPlugin.serial.disconnect(cnx.connectionId, function (ok) {
           if (ok) {
             // Remove from list
             cnxul.removeChild(li);
@@ -125,8 +132,6 @@ function populateConnections() {
     });
   });
 }
-
-var popInt = setInterval(populateConnections, 1000);
 
 function quickFlash() {
 
@@ -222,3 +227,8 @@ function openCloseUSB() {
     });
   });
 }
+
+setTimeout(function _main () {
+  console.log("Trying to setup");
+  if (!main()) setTimeout(_main, 500);
+});

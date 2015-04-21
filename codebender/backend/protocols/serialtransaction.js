@@ -161,7 +161,7 @@ SerialTransaction.prototype.setDtr = function (timeout, val, cb, _retries) {
       }
 
       self.errCb(1, "Waited too long to set DTR.");
-    }, 50);
+    }, 100);
 
     self.log.log("Setting DTR/DTS to", val);
     self.serial.setControlSignals(
@@ -193,9 +193,9 @@ SerialTransaction.prototype.twiggleDtrMaybe = function (cb, _cbArgs) {
   self.serial.getControlSignals(self.connectionId, function(signals) {
     self.log.log("Signals are:", signals);
     self.setDtr(250, before, function () {
-      self.setDtr(500, after, cb);
-    });
-  });
+      self.setDtr(50, after, cb);
+    }, 3);
+  }, 3);
 };
 
 SerialTransaction.prototype.cmdChain = function (chain, cb) {
