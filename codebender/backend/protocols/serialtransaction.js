@@ -152,31 +152,28 @@ SerialTransaction.prototype.destroyOtherConnections = function (name, cb) {
 SerialTransaction.prototype.setDtr = function (timeout, val, cb, _retries) {
   var self = this;
 
+  var waitTooLong = setTimeout(function () {
+    if (_retries) {
+      self.setDtr(timeout, val, cb, _retries-1);
+      return;
+    }
 
-  setTimeout(function() {
-    var waitTooLong = setTimeout(function () {
-      if (_retries) {
-        self.setDtr(timeout, val, cb, _retries-1);
+    self.errCb(errno.UNKNOWN_ERROR, "Waited too long to set DTR.");
+  }, 200);
+
+  self.log.log("Setting DTR/DTS to", val);
+  self.serial.setControlSignals(
+    self.connectionId, {dtr: val, rts: val},
+    function(ok) {
+      clearTimeout(waitTooLong);
+
+      if (!ok) {
+        self.errCb(errno.DTR_RTS_FAIL,"Failed to set flags");
         return;
       }
-
-      self.errCb(errno.UNKNOWN_ERROR, "Waited too long to set DTR.");
-    }, 200);
-
-    self.log.log("Setting DTR/DTS to", val);
-    self.serial.setControlSignals(
-      self.connectionId, {dtr: val, rts: val},
-      function(ok) {
-        clearTimeout(waitTooLong);
-
-        if (!ok) {
-          self.errCb(errno.DTR_RTS_FAIL,"Failed to set flags");
-          return;
-        }
-        self.log.log("DTR/RTS set to", val);
-        cb();
-      });
-  }, timeout);
+      self.log.log("DTR/RTS set to", val);
+      setTimeout(cb, timeout);
+    });
 };
 
 SerialTransaction.prototype.twiggleDtrMaybe = function (cb, _cbArgs) {
