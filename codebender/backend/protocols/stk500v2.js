@@ -302,7 +302,7 @@ STK500v2Transaction.prototype.preProgramHack = function (offset, pgSize, checkPa
     [0xa0, 0x0f, 0xfd, 0x00],
     [0xa0, 0x0f, 0xfe, 0x00],
     [0xa0, 0x0f, 0xff, 0x00]
-  ], this.transitionCb("programFlash", offset, 128 || pgSize, checkPages));
+  ], this.transitionCb("programFlash", offset, pgSize || 256, checkPages));
 };
 
 STK500v2Transaction.prototype.programFlash = function (dataOffset,
