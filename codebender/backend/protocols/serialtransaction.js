@@ -187,6 +187,15 @@ SerialTransaction.prototype.twiggleDtrMaybe = function (cb, _cbArgs) {
     return;
   }
 
+
+  // Avrdude code.
+  // /* Clear DTR and RTS to unload the RESET capacitor
+  //  * (for example in Arduino) */
+  // serial_set_dtr_rts(&pgm->fd, 0);
+  // usleep(250*1000);
+  // /* Set DTR and RTS back to high */
+  // serial_set_dtr_rts(&pgm->fd, 1);
+  // usleep(50*1000
   self.serial.getControlSignals(self.connectionId, function(signals) {
     self.log.log("Signals are:", signals);
     self.setDtr(250, before, function () {
