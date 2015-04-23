@@ -37,10 +37,10 @@ browserify-twig:
 	$(MAKE) enable-dev-mode
 
 log-since-push:
-	PAGER=cat git log "$(shell head $(codebender-twig-dir)/chrome-client.js.twig | sed -n 's_// Commit: \(.*\)_\1_p')..HEAD"
+	@git --no-pager log "$(shell head $(codebender-twig-dir)/chrome-client.js.twig | sed -n 's_// Commit: \(.*\)_\1_p')..HEAD"
 
-y-or-n = read -n 1 -p "==== Are you ok with this (y/n)? " answer && [[ "$$answer" = "y" ]]
-cbgit = PAGER=cat git -C $(CODEBENDER_CC)
+y-or-n = (read -n 1 -p "==== Are you ok with this (y/n)? " answer && [[ "$$answer" = "y" ]] && answer="")
+cbgit = git --no-pager -C $(CODEBENDER_CC)
 pull-request-branch = babelfish_$(shell git for-each-ref --format='%(refname)' --sort=-committerdate refs/heads/ | grep -v 'master' | sed 's_refs/heads/\(.*\)_\1_p' | head -1)
 .PHONY:
 setup-pull-branch:
@@ -49,7 +49,7 @@ setup-pull-branch:
 	@echo "--------"
 	@echo "Will create branch named '$(pull-request-branch)' (set pull-request-branch to override)"
 	$(y-or-n)
-	$(cbgit) checkout -b "$(pull-request-branch)"
+	(($(cbgit) checkout -b "$(pull-request-branch)") || $(y-or-n))
 
 .PHONY:
 pull-request: setup-pull-branch browserify-twig
