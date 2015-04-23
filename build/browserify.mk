@@ -37,7 +37,9 @@ browserify-twig:
 	$(MAKE) enable-dev-mode
 
 pull-request: browserify-twig
-	git -C $(CODEBENDER_CC) commit -a -m "Pull request for BabelFish commit: $(shell git rev-parse HEAD)" || echo "===== Nothing to commit ====="
+	git -C $(CODEBENDER_CC) commit -a -m '$(shell git log "$(head $(codebender-twig-dir)/chrome-client.js.twig | sed -n \"s_// Commit: \(.*\)_\1_p\")..HEAD")' || echo "===== Nothing to commit ====="
+
+push-pull-request:
 	git -C $(CODEBENDER_CC) push
 
 $(codebender-twig-dir)/%.twig: $(dot)/bundles/%
