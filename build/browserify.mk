@@ -36,8 +36,11 @@ browserify-twig:
 	$(MAKE) $(TWIG_TARGETS)
 	$(MAKE) enable-dev-mode
 
+log-since-push:
+	PAGER=cat git log "$(shell head $(codebender-twig-dir)/chrome-client.js.twig | sed -n 's_// Commit: \(.*\)_\1_p')..HEAD"
+
 pull-request: browserify-twig
-	git -C $(CODEBENDER_CC) commit -a -m '$(shell git log "$(head $(codebender-twig-dir)/chrome-client.js.twig | sed -n \"s_// Commit: \(.*\)_\1_p\")..HEAD")' || echo "===== Nothing to commit ====="
+	git -C $(CODEBENDER_CC) commit -a -m '$(shell $(MAKE) log-since-push)' || echo "===== Nothing to commit ====="
 
 push-pull-request:
 	git -C $(CODEBENDER_CC) push
