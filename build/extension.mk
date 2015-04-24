@@ -44,4 +44,5 @@ disable-dev-mode:
 	cp $(DEV_FILE).nodev $(DEV_FILE)
 	$(MAKE) browserify
 
-$(DEV_FILE): enable-dev-mode
+$(DEV_FILE):
+	cp $(DEV_FILE).dev $(DEV_FILE)

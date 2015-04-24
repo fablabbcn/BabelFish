@@ -61,14 +61,15 @@ pull-request: setup-pull-branch browserify-twig
 push-pull-request:
 	$(cbgit) diff development
 	@echo "Will now push..."
-	$(y-or-n)
-	$(cbgit) push origin $(pull-request-branch)
+
+$(dot)/bundles:
+	mkdir -p $@
 
 $(codebender-twig-dir)/%.twig: $(dot)/bundles/%
 	@echo "Generating: $@"
 	echo "// Commit: $(shell git rev-parse HEAD)"| cat - $< > $@
 
-$(dot)/bundles/compilerflasher.js: $(dot)/codebender/ad-hoc-changes.js $(dot)/codebender/compilerflasher.js
+$(dot)/bundles/compilerflasher.js: $(dot)/codebender/ad-hoc-changes.js $(dot)/codebender/compilerflasher.js $(dot)/bundles
 	cat $^ > $@
 
 $(dot)/bundles/%-client.js: $(dot)/codebender/%-loader.js $(DEV_FILE) force | $(browserify) $(dot)/bundles
