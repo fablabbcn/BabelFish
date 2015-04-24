@@ -62,14 +62,11 @@ push-pull-request:
 	$(cbgit) diff development
 	@echo "Will now push..."
 
-$(dot)/bundles:
-	mkdir -p $@
-
 $(codebender-twig-dir)/%.twig: $(dot)/bundles/%
 	@echo "Generating: $@"
 	echo "// Commit: $(shell git rev-parse HEAD)"| cat - $< > $@
 
-$(dot)/bundles/compilerflasher.js: $(dot)/codebender/ad-hoc-changes.js $(dot)/codebender/compilerflasher.js $(dot)/bundles
+$(dot)/bundles/compilerflasher.js: $(dot)/codebender/ad-hoc-changes.js $(dot)/codebender/compilerflasher.js | $(dot)/bundles
 	cat $^ > $@
 
 $(dot)/bundles/%-client.js: $(dot)/codebender/%-loader.js $(DEV_FILE) force | $(browserify) $(dot)/bundles
