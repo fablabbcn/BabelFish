@@ -149,17 +149,17 @@ SerialTransaction.prototype.destroyOtherConnections = function (name, cb) {
 
 // Retries were introduced because in some boards if signals are set
 // too soon after connection, the callback is just not called.
-SerialTransaction.prototype.setDtr = function (timeout, val, cb, _retries) {
+SerialTransaction.prototype.setDtrAndWait = function (timeout, val, cb, _retries) {
   var self = this;
 
   var waitTooLong = setTimeout(function () {
     if (_retries) {
-      self.setDtr(timeout, val, cb, _retries-1);
+      self.setDtrAndWait(timeout, val, cb, _retries-1);
       return;
     }
 
     self.errCb(errno.UNKNOWN_ERROR, "Waited too long to set DTR.");
-  }, 200);
+  }, window.config.dtrTimeout || 500);
 
   self.log.log("Setting DTR/DTS to", val);
   self.serial.setControlSignals(
@@ -187,20 +187,16 @@ SerialTransaction.prototype.twiggleDtrMaybe = function (cb, _cbArgs) {
     return;
   }
 
-
-  // Avrdude code.
+  // Avrdude code:
   // /* Clear DTR and RTS to unload the RESET capacitor
   //  * (for example in Arduino) */
   // serial_set_dtr_rts(&pgm->fd, 0);
   // usleep(250*1000);
   // /* Set DTR and RTS back to high */
   // serial_set_dtr_rts(&pgm->fd, 1);
-  // usleep(50*1000
-  self.serial.getControlSignals(self.connectionId, function(signals) {
-    self.log.log("Signals are:", signals);
-    self.setDtr(250, before, function () {
-      self.setDtr(50, after, cb);
-    }, 3);
+  // usleep(50*1000)
+  self.setDtrAndWait(this.config.twigleDtrWait, before, function () {
+    self.setDtrAndWait(50, after, cb, 3);
   }, 3);
 };
 

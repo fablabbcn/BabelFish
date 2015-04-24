@@ -77,6 +77,7 @@ function STK500v2Transaction () {
 
   this.log = log;
   this.cmdSeq = 1;
+  this.config.twigleDtrWait = 50;
 }
 
 STK500v2Transaction.prototype = new SerialTransaction();

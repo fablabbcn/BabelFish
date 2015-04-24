@@ -29,6 +29,7 @@ function STK500Transaction () {
     SET_DEVICE_EXT: 0x45
   };
   this.maxMessageRetries = 4;
+  this.config.twigleDtrWait = 250;
 }
 
 STK500Transaction.prototype = new SerialTransaction;
