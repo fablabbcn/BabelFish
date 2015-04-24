@@ -11,7 +11,7 @@ chrome-args = --user-data-dir=./chromium-user-data				\
 
 chrome-log-dir = $(dot)/chrome-logs
 
-SUBMODULES += $(dot)/CodebenderChromeDeveloper
+SUBMODULES += $(dot)/CodebenderChromeDeveloper/manifest.json
 
 .PHONY:
 chrome-args:
@@ -22,7 +22,7 @@ $(chrome-log-dir):
 
 # Fire up an asynchronous chrome instance
 .PHONY:
-run-chrome: $(dot)/bundles/chrome-client.js | $(dot)/CodebenderChromeDeveloper $(chrome-log-dir)
+run-chrome: $(dot)/bundles/chrome-client.js | $(dot)/CodebenderChromeDeveloper/manifest.json $(chrome-log-dir)
 	$(chrome) $(chrome-args) $(URL) 2> $(chrome-log-dir)/chrome-$(shell date "+%s").log
 
 # Run a nodejs server and run chrome.
