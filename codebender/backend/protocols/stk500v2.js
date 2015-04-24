@@ -100,7 +100,7 @@ STK500v2Transaction.prototype.writeThenRead = function (data, cb, retries) {
                 ].concat(data);
   message.push(message.reduce(function (a,b) {
     return a^b;
-  }));
+  }, 0));
 
   if (retries === undefined) retries = 3;
 
@@ -163,7 +163,7 @@ STK500v2Transaction.prototype.writeThenRead = function (data, cb, retries) {
     // From the top to get the checksum
     var csum = reader.buffer.databuffer
           .slice(start, msgLen+6)
-          .reduce(function (a,b) {return a^b;});
+          .reduce(function (a,b) {return a^b;}, 0);
 
     // If the checksum failed the whole message was bad. Hope we have
     // retries..
@@ -195,7 +195,8 @@ STK500v2Transaction.prototype.writeThenRead = function (data, cb, retries) {
                          if (retries > 0)
                            self.writeThenRead(data, cb, retries-1);
                          else
-                           self.errCb(errno.READER_TIMEOUT, "STKv2 reader timed out");
+                           self.errCb(errno.READER_TIMEOUT,
+                                      "STKv2 reader timed out");
                        }});
 };
 
