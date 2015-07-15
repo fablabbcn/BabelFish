@@ -1,125 +1,26 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="UTF-8">
-    <title>Codebender app</title>
-
-    <style>
-      body {
-        width: 500px;
-        height: 400px;
-        margin: 0;
-        padding: 0;
-        font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
-        overflow: none;
-        background-image: url('blizzard.png');
-        background-size: 100%;
-        background-repeat: no-repeat;
-        background-attachment: fixed;
-        background-position: 0 0;
-      }
-
-      header, footer {
-        height: 40px;
-        display: block;
-        margin: 0;
-        font-size: 20px;
-        line-height: 20px;
-
-        text-shadow: 0 1px 0 #ffffff;
-
-        -webkit-box-shadow: 0 1px 10px rgba(0,0,0,.1);
-        -moz-box-shadow: 0 1px 10px rgba(0,0,0,.1);
-        box-shadow: 0 1px 10px rgba(0,0,0,.1);
-
-        background-color: #fafafa;
-
-        background-image: -moz-linear-gradient(top, #ffffff, #f2f2f2);
-        background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#ffffff), to(#f2f2f2));
-        background-image: -webkit-linear-gradient(top, #ffffff, #f2f2f2);
-        background-image: -o-linear-gradient(top, #ffffff, #f2f2f2);
-        background-image: linear-gradient(to bottom, #ffffff, #f2f2f2);
-        background-repeat: repeat-x;
-      }
-
-      .banner p {
-        display: inline-block;
-        color: #777777;
-        text-decoration: none;
-        vertical-align: middle;
-      }
-
-      #codebender-banner a {
-        display: block;
-        width: 136px;
-        height: 40px;
-      }
-
-      #codebender-banner p {
-        margin: 10px 2px 24px 2px;
-      }
-
-      #codebender-banner img {
-        display: inline-block;
-        width: 22px;
-        margin: 8px 2px 0 2px;
-      }
-
-      #happy-hacking {
-        display: inline-block;
-        text-align: center;
-        margin-left: 320px;
-      }
-
-      #main-container {
-        height: -moz-calc(100% - 100px);
-        height: -webkit-calc(100% - 100px);
-        height: calc(100% - 100px);
-        margin: 5px;
-        font-size: 16px;
-      }
-
-      #codebender-logo {
-        display: inline-block;
-        margin-left: 345px;
-      }
-      #codebender-logo img {
-        width: 80px;
-        margin: 0 20px 0 0;
-      }
-
-      #github-link {
-        font-size: 12px;
-      }
-
-      .small {
-        font-size: 12px;
-      }
-    </style>
-  </head>
-  <body>
-    <header>
-      <div id="codebender-banner" class="banner">
-        <a href="https://codebender.cc/?referrer=chrome_extension" target="_blank" title="Visit codebender">
-            <img src="codebender-transparent.png"><p>codebender</p>
-        </a>
-      </div>
-    </header>
-
-    <div id="main-container">
-      <p>Now you can access Arduinos, Arduino-like devices and program them through your browser.</p>
-      <p>Visit codebender: <a href="https://codebender.cc/?referrer=chrome_extention" target="_blank">https://codebender.cc</a> the on-line Arduino code editor and IDE, to develop faster and easier, without installing and managing software from multiple computers, while easily uploading your sketch/program to your Arduino.</p>
-
-      <div id="happy-hacking">
-        <p>Happy hacking</p>
-        <p class="small">The Codebender team</p>
-      </div>
-
-      <div id="codebender-logo">
-        <img src="codebender-transparent.png">
-      </div>
-
-      <p id="github-link">Wanna have a look what this app does? We are open source. View our code on <a href="https://github.com/codebendercc/BabelFish"  target="_blank">GitHub</a>.</p>
-    </div>
-  </body>
+<head>
+  <title>Smart Citizen Kit - Configuration Tool</title>
+  <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+<div class="header">
+  <img src="smartcitizen-web-logo.png">
+  <h1>Smart Citizen Kit</h1>
+  <h2>Configuration Tool</h2>
+</div>
+<div class="content">
+  <div>
+    <a class="button blue" target="_blank" href="https://smartcitizen.me/users/login">SIGN IN</a>
+    <a class="button green" target="_blank" href="https://smartcitizen.me/users/add">REGISTER</a>
+  </div>
+  <div>
+    <h3><a target="_blank" href="http://docs.smartcitizen.me">Help?</a></h3>
+  </div>
+<div class="footer">
+  <p>Powered by <a target="_blank" href="https://github.com/codebendercc/BabelFish">Babelfish</a> by <a target="_blank" href="https://codebender.cc/">Codebender.cc</a></p>
+  <p><a target="_blank" href="https://smartcitizen.me">Smart Citizen</a> - Open source technology for citizens political participation<br> in smarter cities. <br><a target="_blank" href="mailto:support@smartcitizen.me">Support</a></p>
+</div>
+</body>
 </html>

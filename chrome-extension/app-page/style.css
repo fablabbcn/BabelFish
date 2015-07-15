@@ -1,0 +1,140 @@
+@font-face {
+  font-family: 'Open Sans Condensed';
+  font-style: normal;
+  font-weight: 700;
+  src: url('fonts/OpenSans-Bold.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Open Sans Condensed';
+  font-style: normal;
+  font-weight: 300;
+  src: url('fonts/OpenSans-Light.woff2') format('woff2');
+}
+
+body {
+  width: 420px;
+  height: 620px;
+  height: 100%;
+  overflow: hidden;
+  background: #00131E; 
+  font-family: 'Open Sans Condensed', sans-serif;
+  font-weight: 300px;
+  font-size: 16px;
+  color: #666666;
+  line-height: 25px;
+  text-align: center;
+}
+
+h1 {
+  font-size: 33px;
+  font-weight: 300;
+  margin-top: 0;
+  margin-bottom: 6px;
+  text-align: center;
+  text-transform: none;
+  line-height: 38px;
+  color: #FFFFFF;
+}
+
+
+h2 {
+  font-size: 28px;
+  font-weight: 300;
+  margin-top: 0;
+  margin-bottom: 6px;
+  text-align: center;
+  text-transform: none;
+  line-height: 38px;
+  color: #00d79c;
+}
+
+h3 {
+  font-size: 28px;
+  font-weight: 300;
+  margin-top: 0;
+  margin-bottom: 6px;
+  text-align: center;
+  text-transform: none;
+  line-height: 38px;
+  color: #FFFFFF;
+}
+
+h3 a{
+  text-decoration: none;
+  color: #FFFFFF;
+}
+
+h3 a:visited, h3 a:active{
+  text-decoration: none;
+  color: #FFFFFF;
+}
+
+h3 a:hover{
+  text-decoration: none;
+  color: #66d5f0;
+}
+
+div.content div{
+  margin-top: 30px;
+}
+
+p {
+  color: #666666;
+}
+
+
+p a {
+  color: #666666;
+}
+
+p a:visited, p a:active{
+  color: #666666;
+}
+
+p a:hover {
+  color: #66d5f0;
+}
+
+a.button {
+    box-sizing: border-box;
+    color: rgb(0, 19, 31);
+    cursor: pointer;
+    display: inline-block;
+    height: 39px;
+    text-align: center;
+    text-decoration: none;
+    text-transform: uppercase;
+    vertical-align: middle;
+    white-space: nowrap;
+    width: 173.09375px;
+    perspective-origin: 86.546875px 19.5px;
+    transform-origin: 86.546875px 19.5px;
+    border: 0px none rgb(0, 19, 31);
+    border-radius: 6px 6px 6px 6px;
+    font: normal normal bold normal 15px/19.9500007629395px 'Open Sans Condensed', Helvetica, Arial, sans-serif;
+    margin: 0px 10px;
+    outline: rgb(0, 19, 31) none 0px;
+    padding: 10px 60px;
+}
+
+a:hover.button{
+    background: #666666 !important;
+}
+
+a.button.green {
+    background: #00d79c none repeat scroll 0% 0% / auto padding-box border-box;
+}
+
+a.button.blue {
+    background: #66d5f0 none repeat scroll 0% 0% / auto padding-box border-box;
+}
+
+div.header {
+  margin-bottom: 30px;
+}
+
+div.footer {
+  margin-top: 30px;
+}
+

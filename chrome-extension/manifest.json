@@ -1,13 +1,14 @@
 {
-    "name": "Codebender app",
-    "version": "0.1.0.10",
+"update_url": "https://clients2.google.com/service/update2/crx",
+    "name": "Smart Citizen Kit",
+    "version": "0.1.1.2",
     "manifest_version": 2,
     "minimum_chrome_version": "41",
-    "author": "Codebender.cc",
+    "author": "Smart Citizen",
     "icons": {"16": "logo16.png",
               "48": "logo48.png",
               "128": "logo128.png"},
-    "description": "Serial for codebender and the rest of the world.",
+    "description": "Smart Citizen Kit configuration tool",
     "app": {
 	"background": {
 	    "page": "background.html"
@@ -16,27 +17,23 @@
     "externally_connectable": {
 	"matches": [
             "http://localhost:8080/*",
-            "http://*.codebender.cc/*",
-            "https://*.codebender.cc/*",
-            "http://codebender.cc/*",
-            "https://codebender.cc/*"
+            "http://localhost/*",
+            "https://smartcitizen.me/*",
+            "http://smartcitizen.me/*",
+            "https://sandbox.smartcitizen.me/*",
+            "http://sandbox.smartcitizen.me/*"
 	],
 	"accepts_tls_channel_id": false
     },
     "permissions": [
-        {
-            "usbDevices": [
-                {"vendorId": 6017, "productId": 3231}
-            ]
-        },
         "storage",
-	"serial",
+    	"serial",
         "usb",
         "http://localhost:8080/*",
         "http://localhost/*",
-        "http://*.codebender.cc/*",
-        "https://*.codebender.cc/*",
-        "http://codebender.cc/*",
-        "https://codebender.cc/*"
+        "https://smartcitizen.me/*",
+        "http://smartcitizen.me/*",
+        "https://sandbox.smartcitizen.me/*",
+        "http://sandbox.smartcitizen.me/*"
     ]
 }

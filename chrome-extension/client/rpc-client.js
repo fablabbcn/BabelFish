@@ -1,3 +1,17 @@
+
+/* 
+-------------------------------------------- 
+  RPC_client.js
+  Proudly based in Codebender.cc Babelfish
+  
+  Author: Codebender - Chris Perivolaropoulos <cperivol@csail.mit.edu>
+  Author: Smart Citizen Team
+
+  THIS IS A BETA!
+
+--------------------------------------------  
+*/
+
 // File: /chrome-extension/client/rpc-client.js
 
 // XXX: move cleaner/listener management code to common.

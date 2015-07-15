@@ -24,8 +24,7 @@ var config = {
   }
 },
     matchUrls = ["http://localhost:8080/*",
-                 "http://localhost/*",
-                 "http://ec2-54-174-134-98.compute-1.amazonaws.com:8080/*"];
+                 "http://localhost/*"];
 
 if (window.chrome && window.chrome.runtime && window.chrome.runtime.id)
   config.extensionId = chrome.runtime.id;
