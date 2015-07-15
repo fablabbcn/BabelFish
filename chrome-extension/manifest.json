@@ -1,7 +1,7 @@
 {
 "update_url": "https://clients2.google.com/service/update2/crx",
     "name": "Smart Citizen Kit",
-    "version": "0.1.1.2",
+    "version": "0.1.1.3",
     "manifest_version": 2,
     "minimum_chrome_version": "41",
     "author": "Smart Citizen",
